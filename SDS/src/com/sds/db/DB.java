@@ -26,10 +26,20 @@ public class DB {
 	private static PreparedStatement scUpdateStmnt = null;
 	private static PreparedStatement queryTealStmnt = null;
 	private static PreparedStatement updateT9Stmnt = null;
+	private static PreparedStatement queryStockIDStmnt = null;
+	private static PreparedStatement typSumbyStockIDStmnt = null;
 	private static Statement stmnt = null;
 
 	public static void closeConnection() {
 		try {
+			if(typSumbyStockIDStmnt != null) {
+				typSumbyStockIDStmnt.close();
+				typSumbyStockIDStmnt = null;
+			}
+			if(queryStockIDStmnt != null) {
+				queryStockIDStmnt.close();
+				queryStockIDStmnt = null;
+			}
 			if (queryTealStmnt != null) {
 				queryTealStmnt.close();
 				queryTealStmnt = null;
@@ -290,6 +300,25 @@ public class DB {
 		return scUpdateStmnt;
 	}
 
+	//queryStockIDStmnt
+	public static PreparedStatement getStockIDQueryStmnt() {
+		getConnection();
+
+		if (queryStockIDStmnt == null) {
+			try {
+
+			
+				String query = "SELECT STOCKID FROM BBROCK WHERE  DATEID =? ORDER BY STOCKID ASC";
+				queryStockIDStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return queryStockIDStmnt;
+	}
+
+	
 	//updateT9Stmnt = null;
 	public static PreparedStatement getUpdateT9Stmnt() {
 		getConnection();
@@ -321,7 +350,7 @@ public class DB {
 				// select SUM(TEAL), SUM(YELLOW), SUM(PINK) FROM BBROCK a, SYMBOLS b WHERE
 				// a.STOCKID = b.STOCKID and b.SYMBOL = ? AND DATEID>=? AND DATEID<=?;
 
-				String query = "select TEAL, DATEID FROM BBROCK WHERE STOCKID = ?  ORDER BY DATEID ASC";
+				String query = "select TEAL, DATEID, BT9 FROM BBROCK WHERE STOCKID = ? AND DATEID>=?  ORDER BY DATEID ASC";
 				queryTealStmnt = dbcon.prepareStatement(query);
 			} catch (SQLException e) {
 				e.printStackTrace(System.out);
@@ -331,6 +360,29 @@ public class DB {
 		return queryTealStmnt;
 	}
 
+	
+	public static PreparedStatement getTYPDSumByStockIDStmnt() {
+		getConnection();
+
+		if (typSumbyStockIDStmnt == null) {
+			try {
+
+				// select SUM(TEAL), SUM(YELLOW), SUM(PINK) FROM BBROCK a, SYMBOLS b WHERE
+				// a.STOCKID = b.STOCKID and b.SYMBOL = ? AND DATEID>=? AND DATEID<=?;
+
+				String query = "select SUM(TEAL), SUM(YELLOW), SUM(PINK) FROM BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=?";
+
+				typSumbyStockIDStmnt  = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return typSumbyStockIDStmnt ;
+	}
+
+	
+	
 	// typSumQueryStmnt
 	public static PreparedStatement getTYPDSumQueryStmnt() {
 		getConnection();

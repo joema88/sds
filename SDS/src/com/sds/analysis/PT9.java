@@ -14,23 +14,28 @@ public class PT9 {
 		updateT9Stmnt = DB.getUpdateT9Stmnt();
 	}
 
-	public static void processStock(String symbol) {
+	public static void processStock(String symbol, int stockID, int dateID) {
 		init();
-		int stockID = DB.getSymbolID(symbol);
+		if (symbol != null && symbol.length() > 0) {
+			stockID = DB.getSymbolID(symbol);
+		}
+
 		int t9 = 0;
 		try {
 			queryTealStmnt.setInt(1, stockID);
+			queryTealStmnt.setInt(2, dateID-1);
 			ResultSet rs = queryTealStmnt.executeQuery();
 
 			while (rs.next()) {
 				int teal = rs.getInt(1);
-				int dateID = rs.getInt(2);
+				dateID = rs.getInt(2);
+				int bt9 = rs.getInt(3);
 				if (teal == 1) {
 					t9 = t9 + teal;
 				} else {
 					t9 = 0;
 				}
-				
+
 				updateT9Stmnt.setInt(1, t9);
 				updateT9Stmnt.setInt(2, stockID);
 				updateT9Stmnt.setInt(3, dateID);
@@ -41,8 +46,9 @@ public class PT9 {
 		}
 
 	}
+
 	public static void main(String[] args) {
-	
+
 	}
 
 }

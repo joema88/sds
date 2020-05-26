@@ -51,7 +51,7 @@ public class BackTestTealCVS {
 						ex.printStackTrace(System.out);
 					}
 					try {
-						close = Float.parseFloat(data[4].strip().substring(1));
+						close = Float.parseFloat(data[4].replaceAll(",","").strip().substring(1));
 					} catch (Exception ex) {
 						System.out.println("Close parsing error");
 						ex.printStackTrace(System.out);
