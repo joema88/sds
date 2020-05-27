@@ -11,7 +11,8 @@ public class DB {
 	 * information_schema.tables GROUP BY table_schema;
 	 */
 	
-	//select a.DATEID, b.CDATE, STOCKID, CLOSE, ATR,TEAL, YELLOW, PINK, SC5,BT9,PTVAL, PTCP, PASS,SC10C, SC15,TSC, MARKCAP, VOLUME FROM BBROCK a, DATES b  WHERE a.DATEID=b.DATEID and STOCKID = 1 order by a.DATEID DESC limit 300;
+	//SQL
+	//select a.DATEID,CDATE, a.STOCKID, CLOSE, ATR,TEAL, YELLOW, PINK, SC5,BT9,PTVAL, PTCP, PASS,TSC, MARKCAP, VOLUME, b.SYMBOL FROM BBROCK a, SYMBOLS b, DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.SYMBOL='LYG' order by a.DATEID DESC limit 300;
 	
 	private static Connection dbcon = null;
 	private static PreparedStatement symbolStmnt = null;
