@@ -12,7 +12,12 @@ public class DB {
 	 */
 	
 	//SQL
-	//select a.DATEID,CDATE, a.STOCKID, CLOSE, ATR,TEAL, YELLOW, PINK, SC5,BT9,PTVAL, PTCP, PASS,TSC, MARKCAP, VOLUME, b.SYMBOL FROM BBROCK a, SYMBOLS b, DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.SYMBOL='LYG' order by a.DATEID DESC limit 300;
+	//select a.DATEID,CDATE, a.STOCKID, CLOSE, ATR,TEAL, YELLOW, PINK, SC5,BT9,TSC5,GT6,GT10,DAYS,PTVAL, PTCP, PASS, b.SYMBOL FROM BBROCK a, SYMBOLS b, DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.SYMBOL='LYG' order by a.DATEID DESC limit 300;
+	
+	//create BBROCK table
+	//1. CREATE TABLE SYMBOLS(STOCKID SMALLINT, SYMBOL VARCHAR(10), PRIMARY KEY(STOCKID)); 
+	 //2. CREATE TABLE DATES(DATEID SMALLINT, CDATE DATE, PRIMARY KEY(DATEID)); 
+	//3. CREATE TABLE BBROCK(STOCKID SMALLINT, DATEID SMALLINT, PERCENT FLOAT DEFAULT 0.0, CLOSE FLOAT DEFAULT 0.0,NETCHANGE FLOAT DEFAULT 0.0, ATR FLOAT DEFAULT 0.0, OPEN FLOAT DEFAULT 0.0,HIGH FLOAT DEFAULT 0.0, LOW FLOAT DEFAULT 0.0,LOW52 FLOAT DEFAULT 0.0,HIGH52 FLOAT DEFAULT 0.0, MARKCAP FLOAT DEFAULT 0.0,VOLUME INT DEFAULT 0, YELLOW TINYINT DEFAULT 0,TEAL TINYINT  DEFAULT 0, PINK TINYINT DEFAULT 0, SC5 SMALLINT DEFAULT 0,YP10 TINYINT DEFAULT 0, BT9 SMALLINT DEFAULT 0,GT10 SMALLINT DEFAULT 0,GT6 SMALLINT DEFAULT 0,TSC5 SMALLINT DEFAULT 0,DAYS SMALLINT DEFAULT 0, PTVAL FLOAT DEFAULT 0.0, PTCP FLOAT DEFAULT 0.0, PASS TINYINT DEFAULT 0, PRIMARY KEY (STOCKID, DATEID), FOREIGN KEY (STOCKID) REFERENCES SYMBOLS(STOCKID) ON DELETE CASCADE, FOREIGN KEY (DATEID) REFERENCES DATES(DATEID));
 	
 	private static Connection dbcon = null;
 	private static PreparedStatement symbolStmnt = null;
@@ -30,9 +35,19 @@ public class DB {
 	private static PreparedStatement queryStockIDStmnt = null;
 	private static PreparedStatement typSumbyStockIDStmnt = null;
 	private static Statement stmnt = null;
+	private static PreparedStatement yp10SumCalStmnt = null;
+	private static PreparedStatement yp10SumUpdateStmnt = null;
 
 	public static void closeConnection() {
 		try {
+			if(yp10SumUpdateStmnt != null) {
+				yp10SumUpdateStmnt.close();
+				yp10SumUpdateStmnt = null;
+			}
+			if(yp10SumCalStmnt != null) {
+				yp10SumCalStmnt.close();
+				yp10SumCalStmnt = null;
+			}
 			if(typSumbyStockIDStmnt != null) {
 				typSumbyStockIDStmnt.close();
 				typSumbyStockIDStmnt = null;
@@ -383,6 +398,48 @@ public class DB {
 	}
 
 	
+	//yp10SumUpdateStmnt
+	public static PreparedStatement getYP10SumUpdateStmnt() {
+		getConnection();
+
+		if (yp10SumUpdateStmnt == null) {
+			try {
+
+				// select SUM(TEAL), SUM(YELLOW), SUM(PINK) FROM BBROCK a, SYMBOLS b WHERE
+				// a.STOCKID = b.STOCKID and b.SYMBOL = ? AND DATEID>=? AND DATEID<=?;
+
+				String query = "UPDATE BBROCK SET YP10 = ?  WHERE STOCKID = ? AND DATEID = ? ";
+
+				yp10SumUpdateStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return yp10SumUpdateStmnt;
+	}
+	
+	
+	//yp10SumCalStmnt
+	public static PreparedStatement getYP10SumCalStmnt() {
+		getConnection();
+
+		if (yp10SumCalStmnt == null) {
+			try {
+
+				// select SUM(TEAL), SUM(YELLOW), SUM(PINK) FROM BBROCK a, SYMBOLS b WHERE
+				// a.STOCKID = b.STOCKID and b.SYMBOL = ? AND DATEID>=? AND DATEID<=?;
+
+				String query = "select SUM(YELLOW), SUM(PINK) FROM BBROCK  WHERE STOCKID = ? AND DATEID>=? AND DATEID<=?";
+
+				yp10SumCalStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return yp10SumCalStmnt;
+	}
 	
 	// typSumQueryStmnt
 	public static PreparedStatement getTYPDSumQueryStmnt() {
@@ -549,9 +606,7 @@ public class DB {
 
 		// $$$$$$$$ SQL
 		/*
-		 * 1. CREATE TABLE SYMBOLS(STOCKID SMALLINT, SYMBOL VARCHAR(10), PRIMARY KEY
-		 * (STOCKID)); 2. CREATE TABLE DATES(DATEID SMALLINT, CDATE DATE, PRIMARY KEY
-		 * (DATEID)); 3. CREATE TABLE BBROCK(STOCKID SMALLINT, DATEID SMALLINT, PERCENT
+		 *  CREATE TABLE BBROCK(STOCKID SMALLINT, DATEID SMALLINT, PERCENT
 		 * FLOAT DEFAULT 0.0, CLOSE FLOAT DEFAULT 0.0,NETCHANGE FLOAT DEFAULT 0.0, ATR
 		 * FLOAT DEFAULT 0.0, OPEN FLOAT DEFAULT 0.0,HIGH FLOAT DEFAULT 0.0, LOW FLOAT
 		 * DEFAULT 0.0,LOW52 FLOAT DEFAULT 0.0,HIGH52 FLOAT DEFAULT 0.0, MARKCAP FLOAT

@@ -39,6 +39,25 @@ public class DailyRecordsUploader {
 					stmnt2.setInt(3, dateID);
 					stmnt2.executeUpdate();
 				}
+				
+				PreparedStatement yp10SumCalStmnt = DB.getYP10SumCalStmnt();
+				yp10SumCalStmnt.setInt(1, stockID);
+				yp10SumCalStmnt.setInt(2, dateID - 9);
+				yp10SumCalStmnt.setInt(3, dateID);
+				ResultSet rs3 = yp10SumCalStmnt.executeQuery();
+				if (rs3.next()) {
+					int yellowSum = rs3.getInt(1);
+					int pinkSum = rs3.getInt(2);
+					int YP10 = yellowSum + pinkSum ;
+					
+					PreparedStatement yp10SumUpdateStmnt = DB.getYP10SumUpdateStmnt();
+					
+					yp10SumUpdateStmnt.setInt(1, YP10);
+					yp10SumUpdateStmnt.setInt(2, stockID);
+					yp10SumUpdateStmnt.setInt(3, dateID);
+					yp10SumUpdateStmnt.executeUpdate();
+
+				}
 
 			}
 		} catch (Exception ex) {

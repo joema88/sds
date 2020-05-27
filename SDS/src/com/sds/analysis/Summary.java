@@ -9,11 +9,16 @@ public class Summary {
 	private static PreparedStatement queryStmnt = null;
 	private static PreparedStatement typSumQueryStmnt = null;
 	private static PreparedStatement scUpdateStmnt = null;
+	private static PreparedStatement yp10SumCalStmnt = null;
+	private static PreparedStatement yp10SumUpdateStmnt = null;
+
 
 	public static void init() {
 		queryStmnt = DB.getSymbolDateIDQueryStmnt();
 		typSumQueryStmnt = DB.getTYPDSumQueryStmnt();
 		scUpdateStmnt = DB.getSCUpdateStmnt();
+		yp10SumCalStmnt = DB.getYP10SumCalStmnt();
+		yp10SumUpdateStmnt = DB.getYP10SumUpdateStmnt();
 	}
 
 	public static void processDailyStocks(String date) {
@@ -47,6 +52,21 @@ public class Summary {
 					scUpdateStmnt.setInt(2, stockID);
 					scUpdateStmnt.setInt(3, dateID);
 					scUpdateStmnt.executeUpdate();
+
+				}
+				
+				yp10SumCalStmnt.setInt(1, stockID);
+				yp10SumCalStmnt.setInt(2, dateID - 9);
+				yp10SumCalStmnt.setInt(3, dateID);
+				ResultSet rs3 = yp10SumCalStmnt.executeQuery();
+				if (rs3.next()) {
+					int yellowSum = rs3.getInt(1);
+					int pinkSum = rs3.getInt(2);
+					int YP10 = yellowSum + pinkSum ;
+					yp10SumUpdateStmnt.setInt(1, YP10);
+					yp10SumUpdateStmnt.setInt(2, stockID);
+					yp10SumUpdateStmnt.setInt(3, dateID);
+					yp10SumUpdateStmnt.executeUpdate();
 
 				}
 			}
