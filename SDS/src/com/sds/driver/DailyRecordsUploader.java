@@ -72,7 +72,7 @@ public class DailyRecordsUploader {
 		String path = "/home/joma/share/test/";
 		boolean currentDateProcessOnly = false;
 		String cDate = "2020-05-19";
-		int dateCountToBeProcessed = 5;
+		int dateCountToBeProcessed = 7;
 		int loopCount = 0;
 		long t1 = System.currentTimeMillis();
 

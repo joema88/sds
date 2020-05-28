@@ -62,7 +62,7 @@ public class Summary {
 				if (rs3.next()) {
 					int yellowSum = rs3.getInt(1);
 					int pinkSum = rs3.getInt(2);
-					int YP10 = yellowSum + pinkSum ;
+					int YP10 = yellowSum + 2*pinkSum ;
 					yp10SumUpdateStmnt.setInt(1, YP10);
 					yp10SumUpdateStmnt.setInt(2, stockID);
 					yp10SumUpdateStmnt.setInt(3, dateID);

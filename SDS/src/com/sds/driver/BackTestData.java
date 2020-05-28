@@ -10,7 +10,7 @@ public class BackTestData {
 		// TODO Auto-generated method stub
 		long t1 = System.currentTimeMillis();
 		String path = "/home/joma/share/test/simple/";
-		String symbol = "TNDM";
+		String symbol = "MRNA";
 		BackTestBaseCVS.processStock(path, symbol);
 		System.out.println("Processing teal records...");
 		BackTestTealCVS.processStock(path, symbol);
@@ -22,6 +22,9 @@ public class BackTestData {
 		Summary.processStock(symbol, 0);
 		System.out.println("Processing PT9...");
 		PT9.processStockHistory(symbol,0,0);
+		System.out.println("Processing bull pattern one ...");
+		OneBullPattern.processStock(symbol, -1);
+		OneBullPattern.findPassPoints(symbol, -1);
 		long t2 = System.currentTimeMillis();
 		System.out.println("Time cost is "+((t2-t1)*1.0f)/(1000*60.0f)+" minutes");
 

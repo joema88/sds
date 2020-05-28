@@ -55,10 +55,17 @@ public class PT9 {
 		int bt9 = getPreviousDayBT9(symbol, stockID, dateID - 1);
 		int teal = getCurrentDayTeal(symbol, stockID, dateID);
 		try {
-			updateT9Stmnt.setInt(1, bt9+teal);
-			updateT9Stmnt.setInt(2, stockID);
-			updateT9Stmnt.setInt(3, dateID);
-			updateT9Stmnt.executeUpdate();
+			if (teal == 1) {
+				updateT9Stmnt.setInt(1, bt9 + teal);
+				updateT9Stmnt.setInt(2, stockID);
+				updateT9Stmnt.setInt(3, dateID);
+				updateT9Stmnt.executeUpdate();
+			} else if (teal == 0) {
+				updateT9Stmnt.setInt(1, 0);
+				updateT9Stmnt.setInt(2, stockID);
+				updateT9Stmnt.setInt(3, dateID);
+				updateT9Stmnt.executeUpdate();
+			}
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}
