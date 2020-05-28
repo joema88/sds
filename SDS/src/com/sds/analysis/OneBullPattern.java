@@ -11,8 +11,8 @@ public class OneBullPattern {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		String stock = "MRNA";
-		processStock(stock, -1);
-		findPassPoints(stock, -1);
+		processStock(stock, -1,-1);
+		findPassPoints(stock, -1, false);
 
 	}
 
@@ -29,10 +29,9 @@ public class OneBullPattern {
 	private static PreparedStatement closeAboveQueryStmnt = null;
 	private static PreparedStatement updatePassPointStmnt = null;
 
-
 	// find days that passes qualified BT9 points +5%, continue log for 5 days, if
 	// it stays above +4% or 5% above
-	public static void findPassPoints(String symbol, int stockID) {
+	public static void findPassPoints(String symbol, int stockID, boolean lastOnly) {
 		if (symbol != null && symbol.length() > 0) {
 			stockID = DB.getSymbolID(symbol);
 		}
@@ -48,49 +47,56 @@ public class OneBullPattern {
 			while (rs.next()) {
 				int dateId = rs.getInt(1);
 				float val = rs.getFloat(2);
-				
+
 				closeAboveQueryStmnt.setInt(1, stockID);
 				closeAboveQueryStmnt.setInt(2, dateId);
 				closeAboveQueryStmnt.setFloat(3, val);
-				
+
 				ResultSet rs2 = closeAboveQueryStmnt.executeQuery();
 				int pval = 1;
-				while(rs2.next()) {
+				while (rs2.next()) {
 					int pDateId = rs2.getInt(1);
-					
-					if(pDateId<preBullDateID||preBullDateID==0) {
-						
-						if(ppDateID==0) {
+
+					if (pDateId < preBullDateID || preBullDateID == 0) {
+
+						if (ppDateID == 0) {
 							pval = 1;
-						}else if((pDateId-ppDateID)==1) {
+						} else if ((pDateId - ppDateID) == 1) {
 							pval++;
-						}else {
-							pval = 0;
+						} else {
+							pval = 1;
 						}
-						
+
 						updatePassPointStmnt.setInt(1, pval);
 						updatePassPointStmnt.setInt(2, stockID);
 						updatePassPointStmnt.setInt(3, pDateId);
 						updatePassPointStmnt.executeUpdate();
 					}
-					
-					
+
 					ppDateID = pDateId;
 				}
-				
-				preBullDateID = dateId;
 
+				preBullDateID = dateId;
+				
+				//for daily process, only need last one processed
+                if(lastOnly) {
+                	break;
+                }
 			}
 		} catch (Exception ex) {
 
 		}
 	}
 
-	public static void processStock(String symbol, int stockID) {
+	public static void processStock(String symbol, int stockID, int stockDateId) {
 		if (symbol != null && symbol.length() > 0) {
 			stockID = DB.getSymbolID(symbol);
 		}
 		pt9BullStmnt = OneBullDB.getPT9BullStmnt(stockID, -1, -1);
+		if (stockDateId > 0) {
+			pt9BullStmnt = OneBullDB.getPT9BullStmnt(stockID, stockDateId, -1);
+		}
+
 		findPreviousYP10ZeroStmnt = OneBullDB.getPreviousYP10OneStmnt();
 		querySC5SumStmnt = OneBullDB.getSC5SumStmnt();
 		dayLengthStmnt = OneBullDB.getBoundaryLengthStmnt();

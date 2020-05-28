@@ -117,7 +117,7 @@ public class OneBullDB extends DB {
 			if (closeAboveQueryStmnt == null) {
 				try {
 
-					String query = "SELECT DATEID FROM BBROCK WHERE STOCKID = ? AND DATEID >? AND CLOSE>? ORDER BY DATEID ASC limit 5 ";
+					String query = "SELECT DATEID FROM BBROCK WHERE STOCKID = ? AND DATEID >? AND CLOSE>? ORDER BY DATEID ASC";
 
 					closeAboveQueryStmnt = DB.getConnection().prepareStatement(query);
 				} catch (SQLException e) {

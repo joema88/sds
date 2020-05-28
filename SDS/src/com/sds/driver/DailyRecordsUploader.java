@@ -58,7 +58,10 @@ public class DailyRecordsUploader {
 					yp10SumUpdateStmnt.executeUpdate();
 
 				}
-
+               //process BT9 Bull pattern one
+				OneBullPattern.processStock("", stockID, dateID);
+				//find passing points
+				OneBullPattern.findPassPoints("", stockID, true);
 			}
 		} catch (Exception ex) {
 			System.out.println("Error at processDailySummaryScore...");
