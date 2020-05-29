@@ -12,12 +12,12 @@ public class DB {
 	 */
 	
 	//SQL
-	//select a.DATEID,CDATE, a.STOCKID, CLOSE, ATR,TEAL, YELLOW, PINK, SC5,BT9,TSC5,GT6,GT10,DAYS,PTVAL, PTCP, PASS, b.SYMBOL FROM BBROCK a, SYMBOLS b, DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.SYMBOL='LYG' order by a.DATEID DESC limit 300;
+	//select a.DATEID,CDATE, a.STOCKID, CLOSE, ATR,TEAL, YELLOW, PINK, SC5,BT9,TSC5,DAYS,PTVAL, PTCP, PASS, CX520,b.SYMBOL FROM BBROCK a, SYMBOLS b, DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.SYMBOL='MAR' order by a.DATEID DESC limit 300;
 	
 	//create BBROCK table
 	//1. CREATE TABLE SYMBOLS(STOCKID SMALLINT, SYMBOL VARCHAR(10), PRIMARY KEY(STOCKID)); 
 	 //2. CREATE TABLE DATES(DATEID SMALLINT, CDATE DATE, PRIMARY KEY(DATEID)); 
-	//3. CREATE TABLE BBROCK(STOCKID SMALLINT, DATEID SMALLINT, PERCENT FLOAT DEFAULT 0.0, CLOSE FLOAT DEFAULT 0.0,NETCHANGE FLOAT DEFAULT 0.0, ATR FLOAT DEFAULT 0.0, OPEN FLOAT DEFAULT 0.0,HIGH FLOAT DEFAULT 0.0, LOW FLOAT DEFAULT 0.0,LOW52 FLOAT DEFAULT 0.0,HIGH52 FLOAT DEFAULT 0.0, MARKCAP FLOAT DEFAULT 0.0,VOLUME INT DEFAULT 0, YELLOW TINYINT DEFAULT 0,TEAL TINYINT  DEFAULT 0, PINK TINYINT DEFAULT 0, SC5 SMALLINT DEFAULT 0,YP10 TINYINT DEFAULT 0, BT9 SMALLINT DEFAULT 0,TSC5 SMALLINT DEFAULT 0,DAYS SMALLINT DEFAULT 0, PTVAL FLOAT DEFAULT 0.0, PTCP FLOAT DEFAULT 0.0, PASS TINYINT DEFAULT 0, PRIMARY KEY (STOCKID, DATEID), FOREIGN KEY (STOCKID) REFERENCES SYMBOLS(STOCKID) ON DELETE CASCADE, FOREIGN KEY (DATEID) REFERENCES DATES(DATEID)); 
+	//3. CREATE TABLE BBROCK(STOCKID SMALLINT, DATEID SMALLINT, PERCENT FLOAT DEFAULT 0.0, CLOSE FLOAT DEFAULT 0.0,NETCHANGE FLOAT DEFAULT 0.0, ATR FLOAT DEFAULT 0.0, OPEN FLOAT DEFAULT 0.0,HIGH FLOAT DEFAULT 0.0, LOW FLOAT DEFAULT 0.0,LOW52 FLOAT DEFAULT 0.0,HIGH52 FLOAT DEFAULT 0.0, MARKCAP FLOAT DEFAULT 0.0,VOLUME INT DEFAULT 0, YELLOW TINYINT DEFAULT 0,TEAL TINYINT  DEFAULT 0, PINK TINYINT DEFAULT 0, SC5 SMALLINT DEFAULT 0,YP10 TINYINT DEFAULT 0, BT9 SMALLINT DEFAULT 0,TSC5 SMALLINT DEFAULT 0,DAYS SMALLINT DEFAULT 0, PTVAL FLOAT DEFAULT 0.0, PTCP FLOAT DEFAULT 0.0, PASS TINYINT DEFAULT 0,CX520 TINYINT DEFAULT 0, PRIMARY KEY (STOCKID, DATEID), FOREIGN KEY (STOCKID) REFERENCES SYMBOLS(STOCKID) ON DELETE CASCADE, FOREIGN KEY (DATEID) REFERENCES DATES(DATEID));
 	private static Connection dbcon = null;
 	private static PreparedStatement symbolStmnt = null;
 	private static PreparedStatement symbolDateIDQuery = null;
@@ -31,6 +31,7 @@ public class DB {
 	private static PreparedStatement scUpdateStmnt = null;
 	private static PreparedStatement queryTealStmnt = null;
 	private static PreparedStatement updateT9Stmnt = null;
+	private static PreparedStatement update520CXStmnt = null;
 	private static PreparedStatement queryStockIDStmnt = null;
 	private static PreparedStatement typSumbyStockIDStmnt = null;
 	private static Statement stmnt = null;
@@ -39,6 +40,10 @@ public class DB {
 
 	public static void closeConnection() {
 		try {
+			if(update520CXStmnt !=null) {
+				update520CXStmnt.close();
+				update520CXStmnt = null;
+			}
 			if(yp10SumUpdateStmnt != null) {
 				yp10SumUpdateStmnt.close();
 				yp10SumUpdateStmnt = null;
@@ -297,6 +302,25 @@ public class DB {
 		return exist;
 	}
 
+	//update520CXStmnt 
+	public static PreparedStatement get520CXUpdateStmnt() {
+		getConnection();
+
+		if (update520CXStmnt  == null) {
+			try {
+
+				String query = "UPDATE BBROCK SET CX520 = ? WHERE STOCKID = ? AND DATEID =? ";
+
+				update520CXStmnt  = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return update520CXStmnt ;
+	}
+
+	
 	// scUpdateStmnt
 	public static PreparedStatement getSCUpdateStmnt() {
 		getConnection();

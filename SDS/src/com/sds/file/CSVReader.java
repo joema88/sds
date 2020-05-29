@@ -14,6 +14,7 @@ public class CSVReader {
 	public static void main(String[] args) {
 
 		String csvFile = "/home/joma/share/test/2020-05-19-watchlistUP.csv";
+		csvFile = "/home/joma/share/test/2020-05-28-watchlistBase3.csv";
 		BufferedReader br = null;
 		String line = "";
 		String cvsSplitBy = ",";
@@ -23,13 +24,15 @@ public class CSVReader {
 			boolean start = false;
 			br = new BufferedReader(new FileReader(csvFile));
 			while ((line = br.readLine()) != null) {
-				if (line.indexOf("Last") > 0) {
-					start = true;
-				}
+
 				// use comma as separator
 				if (start) {
 					String[] data = line.split(cvsSplitBy);
 					String symbol = data[0];
+					if (symbol.equalsIgnoreCase("AMOV")) {
+						int abc = 0;
+						abc++;
+					}
 					float percentage = 0.0f;
 					try {
 						String val = data[1].strip().substring(0, data[1].strip().length() - 1);
@@ -50,75 +53,123 @@ public class CSVReader {
 					} catch (Exception ex) {
 
 					}
-					float atr = 0.0f;
-					try {
-						atr = Float.parseFloat(data[4].strip());
-					} catch (Exception ex) {
 
-					}
 					float open = 0.0f;
 					try {
-						open = Float.parseFloat(data[5].strip());
+						open = Float.parseFloat(data[4].strip());
 					} catch (Exception ex) {
 
 					}
 					float high = 0.0f;
 					try {
-						high = Float.parseFloat(data[6].strip());
+						high = Float.parseFloat(data[5].strip());
 					} catch (Exception ex) {
 
 					}
 					float low = 0.0f;
 					try {
-						low = Float.parseFloat(data[7].strip());
+						low = Float.parseFloat(data[6].strip());
 					} catch (Exception ex) {
 
 					}
 					float low52 = 0.0f;
 					try {
-						low52 = Float.parseFloat(data[8].strip());
+						low52 = Float.parseFloat(data[7].strip());
 					} catch (Exception ex) {
 
 					}
 					float high52 = 0.0f;
 					try {
-						high52 = Float.parseFloat(data[9].strip());
+						high52 = Float.parseFloat(data[8].strip());
 					} catch (Exception ex) {
 
 					}
 					// 119.88,"53,714 M","1,003,250"
 					float marketCap = 0.0f;
 					try {
-						String val = line.substring(line.indexOf(data[9]) + data[9].length() + 2, line.indexOf(" M"));
-						// System.out.println(symbol+ " data[10] "+val);
-
-						marketCap = Float.parseFloat(val.replaceAll(",", ""));
-					} catch (Exception ex) {
-
-					}
-					float volume = 0.0f;
-					try {
-						String val1 = line.substring(line.indexOf(" M") + 4);
-						// System.out.println("val1 "+val1);
-						if (val1.indexOf("\"") >= 0) {
-							String val = line.substring(line.indexOf(" M") + 5, line.length() - 1);
-							// System.out.println("vale "+val);
-							volume = Float.parseFloat(val.replaceAll(",", ""));
+						// System.out.println(line);
+						// System.out.println("Split 8 " + data[8]);
+						// System.out.println("Split 9 " + data[9]);
+						if (line.indexOf(" M") > 0) {
+							String val = line.substring(line.indexOf(data[8]) + data[8].length() + 1,
+									line.indexOf(" M"));
+							// System.out.println(symbol + " data[9] " + val);
+							// System.out.println(val.replaceAll(",", "").replaceAll("\"", ""));
+							marketCap = Float.parseFloat(val.replaceAll(",", "").replaceAll("\"", ""));
 						} else {
-							volume = Float.parseFloat(val1);
+							marketCap = Float.parseFloat(data[9].replaceAll(",", ""));
 						}
 					} catch (Exception ex) {
 
 					}
+					// System.out.println("Split 10 " + data[10]);
+					float volume = 0.0f;
+					float atr = 0.0f;
+
+					// CETXW,-0.29%,.0349,-.0001,.0350,.0352,.0300,.0021,.1000,0,"3,600",0.0112
+					if (line.indexOf(" M") < 0) {
+						if (line.indexOf("\"") >= 0) {
+							String val1 = line.substring(line.indexOf("\"") + 1);
+							// System.out.println("vale1 " + val1);
+							String val2 = val1.substring(0, val1.indexOf("\""));
+							// System.out.println("vale2 " + val2);
+							volume = Float.parseFloat(val2.replaceAll(",", ""));
+							String val3 = val1.substring(val1.indexOf("\"") + 2, val1.length());
+							// System.out.println("vale3 " + val3);
+							if (!val3.equalsIgnoreCase("NaN"))
+								atr = Float.parseFloat(val3);
+						} else {
+							volume = Float.parseFloat(data[10]);
+							if (!data[11].equalsIgnoreCase("NaN"))
+								atr = Float.parseFloat(data[11]);
+						}
+					} else {
+
+						String val1 = line.substring(line.indexOf(" M") + 4);
+
+						// System.out.println("val1 "+val1);
+						if (val1.indexOf("\"") >= 0) {
+							String val11 = line.substring(line.indexOf(" M") + 4);
+							// System.out.println("vale1 " + val11);
+							String val2 = val11.substring(0, val11.indexOf("\""));
+							if (val2.strip().length() == 0) {
+								val11 = line.substring(line.indexOf(" M") + 5);
+								// System.out.println("vale1 " + val11);
+								val2 = val11.substring(0, val11.indexOf("\""));
+							}
+							// System.out.println("vale2 " + val2);
+							volume = Float.parseFloat(val2.replaceAll(",", ""));
+							String val3 = val11.substring(val11.indexOf("\"") + 2, val11.length());
+							// System.out.println("vale3 " + val3);
+							if (!val3.equalsIgnoreCase("NaN"))
+								atr = Float.parseFloat(val3);
+
+						} else {
+							String vStr = val1.substring(0, val1.indexOf(","));
+							volume = Float.parseFloat(vStr);
+
+							String val3 = val1.substring(val1.indexOf(",") + 1, val1.length());
+							// System.out.println("vale3 " + val3);
+							if (!val3.equalsIgnoreCase("NaN"))
+								atr = Float.parseFloat(val3);
+
+						}
+
+					}
+
+					// System.out.println("Split 11 " + data[11]);
 
 					// if (symbol.equalsIgnoreCase("BRK/A"))
-					System.out.println(symbol + ": " + percentage + ": " + close + ": " + netChange + ": " + atr + ": "
-							+ open + ": " + high + ": " + low + ": " + low52 + ": " + high52 + ": " + marketCap + ": "
-							+ volume);
+					System.out.println(symbol + ": " + percentage + ": " + close + ": " + netChange + ": " + open + ": "
+							+ high + ": " + low + ": " + low52 + ": " + high52 + ": " + marketCap + ": " + volume + ": "
+							+ atr);
 					// System.out.println("Country [code= " + country[4] + " , name=" + country[5] +
 					// "]");
-				}
 
+				}
+				if (line.indexOf("Last") > 0) {
+					start = true;
+				}
 			}
 
 		} catch (FileNotFoundException e) {
@@ -184,6 +235,7 @@ public class CSVReader {
 
 	public static void uploadCSVtoDB(String path, String fileName) {
 		String csvFile = path + fileName;
+		System.out.println("Processing file " + csvFile);
 		BufferedReader br = null;
 		String line = "";
 		String cvsSplitBy = ",";
@@ -193,6 +245,7 @@ public class CSVReader {
 		PreparedStatement symbolStmnt = DB.getSymbolInsertStatement();
 		PreparedStatement dateStmnt = DB.getDateInsertStatement();
 		PreparedStatement rockStmnt = DB.getRockInsertStatement();
+		PreparedStatement update520CXStmnt = DB.get520CXUpdateStmnt();
 
 		String dateStr = fileName.substring(0, fileName.indexOf("-watchlist"));
 
@@ -218,7 +271,7 @@ public class CSVReader {
 					int stockID = DB.getSymbolID(symbol);
 
 					boolean recordExists = DB.checkBBRecordExist(stockID, currentDateID);
-					if (recordExists) {
+					if (recordExists && fileName.toLowerCase().indexOf("base") < 0) {
 						// update record only
 						String fieldName = "TEAL";
 						if (fileName.toLowerCase().indexOf("struggle") >= 0) {
@@ -234,156 +287,300 @@ public class CSVReader {
 						}
 
 					} else {
+						// new code
 						float percentage = 0.0f;
 						try {
 							String val = data[1].strip().substring(0, data[1].strip().length() - 1);
 							// System.out.println("data[1] "+val);
 							percentage = Float.parseFloat(val);
 						} catch (Exception ex) {
-
+							System.out.println("Percentage parse error...");
+							ex.printStackTrace(System.out);
 						}
 						float close = 0.0f;
 						try {
 							close = Float.parseFloat(data[2].strip());
 						} catch (Exception ex) {
-
+							System.out.println("Close parse error...");
+							ex.printStackTrace(System.out);
 						}
 						float netChange = 0.0f;
 						try {
 							netChange = Float.parseFloat(data[3].strip());
 						} catch (Exception ex) {
-
+							System.out.println("Netchange parse error...");
+							ex.printStackTrace(System.out);
 						}
-						float atr = 0.0f;
-						try {
-							if (!data[4].strip().equalsIgnoreCase("NaN"))
-								atr = Float.parseFloat(data[4].strip());
-						} catch (Exception ex) {
 
-						}
 						float open = 0.0f;
 						try {
-							open = Float.parseFloat(data[5].strip());
+							open = Float.parseFloat(data[4].strip());
 						} catch (Exception ex) {
-
+							System.out.println("Open parse error...");
+							ex.printStackTrace(System.out);
 						}
 						float high = 0.0f;
 						try {
-							high = Float.parseFloat(data[6].strip());
+							high = Float.parseFloat(data[5].strip());
 						} catch (Exception ex) {
-
+							System.out.println("High parse error...");
+							ex.printStackTrace(System.out);
 						}
 						float low = 0.0f;
 						try {
-							low = Float.parseFloat(data[7].strip());
+							low = Float.parseFloat(data[6].strip());
 						} catch (Exception ex) {
-
+							System.out.println("Low parse error...");
+							ex.printStackTrace(System.out);
 						}
 						float low52 = 0.0f;
 						try {
-							low52 = Float.parseFloat(data[8].strip());
+							low52 = Float.parseFloat(data[7].strip());
 						} catch (Exception ex) {
+							System.out.println("Low52 parse error...");
+							ex.printStackTrace(System.out);
 
 						}
 						float high52 = 0.0f;
 						try {
-							high52 = Float.parseFloat(data[9].strip());
+							high52 = Float.parseFloat(data[8].strip());
 						} catch (Exception ex) {
+							System.out.println("High52 parse error...");
+							ex.printStackTrace(System.out);
 
 						}
 						// 119.88,"53,714 M","1,003,250"
-						// 714 M,"1,003,250"
 						float marketCap = 0.0f;
 						try {
-							if (line.indexOf(" M\",") > 0) {
-								String val = line.substring(line.indexOf(data[9]) + data[9].length() + 2,
-										line.indexOf(" M\","));
-								// System.out.println(symbol+ " data[10] "+val);
-
-								marketCap = Float.parseFloat(val.replaceAll(",", ""));
-							} else if (line.indexOf(" M,") > 0) {
-								String val = line.substring(line.indexOf(data[9]) + data[9].length() + 1,
-										line.indexOf(" M,"));
-								// System.out.println(symbol+ " data[10] "+val);
-
-								marketCap = Float.parseFloat(val.replaceAll(",", ""));
-
+							// System.out.println(line);
+							// System.out.println("Split 8 " + data[8]);
+							// System.out.println("Split 9 " + data[9]);
+							if (line.indexOf(" M") > 0) {
+								String val = line.substring(line.indexOf(data[8]) + data[8].length() + 1,
+										line.indexOf(" M"));
+								while (val.indexOf(data[8]) >= 0) {
+									//System.out.println(val);
+									//System.out.println(data[8]);
+									val = val.substring(val.indexOf(data[8]) + data[8].length() + 1, val.length());
+								}
+								//System.out.println(symbol + " data[9] " + val);
+								// System.out.println(val.replaceAll(",", "").replaceAll("\"", ""));
+								//if (val.indexOf("\"") >= 0) {
+									marketCap = Float.parseFloat(val.replaceAll(",", "").replaceAll("\"", ""));
+								//}else {
+								//	marketCap = Float.parseFloat(val.substring(0,val.indexOf(",")));
+								//}
+							} else {
+								marketCap = Float.parseFloat(data[9].replaceAll(",", ""));
 							}
 						} catch (Exception ex) {
+							System.out.println(symbol + " : " + line);
+							System.out.println("Marketcap parse error...");
+							ex.printStackTrace(System.out);
 
 						}
+						// System.out.println("Split 10 " + data[10]);
 						float volume = 0.0f;
-						try {
-							if (line.indexOf(" M\",") > 0) {
-								String val1 = line.substring(line.indexOf(" M\",") + 4);
-								// System.out.println("val1 "+val1);
-								if (val1.indexOf("\"") >= 0) {
-									String val = line.substring(line.indexOf(" M") + 5, line.length() - 1);
-									// System.out.println("vale "+val);
-									volume = Float.parseFloat(val.replaceAll(",", ""));
-								} else if (val1 != null && val1.trim().length() > 0) {
-									volume = Float.parseFloat(val1);
-								}
-							} else if (line.indexOf(" M,") > 0) {
-								String val1 = line.substring(line.indexOf(" M") + 3);
-								// System.out.println("val1 "+val1);
-								if (val1.indexOf("\"") >= 0) {
-									String val = line.substring(line.indexOf(" M") + 4, line.length() - 1);
-									// System.out.println("vale "+val);
-									volume = Float.parseFloat(val.replaceAll(",", ""));
-								} else if (val1 != null && val1.trim().length() > 0) {
-									volume = Float.parseFloat(val1);
-								}
+						float atr = 0.0f;
+
+						if (symbol.equalsIgnoreCase("BIO")) {
+							System.out.println("Debug");
+						}
+						if (line.indexOf(" M\",\"") > 0) {
+							int m1 = line.indexOf(" M\",\"");
+							String s1 = line.substring(m1 + 5, line.length());
+							// System.out.println(s1);
+							String s2 = s1.substring(0, s1.indexOf("\""));
+							try {
+								volume = Float.parseFloat(s2.replace(",", ""));
+							} catch (Exception ex) {
+								System.out.println("Volume parse error...");
+								ex.printStackTrace(System.out);
+
+							}
+							String s3 = s1.substring(s1.indexOf("\"") + 2, s1.length());
+							try {
+								if(!s3.strip().equalsIgnoreCase("NaN"))
+								atr = Float.parseFloat(s3.replace(",", ""));
+							} catch (Exception ex) {
+								System.out.println("atr parse error...");
+								ex.printStackTrace(System.out);
+
+							}
+						} else if (line.indexOf(" M\",") > 0) {
+							int m1 = line.indexOf(" M\",");
+							String s1 = line.substring(m1 + 4, line.length());
+							// System.out.println(s1);
+							String s2 = s1.substring(0, s1.indexOf(","));
+							try {
+								volume = Float.parseFloat(s2.replace(",", ""));
+							} catch (Exception ex) {
+								System.out.println("Volume parse error...");
+								ex.printStackTrace(System.out);
+
+							}
+							String s3 = s1.substring(s1.indexOf(",") + 1, s1.length());
+							try {
+								if(!s3.strip().equalsIgnoreCase("NaN"))
+								atr = Float.parseFloat(s3.replace(",", ""));
+							} catch (Exception ex) {
+								System.out.println("atr parse error...");
+								ex.printStackTrace(System.out);
+
+							}
+						} else if (line.indexOf(" M,\"") > 0) {
+							int m1 = line.indexOf(" M,\"");
+							String s1 = line.substring(m1 + 4, line.length());
+							// System.out.println(s1);
+							String s2 = s1.substring(0, s1.indexOf("\""));
+							try {
+								volume = Float.parseFloat(s2.replace(",", ""));
+							} catch (Exception ex) {
+								System.out.println("Volume parse error...");
+								ex.printStackTrace(System.out);
+
+							}
+							String s3 = s1.substring(s1.indexOf("\"") + 2, s1.length());
+							try {
+								if(!s3.strip().equalsIgnoreCase("NaN"))
+								atr = Float.parseFloat(s3.replace(",", ""));
+							} catch (Exception ex) {
+								System.out.println("atr parse error...");
+								ex.printStackTrace(System.out);
+
+							}
+						} else if (line.indexOf(" M,") > 0) {
+							int m1 = line.indexOf(" M,");
+							String s1 = line.substring(m1 + 3, line.length());
+							// System.out.println(s1);
+							String s2 = s1.substring(0, s1.indexOf(","));
+							try {
+								volume = Float.parseFloat(s2.replace(",", ""));
+							} catch (Exception ex) {
+								System.out.println("Volume parse error...");
+								ex.printStackTrace(System.out);
+
+							}
+							String s3 = s1.substring(s1.indexOf(",") + 1, s1.length());
+							try {
+								if(!s3.strip().equalsIgnoreCase("NaN"))
+								atr = Float.parseFloat(s3.replace(",", ""));
+							} catch (Exception ex) {
+								System.out.println("atr parse error...");
+								ex.printStackTrace(System.out);
+
+							}
+						} else if (line.indexOf(",\"") > 0) {
+							int m1 = line.indexOf(",\"");
+							String s1 = line.substring(m1 + 2, line.length());
+							// System.out.println(s1);
+							String s2 = s1.substring(0, s1.indexOf("\""));
+							try {
+								volume = Float.parseFloat(s2.replace(",", ""));
+							} catch (Exception ex) {
+								System.out.println("Volume parse error...");
+								ex.printStackTrace(System.out);
+
+							}
+							String s3 = s1.substring(s1.indexOf("\",") + 2, s1.length());
+							try {
+								if(!s3.strip().equalsIgnoreCase("NaN"))
+								atr = Float.parseFloat(s3.replace(",", ""));
+							} catch (Exception ex) {
+								System.out.println("atr parse error...");
+								ex.printStackTrace(System.out);
+
+							}
+						}else {
+							try {
+								volume = Float.parseFloat(data[10]);
+							} catch (Exception ex) {
+								System.out.println("Volume parse error...");
+								ex.printStackTrace(System.out);
+
+							}
+							try {
+								//System.out.println(line);
+								//System.out.println(data[11]);
+								if(!data[11].strip().equalsIgnoreCase("NaN"))
+								atr = Float.parseFloat(data[11]);
+							} catch (Exception ex) {
+								System.out.println("atr parse error...");
+								ex.printStackTrace(System.out);
+
 							}
 
-						} catch (Exception ex) {
-							ex.printStackTrace(System.out);
 						}
 
+						// System.out.println("Split 11 " + data[11]);
+
+						// if (symbol.equalsIgnoreCase("BRK/A"))
+						// System.out.println(symbol + ": " + percentage + ": " + close + ": " +
+						// netChange + ": " + open
+						// + ": " + high + ": " + low + ": " + low52 + ": " + high52 + ": " + marketCap
+						// + ": "
+						// + volume + ": " + atr);
+						// System.out.println("Country [code= " + country[4] + " , name=" + country[5] +
+						// "]");
+						// new code
+
 						// insert records;
-						try {
-							// System.out.println(symbol + ": " + percentage + ": " + close + ": " +
-							// netChange + ": " + atr
-							// + ": " + open + ": " + high + ": " + low + ": " + low52 + ": " + high52 + ":
-							// "
-							// + marketCap + ": " + volume);
-							rockStmnt.setInt(1, stockID);
-							rockStmnt.setInt(2, currentDateID);
-							rockStmnt.setFloat(3, percentage);
-							rockStmnt.setFloat(4, close);
-							rockStmnt.setFloat(5, netChange);
-							rockStmnt.setFloat(6, atr);
-							rockStmnt.setFloat(7, open);
-							rockStmnt.setFloat(8, high);
-							rockStmnt.setFloat(9, low);
-							rockStmnt.setFloat(10, low52);
-							rockStmnt.setFloat(11, high52);
-							rockStmnt.setFloat(12, marketCap);
-							rockStmnt.setFloat(13, volume);
-							// yellow
-							if (fileName.toLowerCase().indexOf("struggle") > 0) {
-								rockStmnt.setInt(14, 1);
-							} else {
-								rockStmnt.setInt(14, 0);
+						if (!recordExists&&fileName.toLowerCase().indexOf("basecrx") < 0) {
+							try {
+								 System.out.println(symbol + ": " + percentage + ": " + close + ": " +
+								 netChange + ": " + atr
+								+ ": " + open + ": " + high + ": " + low + ": " + low52 + ": " + high52 
+								+ ": " + marketCap + ": " + volume);
+								rockStmnt.setInt(1, stockID);
+								rockStmnt.setInt(2, currentDateID);
+								rockStmnt.setFloat(3, percentage);
+								rockStmnt.setFloat(4, close);
+								rockStmnt.setFloat(5, netChange);
+								rockStmnt.setFloat(6, atr);
+								rockStmnt.setFloat(7, open);
+								rockStmnt.setFloat(8, high);
+								rockStmnt.setFloat(9, low);
+								rockStmnt.setFloat(10, low52);
+								rockStmnt.setFloat(11, high52);
+								rockStmnt.setFloat(12, marketCap);
+								rockStmnt.setFloat(13, volume);
+								// yellow
+								if (fileName.toLowerCase().indexOf("struggle") > 0) {
+									rockStmnt.setInt(14, 1);
+								} else {
+									rockStmnt.setInt(14, 0);
+								}
+								// teal
+								if (fileName.toLowerCase().indexOf("up") > 0) {
+									rockStmnt.setInt(15, 1);
+								} else {
+									rockStmnt.setInt(15, 0);
+								}
+								// pink
+								if (fileName.toLowerCase().indexOf("down") > 0) {
+									rockStmnt.setInt(16, 1);
+								} else {
+									rockStmnt.setInt(16, 0);
+								}
+
+								 rockStmnt.execute();
+							} catch (Exception ex) {
+								ex.printStackTrace(System.out);
 							}
-							// teal
-							if (fileName.toLowerCase().indexOf("up") > 0) {
-								rockStmnt.setInt(15, 1);
-							} else {
-								rockStmnt.setInt(15, 0);
-							}
-							// pink
-							if (fileName.toLowerCase().indexOf("down") > 0) {
-								rockStmnt.setInt(16, 1);
-							} else {
-								rockStmnt.setInt(16, 0);
+							// insert records;
+						} else if (fileName.toLowerCase().indexOf("basecrx") >= 0) {
+							// update 520CX
+							try {
+								update520CXStmnt.setInt(1, (int) atr);
+								update520CXStmnt.setInt(2, stockID);
+								update520CXStmnt.setInt(3, currentDateID);
+								update520CXStmnt.executeUpdate();
+							} catch (Exception ex) {
+								System.out.println("Update 520CX failed ");
+								ex.printStackTrace(System.out);
 							}
 
-							rockStmnt.execute();
-						} catch (Exception ex) {
-							ex.printStackTrace(System.out);
 						}
-						// insert records;
 
 					}
 				}
