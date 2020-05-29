@@ -37,12 +37,17 @@ public class DB {
 	private static Statement stmnt = null;
 	private static PreparedStatement yp10SumCalStmnt = null;
 	private static PreparedStatement yp10SumUpdateStmnt = null;
+	private static PreparedStatement update520CXRange = null;
 
 	public static void closeConnection() {
 		try {
 			if(update520CXStmnt !=null) {
 				update520CXStmnt.close();
 				update520CXStmnt = null;
+			}
+			if(update520CXRange !=null) {
+				update520CXRange.close();
+				update520CXRange = null;
 			}
 			if(yp10SumUpdateStmnt != null) {
 				yp10SumUpdateStmnt.close();
@@ -302,6 +307,23 @@ public class DB {
 		return exist;
 	}
 
+	public static PreparedStatement get520CXRangeUpdate() {
+		getConnection();
+
+		if (update520CXRange  == null) {
+			try {
+
+				String query = "UPDATE BBROCK SET CX520 = ? WHERE STOCKID = ? AND DATEID >=? ";
+
+				update520CXRange   = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return update520CXRange ;
+	}
+	
 	//update520CXStmnt 
 	public static PreparedStatement get520CXUpdateStmnt() {
 		getConnection();
@@ -534,6 +556,8 @@ public class DB {
 		return backTestYellowUpdateStmnt;
 	}
 
+	
+	
 	public static PreparedStatement getBackTestPinkUpdateStmnt() {
 		getConnection();
 
