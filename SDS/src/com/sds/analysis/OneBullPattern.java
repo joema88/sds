@@ -11,7 +11,7 @@ public class OneBullPattern {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		String stock = "MRNA";
-		processStock(stock, -1,-1);
+		processStock(stock, -1, -1);
 		findPassPoints(stock, -1, false);
 
 	}
@@ -44,9 +44,11 @@ public class OneBullPattern {
 			ptvalQueryStmnt.setInt(1, stockID);
 			ResultSet rs = ptvalQueryStmnt.executeQuery();
 
+			int lc = 0;
 			while (rs.next()) {
 				int dateId = rs.getInt(1);
 				float val = rs.getFloat(2);
+				lc++;
 
 				closeAboveQueryStmnt.setInt(1, stockID);
 				closeAboveQueryStmnt.setInt(2, dateId);
@@ -57,7 +59,9 @@ public class OneBullPattern {
 				while (rs2.next()) {
 					int pDateId = rs2.getInt(1);
 
-					if (pDateId < preBullDateID || preBullDateID == 0) {
+					//modify to allow to overrun the next bullpoint passpoint
+					//or allow enough space to log 10 days continuous passes
+					if (pDateId < preBullDateID + 10 || preBullDateID == 0) {
 
 						if (ppDateID == 0) {
 							pval = 1;
@@ -67,22 +71,29 @@ public class OneBullPattern {
 							pval = 1;
 						}
 
+						if(pval<12) { //we only need 10 anyway
 						updatePassPointStmnt.setInt(1, pval);
 						updatePassPointStmnt.setInt(2, stockID);
 						updatePassPointStmnt.setInt(3, pDateId);
 						updatePassPointStmnt.executeUpdate();
+						}
 					}
 
 					ppDateID = pDateId;
 				}
 
 				preBullDateID = dateId;
-				
-				//for daily process, only need last one processed
-                if(lastOnly) {
-                	break;
-                }
+
+				// for daily process, only need last two processed
+				//this is because the 10 continuous pass could run into the next
+				//bull point, we need to override the first bull point pass point
+				//low values, so we don't miss the 10 cont pass bull points
+				if (lastOnly&&lc>=2) {
+					break;
+				}
 			}
+
+			
 		} catch (Exception ex) {
 
 		}
