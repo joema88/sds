@@ -10,3 +10,14 @@
     10% rule might not be applicable, hold on for big gain like ADAP.
 5.	All these patterns are based on daily price, day is the minimum unit.
 6.	Could extend study into minutes or hours.
+
+7. Observation: if after teal9 +5% continued for 10days then drop into bear or correction
+   then wait AVG5>AVG20 for 10 continuous days, before buy. This could be W recover 
+   or V recover, both applicable. TNDM, WST, MSFT. The uptrend should not have AVG5<AVG20
+   to make this rule more accurate.
+   Alternatively: 30 day plus AVG5>AVG20 with 1 Teal9, drop, then AVG5>AVG20 for days buy
+   BIG
+   
+8. Observation: If after teal9 +5% continue for 10 days, and no more second teal9 show up,
+   the second continue for less than 10 days, and price high lower than the previous peak
+   bear caution. BAC
