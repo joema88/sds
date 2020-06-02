@@ -10,6 +10,10 @@ import java.sql.SQLException;
    to make this rule more accurate.
    Alternatively: 30 day plus AVG5>AVG20 with 1 Teal9, drop, then AVG5>AVG20 for days buy
    BIG
+   1. Be careful when the close price falls below AVG20 line, especially at the end,
+   usually stock behavior will result in further leg down...(MANUAL CHECK)
+   2. THE YELLOW, TEAL, PINK SUM SHOULD BE > 5 FOR THE LAST 10 BARS, IF NOT WAIT FOR DAYS
+   
  */
 public class TwoBullDB extends DB {
 	private static PreparedStatement findPreviousCCXStmnt = null;
