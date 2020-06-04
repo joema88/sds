@@ -571,7 +571,12 @@ public class CSVReader {
 						} else if (fileName.toLowerCase().indexOf("basecrx") >= 0) {
 							// update 520CX
 							try {
-								update520CXStmnt.setInt(1, (int) atr);
+								if(((int) atr)<1) {
+									//basecrx file 0 means below thus -1
+									update520CXStmnt.setInt(1, -1);
+								}else {
+								  update520CXStmnt.setInt(1, (int) atr);
+								}
 								update520CXStmnt.setInt(2, stockID);
 								update520CXStmnt.setInt(3, currentDateID);
 								update520CXStmnt.executeUpdate();
