@@ -10,18 +10,18 @@ public class BackTestData {
 		// TODO Auto-generated method stub
 		long t1 = System.currentTimeMillis();
 		String path = "/home/joma/share/test/simple/";
-		String symbol = "BIG";
-		BackTestBaseCVS.processStock(path, symbol);
+		String symbol = "TNDM";
+		//BackTestBaseCVS.processStock(path, symbol);
 		System.out.println("Processing teal records...");
-		BackTestTealCVS.processStock(path, symbol);
+		//BackTestTealCVS.processStock(path, symbol);
 		System.out.println("Processing yellow records...");
-		BackTestYellowCVS.processStock(path, symbol);
+		//BackTestYellowCVS.processStock(path, symbol);
 		System.out.println("Processing pink records...");
-		BackTestPinkCVS.processStock(path, symbol);
+		//BackTestPinkCVS.processStock(path, symbol);
 		System.out.println("Processing CX520 records..");
-		BackTestCX520CVS.processStock(path, symbol);
+		//BackTestCX520CVS.processStock(path, symbol);
 		System.out.println("Processing summary...");
-		Summary.processStock(symbol, 0);
+		//Summary.processStock(symbol, 0);
 		System.out.println("Processing CCX History...");
 		Summary.processCCXHistory(symbol, 0);
 		System.out.println("Processing PT9...");

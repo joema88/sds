@@ -1,5 +1,9 @@
 package com.sds.analysis;
 
+import com.sds.db.DB;
+import java.sql.*;
+import com.sds.db.TwoBullDB;
+
 /*
  *  So Bull Pattern deals is another less bull case of Bull Pattern One.
  *  Strong Bull Pattern One, the BT9 and 10 pass points usually overlapped and one after 
@@ -24,11 +28,426 @@ package com.sds.analysis;
  * INTO BIG CHUNK OF TREND, SMALL FRAGMENT AVG5>AVG20 PEAK (HIGHEST CLOSE) COULD BE USED
  * AS REFERENCE TO SEE IF THE FRAGMENT SHOULD BE ALIGNED BACKWARDS OR FORWARDS, UP OR DOWN
  */
+
+//QUERY TO UNDERSTAND LOGIC
+//select a.DATEID,CDATE, a.STOCKID, CLOSE, ATR,TEAL, YELLOW, PINK,YP10, SC5,BT9,DAYS,PTVAL, PTCP, PASS, CX520,CCX, BDCX, b.SYMBOL FROM BBROCK a, SYMBOLS b, DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.SYMBOL='TENX' order by a.DATEID DESC limit 300;
 public class TwoBullPattern {
+
+	private static PreparedStatement queryBDCXStmnt = null;
+	private static PreparedStatement queryBeginPrice = null;
+	private static PreparedStatement queryEndPrice = null;
+	private static PreparedStatement queryHighLowPrice = null;
+	private static PreparedStatement pdateBDCXZero = null;
+	private static PreparedStatement updateBDW = null;
+	private static PreparedStatement updateBDWZero = null;
+
+	public static void init() {
+		queryBDCXStmnt = TwoBullDB.getBDCXQuery();
+		queryBeginPrice = TwoBullDB.getQueryBeginPrice();
+		queryEndPrice = TwoBullDB.getQueryEndPrice();
+		queryHighLowPrice = TwoBullDB.getHighLowPrice();
+		pdateBDCXZero = TwoBullDB.getBDCXUpdateZero();
+		updateBDW = TwoBullDB.getBDWUpdateStmnt();
+		updateBDWZero = TwoBullDB.getBDWUpdateZero();
+	}
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
+		mergeBDCXHistory("TNDM", -1);
 
+	}
+
+	public static void mergeBDCXHistory(String symbol, int stockID) {
+		init();
+		if (symbol != null && symbol.length() > 0) {
+			stockID = DB.getSymbolID(symbol);
+		}
+
+		int bdcx1 = 0;
+		float closeHigh1 = 0.0f;
+		float closeLow1 = 0.0f;
+		float endPrice1 = 0.0f;
+		float beginPrice1 = 0.0f;
+		int endDate1 = 0;
+		int beginDate1 = 0;
+
+		int bdcx2 = 0;
+		float endPrice2 = 0.0f;
+		float beginPrice2 = 0.0f;
+		float closeHigh2 = 0.0f;
+		float closeLow2 = 0.0f;
+		int endDate2 = 0;
+		int beginDate2 = 0;
+
+		int bdcx3 = 0;
+		float endPrice3 = 0.0f;
+		float beginPrice3 = 0.0f;
+		float closeHigh3 = 0.0f;
+		float closeLow3 = 0.0f;
+		int endDate3 = 0;
+		int beginDate3 = 0;
+
+		try {
+			queryBDCXStmnt.setInt(1, stockID);
+			ResultSet rs1 = queryBDCXStmnt.executeQuery();
+			int loopCount = 0;
+			int targetCount = 2;
+			int beginBDCX = 0;
+			boolean firstLoop = true;
+			while (rs1.next()) {
+				int bdcx = rs1.getInt(1);
+				int dateID = rs1.getInt(2);
+
+				if (dateID == 8549) {
+					System.out.println("Attention...");
+				}
+				if (firstLoop && (bdcx == 1 || bdcx == -1)) {
+					// we should just ignore the first bdcx
+					targetCount = 1;
+				}
+
+				if (loopCount >= targetCount) {
+					if (endDate1 == 0 && beginDate1 == 0) {
+						endDate1 = dateID;
+						bdcx1 = bdcx;
+						beginBDCX = bdcx;
+						queryEndPrice.setInt(1, stockID);
+						queryEndPrice.setInt(2, endDate1);
+						ResultSet rs2 = queryEndPrice.executeQuery();
+						if (rs2.next()) {
+							endPrice1 = rs2.getFloat(1);
+						}
+						if (rs1.next()) {
+							// bdcx = rs1.getInt(1);//should be +1 or -1
+							beginDate1 = rs1.getInt(2);
+
+							queryBeginPrice.setInt(1, stockID);
+							queryBeginPrice.setInt(2, beginDate1);
+							ResultSet rs3 = queryBeginPrice.executeQuery();
+							if (rs3.next()) {
+								beginPrice1 = rs3.getFloat(1);
+							}
+
+							queryHighLowPrice.setInt(1, stockID);
+							queryHighLowPrice.setInt(2, beginDate1);
+							queryHighLowPrice.setInt(3, endDate1);
+							ResultSet rs4 = queryHighLowPrice.executeQuery();
+							if (rs4.next()) {
+								closeHigh1 = rs4.getFloat(1);
+								closeLow1 = rs4.getFloat(2);
+							}
+						}
+
+					} else if (endDate2 == 0 && beginDate2 == 0) {
+						endDate2 = dateID;
+						bdcx2 = bdcx;
+						queryEndPrice.setInt(1, stockID);
+						queryEndPrice.setInt(2, endDate2);
+						ResultSet rs5 = queryEndPrice.executeQuery();
+						if (rs5.next()) {
+							endPrice2 = rs5.getFloat(1);
+						}
+						if (rs1.next()) {
+							// bdcx = rs1.getInt(1);//should be +1 or -1
+							beginDate2 = rs1.getInt(2);
+
+							queryBeginPrice.setInt(1, stockID);
+							queryBeginPrice.setInt(2, beginDate2);
+							ResultSet rs6 = queryBeginPrice.executeQuery();
+							if (rs6.next()) {
+								beginPrice2 = rs6.getFloat(1);
+							}
+
+							queryHighLowPrice.setInt(1, stockID);
+							queryHighLowPrice.setInt(2, beginDate2);
+							queryHighLowPrice.setInt(3, endDate2);
+							ResultSet rs7 = queryHighLowPrice.executeQuery();
+							if (rs7.next()) {
+								closeHigh2 = rs7.getFloat(1);
+								closeLow2 = rs7.getFloat(2);
+							}
+						}
+
+					} else if (endDate3 == 0 && beginDate3 == 0) {
+						endDate3 = dateID;
+						bdcx3 = bdcx;
+						queryEndPrice.setInt(1, stockID);
+						queryEndPrice.setInt(2, endDate3);
+						ResultSet rs8 = queryEndPrice.executeQuery();
+						if (rs8.next()) {
+							endPrice3 = rs8.getFloat(1);
+						}
+						if (rs1.next()) {
+							// bdcx = rs1.getInt(1);//should be +1 or -1
+							beginDate3 = rs1.getInt(2);
+
+							queryBeginPrice.setInt(1, stockID);
+							queryBeginPrice.setInt(2, beginDate3);
+							ResultSet rs9 = queryBeginPrice.executeQuery();
+							if (rs9.next()) {
+								beginPrice3 = rs9.getFloat(1);
+							}
+
+							queryHighLowPrice.setInt(1, stockID);
+							queryHighLowPrice.setInt(2, beginDate3);
+							queryHighLowPrice.setInt(3, endDate3);
+							ResultSet rs10 = queryHighLowPrice.executeQuery();
+							if (rs10.next()) {
+								closeHigh3 = rs10.getFloat(1);
+								closeLow3 = rs10.getFloat(2);
+							}
+						}
+
+						boolean merged = false;
+						// merge logic
+						if ((bdcx1 < 0 && bdcx2 < 0) || (bdcx1 > 0 && bdcx2 > 0)) { // same sign merge
+							// we need to adjust the new end bdcx value
+							// then updateBDW
+							int bdw = Math.abs(bdcx1) + Math.abs(bdcx2);
+							if (bdcx1 < 0) {
+								bdcx1 = -bdw;
+								updateBDW.setInt(1, -bdw);
+							} else {
+								bdcx1 = bdw;
+								updateBDW.setInt(1, bdw);
+							}
+							updateBDW.setInt(2, stockID);
+							updateBDW.setInt(3, endDate1);
+							updateBDW.executeUpdate();
+
+							// skip the next few points
+
+							// update the last
+							if (bdcx1 < 0) {
+								updateBDW.setInt(1, -1);
+							} else {
+								updateBDW.setInt(1, 1);
+							}
+							updateBDW.setInt(2, stockID);
+							updateBDW.setInt(3, beginDate2);
+							updateBDW.executeUpdate();
+
+							// set previous -1 to zero
+							updateBDWZero.setInt(1, stockID);
+							updateBDWZero.setInt(2, beginDate2);
+							updateBDWZero.setInt(3, endDate1);
+							if (bdcx1 < 0) {
+								updateBDWZero.setInt(4, -1);
+							} else {
+								updateBDWZero.setInt(4, 1);
+							}
+							updateBDWZero.executeUpdate();
+
+							// reassign logic, through reassign logic, we skip points
+							// of beginDate1, endDate2, beginDate2, enbdDate3 update again BDW column
+							if (bdcx1 < 0) {
+								bdcx1 = -bdw;
+							} else {
+								bdcx1 = bdw;
+							}
+							// endPrice1 = endPrice1;
+							// endDate1 = endDate1 ;
+							beginDate1 = beginDate2;
+							beginPrice1 = beginPrice2;
+
+							// need to get new closeHigh1 and closeLow1
+							queryHighLowPrice.setInt(1, stockID);
+							queryHighLowPrice.setInt(2, beginDate1);
+							queryHighLowPrice.setInt(3, endDate1);
+							ResultSet rs11 = queryHighLowPrice.executeQuery();
+							if (rs11.next()) {
+								closeHigh1 = rs11.getFloat(1);
+								closeLow1 = rs11.getFloat(2);
+							}
+
+							// need to reset zero to make loop logic effective again
+
+							bdcx2 = bdcx3;
+							closeHigh2 = closeHigh3;
+							closeLow2 = closeLow3;
+							endPrice2 = endPrice3;
+							beginPrice2 = beginPrice3;
+							endDate2 = endDate3;
+							beginDate2 = beginDate3;
+
+							endDate3 = 0;
+							beginDate3 = 0;
+
+							merged = true;
+							// beginBDCX = -1;
+							// end same sign merge
+						} else if (bdcx1 < 0 && bdcx2 > 0) {
+
+							// so we have -bdcx, then +bdcx, then -bdcx
+							// the goal is that if +bdcx is <13, and part of continue drop
+							// then we could merge this as a big drop
+							// auto merge if bdcx2<10 and >0 (implied)
+							if (bdcx2 < 10 || (closeHigh3 > closeHigh2 && bdcx2 < 13 && bdcx2 > 0)) { // we can merge
+								// we need to adjust the new end bdcx value
+								// then updateBDW
+								int bdw = -(Math.abs(bdcx1) + Math.abs(bdcx2) + Math.abs(bdcx3));
+								updateBDW.setInt(1, bdw);
+								updateBDW.setInt(2, stockID);
+								updateBDW.setInt(3, endDate1);
+								updateBDW.executeUpdate();
+
+								// skip the next few points
+
+								// update the last
+
+								updateBDW.setInt(1, -1);
+								updateBDW.setInt(2, stockID);
+								updateBDW.setInt(3, beginDate3);
+								updateBDW.executeUpdate();
+
+								// set previous -1 to zero
+								updateBDWZero.setInt(1, stockID);
+								updateBDWZero.setInt(2, beginDate3);
+								updateBDWZero.setInt(3, endDate1);
+								updateBDWZero.setInt(4, -1);
+								updateBDWZero.executeUpdate();
+
+								// reassign logic, through reassign logic, we skip points
+								// of beginDate1, endDate2, beginDate2, enbdDate3 update again BDW column
+								bdcx1 = bdw;
+								// endPrice1 = endPrice1;
+								// endDate1 = endDate1 ;
+								beginDate1 = beginDate3;
+								beginPrice1 = beginPrice3;
+
+								// need to get new closeHigh1 and closeLow1
+								queryHighLowPrice.setInt(1, stockID);
+								queryHighLowPrice.setInt(2, beginDate1);
+								queryHighLowPrice.setInt(3, endDate1);
+								ResultSet rs11 = queryHighLowPrice.executeQuery();
+								if (rs11.next()) {
+									closeHigh1 = rs11.getFloat(1);
+									closeLow1 = rs11.getFloat(2);
+								}
+
+								// need to reset zero to make loop logic effective again
+								endDate2 = 0;
+								beginDate2 = 0;
+								endDate3 = 0;
+								beginDate3 = 0;
+								merged = true;
+								// beginBDCX = -1;
+
+							}
+							// end if (closeHigh3 > closeHigh2 && bdcx2 < 13 && bdcx2>0) { // we can merge
+
+						} else if (bdcx1 > 0 && bdcx2 < 0) { // beginBDCX>0
+							// so we have +bdcx, then -bdcx, then +bdcx
+							// the goal is that if -bdcx is <13, and part of shallow drop in big up trend
+							// then we could merge this as a big up trend
+							// auto merge if bdcx2>-10
+							if (bdcx2 > -10 || (beginPrice3 < beginPrice1 && endPrice3 < endPrice1
+									&& closeHigh3 < closeHigh1 && -bdcx2 < 13 && bdcx2 < 0)) { // we can merge
+								// we need to adjust the new end bdcx value
+								// then updateBDW
+								int bdw = Math.abs(bdcx1) + Math.abs(bdcx2) + Math.abs(bdcx3);
+								updateBDW.setInt(1, bdw);
+								updateBDW.setInt(2, stockID);
+								updateBDW.setInt(3, endDate1);
+								updateBDW.executeUpdate();
+
+								// skip the next few points
+
+								// update the last
+								updateBDW.setInt(1, 1);
+								updateBDW.setInt(2, stockID);
+								updateBDW.setInt(3, beginDate3);
+								updateBDW.executeUpdate();
+
+								// set previous 11 to zero
+								updateBDWZero.setInt(1, stockID);
+								updateBDWZero.setInt(2, beginDate3);
+								updateBDWZero.setInt(3, endDate1);
+								updateBDWZero.setInt(4, 1);
+								updateBDWZero.executeUpdate();
+
+								// reassign logic, through reassign logic, we skip points
+								// of beginDate1, endDate2, beginDate2, enbdDate3 update again BDW column
+								bdcx1 = bdw;
+								// endPrice1 = endPrice1;
+								// endDate1 = endDate1 ;
+								beginDate1 = beginDate3;
+								beginPrice1 = beginPrice3;
+
+								// need to get new closeHigh1 and closeLow1
+								queryHighLowPrice.setInt(1, stockID);
+								queryHighLowPrice.setInt(2, beginDate1);
+								queryHighLowPrice.setInt(3, endDate1);
+								ResultSet rs12 = queryHighLowPrice.executeQuery();
+								if (rs12.next()) {
+									closeHigh1 = rs12.getFloat(1);
+									closeLow1 = rs12.getFloat(2);
+								}
+
+								// need to reset zero to make loop logic effective again
+								endDate2 = 0;
+								beginDate2 = 0;
+								endDate3 = 0;
+								beginDate3 = 0;
+								merged = true;
+								// beginBDCX = 1;
+
+							}
+							// end if (closeHigh3 > closeHigh2 && bdcx2 < 13 && bdcx2>0) { // we can merge
+
+						} // end bginBDCX>0
+
+						// if we could not merge then update BDW
+						// reassign logic
+						if (!merged) {
+							updateBDW.setInt(1, bdcx1);
+							updateBDW.setInt(2, stockID);
+							updateBDW.setInt(3, endDate1);
+							updateBDW.executeUpdate();
+
+							if (bdcx1 > 0) {
+								updateBDW.setInt(1, 1);
+							} else {
+								updateBDW.setInt(1, -1);
+							}
+							updateBDW.setInt(2, stockID);
+							updateBDW.setInt(3, beginDate1);
+							updateBDW.executeUpdate();
+
+							bdcx1 = bdcx2;
+							bdcx2 = bdcx3;
+							closeHigh1 = closeHigh2;
+							closeHigh2 = closeHigh3;
+							closeLow1 = closeLow2;
+							closeLow2 = closeLow3;
+							endPrice1 = endPrice2;
+							endPrice2 = endPrice3;
+							beginPrice1 = beginPrice2;
+							beginPrice2 = beginPrice3;
+							endDate1 = endDate2;
+							endDate2 = endDate3;
+							beginDate1 = beginDate2;
+							beginDate2 = beginDate3;
+							endDate3 = 0;
+							beginDate3 = 0;
+							// beginBDCX = -beginBDCX;
+						}
+
+					}
+				} else { // if (loopCount >= targetCount) {
+					// we need move the first 1 or 2 records over
+					updateBDW.setInt(1, bdcx);
+					updateBDW.setInt(2, stockID);
+					updateBDW.setInt(3, dateID);
+					updateBDW.executeUpdate();
+					loopCount++;
+					firstLoop = false;
+				}
+
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
 	}
 
 }

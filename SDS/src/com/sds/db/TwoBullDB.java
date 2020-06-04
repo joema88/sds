@@ -13,24 +13,52 @@ import java.sql.SQLException;
    1. Be careful when the close price falls below AVG20 line, especially at the end,
    usually stock behavior will result in further leg down...(MANUAL CHECK)
    2. THE YELLOW, TEAL, PINK SUM SHOULD BE > 5 FOR THE LAST 10 BARS, IF NOT WAIT FOR DAYS
+   OR 20 DAYS ABOVE AVG20 IF SUM<5
    
  */
 public class TwoBullDB extends DB {
 	private static PreparedStatement findPreviousCCXStmnt = null;
 	private static PreparedStatement queryCX520 = null;
 	private static PreparedStatement updateCCXStmnt = null;
+	private static PreparedStatement updateBDCXZero = null;
+	private static PreparedStatement bdcxQueryStmnt = null;
+	private static PreparedStatement queryEndPrice = null;
+	private static PreparedStatement queryHighLowPrice = null;
+	private static PreparedStatement updateBDW = null;
+	private static PreparedStatement updateBDWZero = null;
 
 	public static void closeConnection() {
 		try {
-			if(updateCCXStmnt != null) {
+			if(updateBDWZero != null) {
+				updateBDWZero.close();
+				updateBDWZero = null;
+			}
+			if (queryHighLowPrice != null) {
+				queryHighLowPrice.close();
+				queryHighLowPrice = null;
+			}
+			if (queryEndPrice != null) {
+				queryEndPrice.close();
+				queryEndPrice = null;
+			}
+
+			if (bdcxQueryStmnt != null) {
+				bdcxQueryStmnt.close();
+				bdcxQueryStmnt = null;
+			}
+			if (updateBDCXZero != null) {
+				updateBDCXZero.close();
+				updateBDCXZero = null;
+			}
+			if (updateCCXStmnt != null) {
 				updateCCXStmnt.close();
 				updateCCXStmnt = null;
 			}
-			if(findPreviousCCXStmnt != null) {
+			if (findPreviousCCXStmnt != null) {
 				findPreviousCCXStmnt.close();
 				findPreviousCCXStmnt = null;
 			}
-			if(queryCX520 != null) {
+			if (queryCX520 != null) {
 				queryCX520.close();
 				queryCX520 = null;
 			}
@@ -39,21 +67,110 @@ public class TwoBullDB extends DB {
 		}
 
 	}
-	
-	public static PreparedStatement getCCXUpdateStmnt() {
-	   if(updateCCXStmnt == null) {
-		   try {
 
-				String query = "UPDATE BBROCK SET CCX = ? WHERE  STOCKID = ? AND DATEID = ? ";
+	public static PreparedStatement getQueryBeginPrice() {
+		return getQueryEndPrice();
+	}
+
+	public static PreparedStatement getHighLowPrice() {
+		if (queryHighLowPrice == null) {
+			try {
+
+				String query = "SELECT MAX(CLOSE),MIN(CLOSE) FROM BBROCK WHERE STOCKID = ? AND DATEID >= ? AND DATEID<= ?";
+
+				queryHighLowPrice = DB.getConnection().prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+		return queryHighLowPrice;
+	}
+
+	public static PreparedStatement getQueryEndPrice() {
+		if (queryEndPrice == null) {
+			try {
+
+				String query = "SELECT CLOSE FROM BBROCK WHERE STOCKID = ? AND DATEID = ? ";
+
+				queryEndPrice = DB.getConnection().prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+		return queryEndPrice;
+	}
+
+	// BDW
+	public static PreparedStatement getBDWUpdateStmnt() {
+		if (updateBDW == null) {
+			try {
+
+				String query = "UPDATE BBROCK SET BDW = ? WHERE  STOCKID = ? AND DATEID = ? ";
+
+				updateBDW = DB.getConnection().prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+		return updateBDW;
+	}
+
+	public static PreparedStatement getBDWUpdateZero() {
+		if (updateBDWZero == null) {
+			try {
+
+				String query = "UPDATE BBROCK SET BDW = 0 WHERE  STOCKID = ? AND DATEID >? AND DATEID<? AND BDW = ?";
+
+				updateBDWZero = DB.getConnection().prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+		return updateBDWZero;
+	}
+
+	public static PreparedStatement getBDCXUpdateZero() {
+		if (updateBDCXZero == null) {
+			try {
+
+				String query = "UPDATE BBROCK SET BDCX = 0 WHERE  STOCKID = ? AND DATEID = ? ";
+
+				updateBDCXZero = DB.getConnection().prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+		return updateBDCXZero;
+	}
+
+	public static PreparedStatement getBDCXQuery() {
+		if (bdcxQueryStmnt == null) {
+			try {
+//take out 13 now, need to think how to handle it
+				String query = "SELECT BDCX, DATEID FROM BBROCK WHERE BDCX<>0 AND BDCX<>13 AND STOCKID = ? ORDER BY DATEID DESC ";
+
+				bdcxQueryStmnt = DB.getConnection().prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+		return bdcxQueryStmnt;
+	}
+
+	public static PreparedStatement getCCXUpdateStmnt() {
+		if (updateCCXStmnt == null) {
+			try {
+
+				String query = "UPDATE BBROCK SET CCX = ?, BDCX = ? WHERE  STOCKID = ? AND DATEID = ? ";
 
 				updateCCXStmnt = DB.getConnection().prepareStatement(query);
 			} catch (SQLException e) {
 				e.printStackTrace(System.out);
 			}
-	   }
-	   return updateCCXStmnt;
+		}
+		return updateCCXStmnt;
 	}
-	
+
 	public static PreparedStatement getCurrentCX520Stmnt() {
 
 		if (queryCX520 == null) {
@@ -70,13 +187,12 @@ public class TwoBullDB extends DB {
 		return queryCX520;
 	}
 
-	
 	public static PreparedStatement getPreviousCCXStmnt() {
 
 		if (findPreviousCCXStmnt == null) {
 			try {
 
-				String query = "SELECT CCX FROM BBROCK WHERE  STOCKID = ? AND DATEID <? ORDER BY DATEID DESC LIMIT 1";
+				String query = "SELECT CCX, BDCX FROM BBROCK WHERE  STOCKID = ? AND DATEID <? ORDER BY DATEID DESC LIMIT 1";
 
 				findPreviousCCXStmnt = DB.getConnection().prepareStatement(query);
 			} catch (SQLException e) {

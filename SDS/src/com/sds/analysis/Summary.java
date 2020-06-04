@@ -15,6 +15,7 @@ public class Summary {
 	private static PreparedStatement queryCX520 = null;
 	private static PreparedStatement findPreviousCCX = null;
 	private static PreparedStatement updateCCX = null;
+	private static PreparedStatement updateBDCXZero = null;
 
 	public static void init() {
 		queryStmnt = DB.getSymbolDateIDQueryStmnt();
@@ -25,6 +26,7 @@ public class Summary {
 		queryCX520 = TwoBullDB.getCurrentCX520Stmnt();
 		findPreviousCCX = TwoBullDB.getPreviousCCXStmnt();
 		updateCCX = TwoBullDB.getCCXUpdateStmnt();
+		updateBDCXZero = TwoBullDB.getBDCXUpdateZero();
 
 	}
 
@@ -33,7 +35,7 @@ public class Summary {
 		int dateID = DB.getDateID(date);
 
 	}
-	
+
 	public static void processCCXHistory(String symbol, int stockID) {
 		init();
 		if (symbol != null && symbol.length() > 0) {
@@ -42,7 +44,7 @@ public class Summary {
 		try {
 			queryCX520.setInt(1, stockID);
 			ResultSet rs4 = queryCX520.executeQuery();
-			while(rs4.next()) {
+			while (rs4.next()) {
 				int cx520 = rs4.getInt(1);
 				int dateID = rs4.getInt(2);
 				findPreviousCCX.setInt(1, stockID);
@@ -50,18 +52,43 @@ public class Summary {
 				ResultSet rs5 = findPreviousCCX.executeQuery();
 				if (rs5.next()) {
 					int pccx = rs5.getInt(1);
+					int pbdcx = rs5.getInt(2);
 					int ccx = 0;
-					if((pccx>0 && cx520>0)||(pccx<0 && cx520<0)) {
+					if ((pccx > 0 && cx520 > 0) || (pccx < 0 && cx520 < 0)) {
 						ccx = pccx + cx520;
-					}else if((pccx>0 && cx520<0)||(pccx<0 && cx520>0)) {
+						if (pbdcx != 13 && pbdcx != 1 && pbdcx != -1) { // except this buy point value, all rest val set
+																		// = 0
+							updateBDCXZero.setInt(1, stockID);
+							updateBDCXZero.setInt(2, dateID - 1);
+							updateBDCXZero.executeUpdate();
+
+						}
+						pbdcx = pbdcx + cx520;
+
+					} else if ((pccx > 0 && cx520 < 0) || (pccx < 0 && cx520 > 0)) {
+						if (pbdcx == 1 || pbdcx == -1) {
+							// merge here instead in Bull Pattern Two merge causing trouble
+							findPreviousCCX.setInt(1, stockID);
+							findPreviousCCX.setInt(2, dateID - 1);
+							ResultSet rs6 = findPreviousCCX.executeQuery();
+							if (rs6.next()) {
+								//int ppccx = rs6.getInt(1);
+								int ppbdcx = rs6.getInt(2);
+							}
+
+						} else {
+							ccx = cx520;
+							pbdcx = cx520;
+						}
+					} else if (pccx == 0) {
 						ccx = cx520;
-					}else if(pccx == 0) {
-						ccx = cx520;
+						pbdcx = cx520;
 					}
-					
+
 					updateCCX.setInt(1, ccx);
-					updateCCX.setInt(2, stockID);
-					updateCCX.setInt(3, dateID);
+					updateCCX.setInt(2, pbdcx);
+					updateCCX.setInt(3, stockID);
+					updateCCX.setInt(4, dateID);
 					updateCCX.executeUpdate();
 
 				}
@@ -114,8 +141,6 @@ public class Summary {
 					yp10SumUpdateStmnt.executeUpdate();
 
 				}
-
-			
 
 			}
 

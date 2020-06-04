@@ -415,7 +415,7 @@ public class CSVReader {
 							try {
 								volume = Float.parseFloat(s2.replace(",", ""));
 							} catch (Exception ex) {
-								System.out.println("Volume parse error...");
+								System.out.println("Volume parse error..."+symbol);
 								ex.printStackTrace(System.out);
 
 							}
@@ -457,7 +457,7 @@ public class CSVReader {
 							try {
 								volume = Float.parseFloat(s2.replace(",", ""));
 							} catch (Exception ex) {
-								System.out.println("Volume parse error...");
+								System.out.println("Volume parse error..."+symbol);
 								ex.printStackTrace(System.out);
 
 							}
@@ -466,7 +466,7 @@ public class CSVReader {
 								if(!s3.strip().equalsIgnoreCase("NaN"))
 								atr = Float.parseFloat(s3.replace(",", ""));
 							} catch (Exception ex) {
-								System.out.println("atr parse error...");
+								System.out.println("atr parse error..."+symbol);
 								ex.printStackTrace(System.out);
 
 							}
@@ -495,7 +495,7 @@ public class CSVReader {
 							try {
 								volume = Float.parseFloat(data[10]);
 							} catch (Exception ex) {
-								System.out.println("Volume parse error...");
+								System.out.println("Volume parse error..."+symbol);
 								ex.printStackTrace(System.out);
 
 							}
@@ -505,7 +505,7 @@ public class CSVReader {
 								if(!data[11].strip().equalsIgnoreCase("NaN"))
 								atr = Float.parseFloat(data[11]);
 							} catch (Exception ex) {
-								System.out.println("atr parse error...");
+								System.out.println("atr parse error..."+symbol);
 								ex.printStackTrace(System.out);
 
 							}
@@ -527,10 +527,10 @@ public class CSVReader {
 						// insert records;
 						if (!recordExists&&fileName.toLowerCase().indexOf("basecrx") < 0) {
 							try {
-								 System.out.println(symbol + ": " + percentage + ": " + close + ": " +
-								 netChange + ": " + atr
-								+ ": " + open + ": " + high + ": " + low + ": " + low52 + ": " + high52 
-								+ ": " + marketCap + ": " + volume);
+						//		 System.out.println(symbol + ": " + percentage + ": " + close + ": " +
+						//		 netChange + ": " + atr
+						//		+ ": " + open + ": " + high + ": " + low + ": " + low52 + ": " + high52 
+						//		+ ": " + marketCap + ": " + volume);
 								rockStmnt.setInt(1, stockID);
 								rockStmnt.setInt(2, currentDateID);
 								rockStmnt.setFloat(3, percentage);

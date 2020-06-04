@@ -3,6 +3,7 @@ package com.sds.db;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+
 public class OneBullDB extends DB {
 
 	private static PreparedStatement dayLengthStmnt = null;
