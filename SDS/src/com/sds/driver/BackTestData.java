@@ -29,6 +29,7 @@ public class BackTestData {
 		System.out.println("Processing bull pattern one ...");
 		OneBullPattern.processStock(symbol, -1, -1);
 		OneBullPattern.findPassPoints(symbol, -1, false);
+		TwoBullPattern.mergeBDCXHistory(symbol, -1);
 		long t2 = System.currentTimeMillis();
 		System.out.println("Time cost is " + ((t2 - t1) * 1.0f) / (1000 * 60.0f) + " minutes");
 

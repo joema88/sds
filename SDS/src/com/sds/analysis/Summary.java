@@ -59,9 +59,12 @@ public class Summary {
 					int ccx = 0;
 					if ((pccx > 0 && cx520 > 0) || (pccx < 0 && cx520 < 0)) {
 						ccx = pccx + cx520;
-						if (pbdcx != 13 && pbdcx != 1 && pbdcx != -1) { // except this buy point value, all rest val set
+					//	if (pbdcx != 13 && pbdcx != 1 && pbdcx != -1) { // except this buy point value, all rest val set
 																		// = 0
-							updateBDCXZero.setInt(1, stockID);
+						//NOW WE HAVE THE BDW (MERGED RESULT OF BDCX, TAKE OUT 13 DAYS
+						//ON BDCX COLUMN, MAYBE PUT ON BDW? HOW MANY DAYS TO BUY? 13??
+						if ( pbdcx != 1 && pbdcx != -1) { 
+						updateBDCXZero.setInt(1, stockID);
 							updateBDCXZero.setInt(2, dateID - 1);
 							updateBDCXZero.executeUpdate();
 

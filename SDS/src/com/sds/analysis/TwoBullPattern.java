@@ -341,7 +341,7 @@ public class TwoBullPattern {
 							// the goal is that if -bdcx is <13, and part of shallow drop in big up trend
 							// then we could merge this as a big up trend
 							// auto merge if bdcx2>-10
-							if (bdcx2 > -10 || (beginPrice3 < beginPrice1 && endPrice3 < endPrice1
+							if (bdcx2 > -10 || (endPrice3 < endPrice1
 									&& closeHigh3 < closeHigh1 && -bdcx2 < 13 && bdcx2 < 0)) { // we can merge
 								// we need to adjust the new end bdcx value
 								// then updateBDW
