@@ -525,7 +525,7 @@ public class CSVReader {
 						// new code
 
 						// insert records;
-						if (!recordExists&&fileName.toLowerCase().indexOf("basecrx") < 0) {
+						if (!recordExists&&fileName.toLowerCase().indexOf("crx") < 0) {
 							try {
 						//		 System.out.println(symbol + ": " + percentage + ": " + close + ": " +
 						//		 netChange + ": " + atr
@@ -568,7 +568,7 @@ public class CSVReader {
 								ex.printStackTrace(System.out);
 							}
 							// insert records;
-						} else if (fileName.toLowerCase().indexOf("basecrx") >= 0) {
+						} else if (fileName.toLowerCase().indexOf("crx") >= 0) {
 							// update 520CX
 							try {
 								if(((int) atr)<1) {
