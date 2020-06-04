@@ -271,7 +271,7 @@ public class CSVReader {
 					int stockID = DB.getSymbolID(symbol);
 
 					boolean recordExists = DB.checkBBRecordExist(stockID, currentDateID);
-					if (recordExists && fileName.toLowerCase().indexOf("base") < 0) {
+					if (recordExists && (fileName.toLowerCase().indexOf("base") < 0||fileName.toLowerCase().indexOf("crx") < 0)) {
 						// update record only
 						String fieldName = "TEAL";
 						if (fileName.toLowerCase().indexOf("struggle") >= 0) {
