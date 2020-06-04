@@ -47,6 +47,9 @@ public class Summary {
 			while (rs4.next()) {
 				int cx520 = rs4.getInt(1);
 				int dateID = rs4.getInt(2);
+				if(dateID==8505) {
+					System.out.println("Attention...");
+				}
 				findPreviousCCX.setInt(1, stockID);
 				findPreviousCCX.setInt(2, dateID);
 				ResultSet rs5 = findPreviousCCX.executeQuery();
@@ -65,22 +68,61 @@ public class Summary {
 						}
 						pbdcx = pbdcx + cx520;
 
-					} else if ((pccx > 0 && cx520 < 0) || (pccx < 0 && cx520 > 0)) {
-						if (pbdcx == 1 || pbdcx == -1) {
+					} else if ((pccx > 0 && cx520 < 0)) {
+						if (pbdcx == 1) { //as pccx > 0
 							// merge here instead in Bull Pattern Two merge causing trouble
 							findPreviousCCX.setInt(1, stockID);
 							findPreviousCCX.setInt(2, dateID - 1);
 							ResultSet rs6 = findPreviousCCX.executeQuery();
 							if (rs6.next()) {
-								//int ppccx = rs6.getInt(1);
-								int ppbdcx = rs6.getInt(2);
+								// int ppccx = rs6.getInt(1);
+								int ppbdcx = rs6.getInt(2); //this one <0
+								pbdcx = ppbdcx+cx520-pbdcx; //merge here
+								ccx = cx520;
+								
+								//make pbdcx (=1) zero
+								updateBDCXZero.setInt(1, stockID);
+								updateBDCXZero.setInt(2, dateID - 1);
+								updateBDCXZero.executeUpdate();
+								//make ppbdcx zero
+								updateBDCXZero.setInt(1, stockID);
+								updateBDCXZero.setInt(2, dateID - 2);
+								updateBDCXZero.executeUpdate();
+
 							}
 
-						} else {
+						} else { 
 							ccx = cx520;
 							pbdcx = cx520;
 						}
-					} else if (pccx == 0) {
+					} else if ((pccx < 0 && cx520 > 0)) {
+						if (pbdcx == -1) { //as pccx < 0
+							// merge here instead in Bull Pattern Two merge causing trouble
+							findPreviousCCX.setInt(1, stockID);
+							findPreviousCCX.setInt(2, dateID - 1);
+							ResultSet rs7 = findPreviousCCX.executeQuery();
+							if (rs7.next()) {
+								// int ppccx = rs6.getInt(1);
+								int ppbdcx = rs7.getInt(2); //this one >0
+								pbdcx = ppbdcx+cx520-pbdcx; //merge here
+								ccx = cx520;
+								
+								//make pbdcx (=1) zero
+								updateBDCXZero.setInt(1, stockID);
+								updateBDCXZero.setInt(2, dateID - 1);
+								updateBDCXZero.executeUpdate();
+								//make ppbdcx zero
+								updateBDCXZero.setInt(1, stockID);
+								updateBDCXZero.setInt(2, dateID - 2);
+								updateBDCXZero.executeUpdate();
+
+							}
+
+						} else { 
+							ccx = cx520;
+							pbdcx = cx520;
+						}
+					}else if (pccx == 0) {
 						ccx = cx520;
 						pbdcx = cx520;
 					}
