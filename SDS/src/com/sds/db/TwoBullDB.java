@@ -26,9 +26,19 @@ public class TwoBullDB extends DB {
 	private static PreparedStatement queryHighLowPrice = null;
 	private static PreparedStatement updateBDW = null;
 	private static PreparedStatement updateBDWZero = null;
+	private static PreparedStatement bdwQueryStmnt = null;
+	private static PreparedStatement updatePTCP2 = null;
 
 	public static void closeConnection() {
 		try {
+			if(updatePTCP2 != null) {
+				updatePTCP2.close();
+				updatePTCP2 = null;
+			}
+			if(bdwQueryStmnt != null) {
+				bdwQueryStmnt.close();
+				bdwQueryStmnt = null;
+			}
 			if(updateBDWZero != null) {
 				updateBDWZero.close();
 				updateBDWZero = null;
@@ -100,6 +110,21 @@ public class TwoBullDB extends DB {
 		return queryEndPrice;
 	}
 
+	public static PreparedStatement getPTCP2UpdateStmnt() {
+		if (updatePTCP2 == null) {
+			try {
+
+				String query = "UPDATE BBROCK SET PTCP2 = ?, DAY2 = ?  WHERE  STOCKID = ? AND DATEID = ? ";
+
+				updatePTCP2 = DB.getConnection().prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+		return updatePTCP2;
+	}
+
+	
 	// BDW
 	public static PreparedStatement getBDWUpdateStmnt() {
 		if (updateBDW == null) {
@@ -143,11 +168,27 @@ public class TwoBullDB extends DB {
 		return updateBDCXZero;
 	}
 
+	
+	public static PreparedStatement getBDWQuery() {
+		if (bdwQueryStmnt == null) {
+			try {
+            //take out 13 now, need to think how to handle it
+				String query = "SELECT BDW, DATEID FROM BBROCK WHERE BDW<>0 AND STOCKID = ? ORDER BY DATEID DESC ";
+
+				bdwQueryStmnt = DB.getConnection().prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+		return bdwQueryStmnt;
+	}
+
+	
 	public static PreparedStatement getBDCXQuery() {
 		if (bdcxQueryStmnt == null) {
 			try {
-//take out 13 now, need to think how to handle it
-				String query = "SELECT BDCX, DATEID FROM BBROCK WHERE BDCX<>0 AND BDCX<>13 AND STOCKID = ? ORDER BY DATEID DESC ";
+            //take out 13 now, need to think how to handle it
+				String query = "SELECT BDCX, DATEID FROM BBROCK WHERE BDCX<>0 AND STOCKID = ? ORDER BY DATEID DESC ";
 
 				bdcxQueryStmnt = DB.getConnection().prepareStatement(query);
 			} catch (SQLException e) {

@@ -1,6 +1,8 @@
 package com.sds.analysis;
 
 import com.sds.db.DB;
+import com.sds.db.OneBullDB;
+
 import java.sql.*;
 import com.sds.db.TwoBullDB;
 
@@ -40,6 +42,10 @@ public class TwoBullPattern {
 	private static PreparedStatement pdateBDCXZero = null;
 	private static PreparedStatement updateBDW = null;
 	private static PreparedStatement updateBDWZero = null;
+	private static PreparedStatement bdwQueryStmnt = null;
+	private static PreparedStatement minCloseQuery = null;
+	private static PreparedStatement maxCloseQuery = null;
+	private static PreparedStatement updatePTCP2 = null;
 
 	public static void init() {
 		queryBDCXStmnt = TwoBullDB.getBDCXQuery();
@@ -49,11 +55,149 @@ public class TwoBullPattern {
 		pdateBDCXZero = TwoBullDB.getBDCXUpdateZero();
 		updateBDW = TwoBullDB.getBDWUpdateStmnt();
 		updateBDWZero = TwoBullDB.getBDWUpdateZero();
+		bdwQueryStmnt = TwoBullDB.getBDWQuery();
+		minCloseQuery = OneBullDB.getMinCloseFindStmnt();
+		maxCloseQuery = OneBullDB.getMaxCloseFindStmnt();
+		updatePTCP2 = TwoBullDB.getPTCP2UpdateStmnt();
 	}
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		mergeBDCXHistory("TNDM", -1);
+		String symbol ="ZSAN";
+		mergeBDCXHistory(symbol, -1);
+		updatePTCP2History(symbol, -1);
+
+	}
+
+	// update peak trough change percentage based on merged boundary BDW
+	public static void updatePTCP2History(String symbol, int stockID) {
+		init();
+		if (symbol != null && symbol.length() > 0) {
+			stockID = DB.getSymbolID(symbol);
+		}
+		try {
+			bdwQueryStmnt.setInt(1, stockID);
+			ResultSet rs1 = bdwQueryStmnt.executeQuery();
+			boolean start = false;
+			int lc = 0;
+			int endDate1 = 0;
+			int endDate2 = 0;
+			int startDate1 = 0;
+			int startDate2 = 0;
+			int bdw1 = 0;
+			int bdw2 = 0;
+			float minClose = 0.0f;
+			float maxClose = 0.0f;
+			int minDate = 0;
+			int maxDate = 0;
+			float ptcp2 = 0.0f;
+			int days2 = 0;
+
+			while (rs1.next()) {
+				int bdw = rs1.getInt(1);
+				int dateId = rs1.getInt(2);
+				if (start) {
+					if (endDate1 == 0) {
+						endDate1 = dateId;
+						bdw1 = bdw;
+					} else if (startDate1 == 0) {
+						startDate1 = dateId;
+					} else if (endDate2 == 0) {
+						endDate2 = dateId;
+						bdw2 = bdw;
+					} else if (startDate2 == 0) {
+						startDate2 = dateId;
+					} 
+					
+					if(endDate1>0 && endDate2>0 && startDate1>0 && startDate2>0) {
+						//we have full house, we could start query max, min close price
+						if(bdw1<0 && bdw2>0) {
+							//get the min for the first period
+							minCloseQuery.setInt(1, stockID);
+							minCloseQuery.setInt(2, startDate1);
+							minCloseQuery.setInt(3, endDate1);
+							ResultSet rs2 = minCloseQuery.executeQuery();
+							
+							if(rs2.next()) {
+								minClose = rs2.getFloat(1);
+								minDate = rs2.getInt(2);
+							}
+							
+							
+							//get the max for the second period
+							maxCloseQuery.setInt(1, stockID);
+							maxCloseQuery.setInt(2, startDate2);
+							maxCloseQuery.setInt(3, endDate2);
+							ResultSet rs3 = maxCloseQuery.executeQuery();
+							
+							if(rs3.next()) {
+								maxClose = rs3.getFloat(1);
+								maxDate = rs3.getInt(2);
+							}
+							
+							ptcp2 = 100.0f*(minClose - maxClose)/maxClose;
+							days2 = minDate - maxDate;
+							
+						}else if(bdw1>0 && bdw2<0) {
+							//get the max for the first period
+							maxCloseQuery.setInt(1, stockID);
+							maxCloseQuery.setInt(2, startDate1);
+							maxCloseQuery.setInt(3, endDate1);
+							ResultSet rs4 = maxCloseQuery.executeQuery();
+							
+							if(rs4.next()) {
+								maxClose = rs4.getFloat(1);
+								maxDate = rs4.getInt(2);
+							}
+							
+							
+							//get the min for the second period
+							minCloseQuery.setInt(1, stockID);
+							minCloseQuery.setInt(2, startDate2);
+							minCloseQuery.setInt(3, endDate2);
+							ResultSet rs5 = minCloseQuery.executeQuery();
+							
+							if(rs5.next()) {
+								minClose = rs5.getFloat(1);
+								minDate = rs5.getInt(2);
+							}
+							
+							ptcp2 = 100.0f*(maxClose - minClose)/minClose;
+							days2 = maxDate - minDate;
+							
+						}
+						
+						//update 
+						updatePTCP2.setFloat(1, ptcp2);
+						updatePTCP2.setInt(2,days2);
+						updatePTCP2.setInt(3, stockID);
+						updatePTCP2.setInt(4, endDate1);
+						updatePTCP2.executeUpdate();
+						
+						//reassign
+						endDate1 = endDate2;
+						startDate1 = startDate2;
+						bdw1 = bdw2;
+						endDate2 = 0;
+						startDate2 = 0;
+						bdw2 = 0;
+						days2 = 0;
+						ptcp2 = 0.0f;
+					}
+
+				} else if (!start) {
+					// if -1 or +1, then we could start next, otherwise wait one more next
+					if ((bdw == -1 || bdw == 1) || lc == 2) {
+						start = true;
+					}
+				}
+				lc++;
+
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+
+		}
 
 	}
 
@@ -341,8 +485,10 @@ public class TwoBullPattern {
 							// the goal is that if -bdcx is <13, and part of shallow drop in big up trend
 							// then we could merge this as a big up trend
 							// auto merge if bdcx2>-10
-							if (bdcx2 > -10 || (endPrice3 < endPrice1
-									&& closeHigh3 < closeHigh1 && -bdcx2 < 13 && bdcx2 < 0)) { // we can merge
+							if (bdcx2 > -10
+									|| (endPrice3 < endPrice1 && closeHigh3 < closeHigh1 && -bdcx2 < 13 && bdcx2 < 0)) { // we
+																															// can
+																															// merge
 								// we need to adjust the new end bdcx value
 								// then updateBDW
 								int bdw = Math.abs(bdcx1) + Math.abs(bdcx2) + Math.abs(bdcx3);

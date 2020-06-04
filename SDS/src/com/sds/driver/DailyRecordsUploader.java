@@ -58,10 +58,23 @@ public class DailyRecordsUploader {
 					yp10SumUpdateStmnt.executeUpdate();
 
 				}
+				
+				//need to optimize the following calls not to do entire history
+				Summary.processCCXHistory("", stockID);
+				
+				//need to optimize the following calls not to do entire history
                //process BT9 Bull pattern one
 				OneBullPattern.processStock("", stockID, dateID);
+				
+				//need to optimize the following calls not to do entire history
 				//find passing points
 				OneBullPattern.findPassPoints("", stockID, true);
+				
+				//need to optimize the following calls not to do entire history
+				TwoBullPattern.mergeBDCXHistory("", stockID);
+				
+				//need to optimize the following calls not to do entire history
+				TwoBullPattern.updatePTCP2History("", stockID);
 			}
 		} catch (Exception ex) {
 			System.out.println("Error at processDailySummaryScore...");
@@ -70,11 +83,12 @@ public class DailyRecordsUploader {
 
 	}
 
+	//TOD DO (6/4/2020): CCX, BDCX, BDW ARE NOT UPDATED OR CALCULATED IN DAILY ROUTINE
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		String path = "/home/joma/share/test/";
 		boolean currentDateProcessOnly = false;
-		String cDate = "2020-06-03";
+		String cDate = "2020-06-02";
 		int dateCountToBeProcessed = 2;
 		int loopCount = 0;
 		long t1 = System.currentTimeMillis();
@@ -84,7 +98,7 @@ public class DailyRecordsUploader {
 			System.out.println("Process daily summary and PT9...");
 			processDailySummaryScore(cDate);
 			try {
-				Thread.sleep(5000);
+				Thread.sleep(10000);
 			} catch (Exception ex) {
 
 			}
