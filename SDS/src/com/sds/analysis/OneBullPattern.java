@@ -45,7 +45,7 @@ public class OneBullPattern {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		String stock = "MRNA";
-		processStock(stock, -1, -1);
+		processStock(stock, -1, -1, false);
 		findPassPoints(stock, -1, false);
 
 	}
@@ -97,21 +97,21 @@ public class OneBullPattern {
 					// or allow enough space to log 10 days continuous passes
 					if (pDateId < preBullDateID + 10 || preBullDateID == 0) {
 
-					if (ppDateID == 0) {
-						pval = 1;
-					} else if ((pDateId - ppDateID) == 1) {
-						pval++;
-					} else {
-						pval = 1;
-					}
+						if (ppDateID == 0) {
+							pval = 1;
+						} else if ((pDateId - ppDateID) == 1) {
+							pval++;
+						} else {
+							pval = 1;
+						}
 
-					if (pval < 12) { // we only need 10 anyway
-						updatePassPointStmnt.setInt(1, pval);
-						updatePassPointStmnt.setInt(2, stockID);
-						updatePassPointStmnt.setInt(3, pDateId);
-						updatePassPointStmnt.executeUpdate();
+						if (pval < 12) { // we only need 10 anyway
+							updatePassPointStmnt.setInt(1, pval);
+							updatePassPointStmnt.setInt(2, stockID);
+							updatePassPointStmnt.setInt(3, pDateId);
+							updatePassPointStmnt.executeUpdate();
+						}
 					}
-				 }
 
 					ppDateID = pDateId;
 				}
@@ -132,7 +132,7 @@ public class OneBullPattern {
 		}
 	}
 
-	public static void processStock(String symbol, int stockID, int stockDateId) {
+	public static void processStock(String symbol, int stockID, int stockDateId, boolean lastOnly) {
 		if (symbol != null && symbol.length() > 0) {
 			stockID = DB.getSymbolID(symbol);
 		}
@@ -272,7 +272,14 @@ public class OneBullPattern {
 
 				}
 
+				// as ResultSet is ordered by DATEID DESC, we just process one record
+				// for last day only case
+				if (lastOnly) {
+					break;
+				}
+
 			}
+
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}

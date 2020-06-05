@@ -60,21 +60,26 @@ public class DailyRecordsUploader {
 				}
 				
 				//need to optimize the following calls not to do entire history
-				Summary.processCCXHistory("", stockID);
+				//DONE 6/5/2020
+				Summary.processLastDayCCX("", stockID);
 				
 				//need to optimize the following calls not to do entire history
                //process BT9 Bull pattern one
-				OneBullPattern.processStock("", stockID, dateID);
+				//DONE 6/5/2020
+				OneBullPattern.processStock("", stockID, dateID,true);
 				
 				//need to optimize the following calls not to do entire history
 				//find passing points
+				//already optimized 6/5/2020
 				OneBullPattern.findPassPoints("", stockID, true);
 				
 				//need to optimize the following calls not to do entire history
-				TwoBullPattern.mergeBDCXHistory("", stockID);
+				//DONE 6/5/2020
+				TwoBullPattern.mergeBDCXHistory("", stockID,true);
 				
 				//need to optimize the following calls not to do entire history
-				TwoBullPattern.updatePTCP2History("", stockID);
+				// DONE 6/5/2020
+				TwoBullPattern.updatePTCP2History("", stockID,true);
 			}
 		} catch (Exception ex) {
 			System.out.println("Error at processDailySummaryScore...");
@@ -88,7 +93,7 @@ public class DailyRecordsUploader {
 		// TODO Auto-generated method stub
 		String path = "/home/joma/share/test/";
 		boolean currentDateProcessOnly = false;
-		String cDate = "2020-06-02";
+		String cDate = "2020-06-04";
 		int dateCountToBeProcessed = 2;
 		int loopCount = 0;
 		long t1 = System.currentTimeMillis();

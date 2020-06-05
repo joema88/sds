@@ -28,9 +28,19 @@ public class TwoBullDB extends DB {
 	private static PreparedStatement updateBDWZero = null;
 	private static PreparedStatement bdwQueryStmnt = null;
 	private static PreparedStatement updatePTCP2 = null;
+	private static PreparedStatement queryLastDayCX520 = null;
+	private static PreparedStatement bdcxNoZeroCount = null;
 
 	public static void closeConnection() {
 		try {
+			if(bdcxNoZeroCount != null) {
+				bdcxNoZeroCount.close();
+				bdcxNoZeroCount = null;
+			}
+			if(queryLastDayCX520 != null) {
+				queryLastDayCX520.close();
+				queryLastDayCX520 = null;
+			}
 			if(updatePTCP2 != null) {
 				updatePTCP2.close();
 				updatePTCP2 = null;
@@ -140,6 +150,7 @@ public class TwoBullDB extends DB {
 		return updateBDW;
 	}
 
+
 	public static PreparedStatement getBDWUpdateZero() {
 		if (updateBDWZero == null) {
 			try {
@@ -183,6 +194,19 @@ public class TwoBullDB extends DB {
 		return bdwQueryStmnt;
 	}
 
+	public static PreparedStatement getBDCXNoZeroCount() {
+		if (bdcxNoZeroCount == null) {
+			try {
+            //take out 13 now, need to think how to handle it
+				String query = "SELECT COUNT(*) FROM BBROCK WHERE BDCX<>0 AND STOCKID = ? ";
+
+				bdcxNoZeroCount = DB.getConnection().prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+		return bdcxNoZeroCount;
+	}
 	
 	public static PreparedStatement getBDCXQuery() {
 		if (bdcxQueryStmnt == null) {
@@ -212,7 +236,22 @@ public class TwoBullDB extends DB {
 		return updateCCXStmnt;
 	}
 
-	public static PreparedStatement getCurrentCX520Stmnt() {
+	public static PreparedStatement getLastDayCX520Stmnt() {
+
+		if (queryLastDayCX520 == null) {
+			try {
+
+				String query = "SELECT CX520, DATEID FROM BBROCK WHERE  STOCKID = ? ORDER BY DATEID DESC limit 1 ";
+
+				queryLastDayCX520 = DB.getConnection().prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return queryLastDayCX520;
+	}
+	public static PreparedStatement getCX520HistoryStmnt() {
 
 		if (queryCX520 == null) {
 			try {

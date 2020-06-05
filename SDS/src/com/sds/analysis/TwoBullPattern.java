@@ -46,7 +46,7 @@ public class TwoBullPattern {
 	private static PreparedStatement minCloseQuery = null;
 	private static PreparedStatement maxCloseQuery = null;
 	private static PreparedStatement updatePTCP2 = null;
-
+	
 	public static void init() {
 		queryBDCXStmnt = TwoBullDB.getBDCXQuery();
 		queryBeginPrice = TwoBullDB.getQueryBeginPrice();
@@ -64,13 +64,13 @@ public class TwoBullPattern {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		String symbol ="ZSAN";
-		mergeBDCXHistory(symbol, -1);
-		updatePTCP2History(symbol, -1);
+		mergeBDCXHistory(symbol, -1,false);
+		updatePTCP2History(symbol, -1,false);
 
 	}
 
 	// update peak trough change percentage based on merged boundary BDW
-	public static void updatePTCP2History(String symbol, int stockID) {
+	public static void updatePTCP2History(String symbol, int stockID, boolean lastDayOnly) {
 		init();
 		if (symbol != null && symbol.length() > 0) {
 			stockID = DB.getSymbolID(symbol);
@@ -92,6 +92,7 @@ public class TwoBullPattern {
 			int maxDate = 0;
 			float ptcp2 = 0.0f;
 			int days2 = 0;
+			boolean lastProcessed = false;
 
 			while (rs1.next()) {
 				int bdw = rs1.getInt(1);
@@ -110,6 +111,7 @@ public class TwoBullPattern {
 					} 
 					
 					if(endDate1>0 && endDate2>0 && startDate1>0 && startDate2>0) {
+						lastProcessed = true;
 						//we have full house, we could start query max, min close price
 						if(bdw1<0 && bdw2>0) {
 							//get the min for the first period
@@ -193,6 +195,10 @@ public class TwoBullPattern {
 				}
 				lc++;
 
+				//optimized for daily process, we only need to process last attempt
+				if(lastDayOnly&&lastProcessed) {
+					break;
+				}
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
@@ -201,7 +207,7 @@ public class TwoBullPattern {
 
 	}
 
-	public static void mergeBDCXHistory(String symbol, int stockID) {
+	public static void mergeBDCXHistory(String symbol, int stockID, boolean lastDayOnly) {
 		init();
 		if (symbol != null && symbol.length() > 0) {
 			stockID = DB.getSymbolID(symbol);
@@ -230,8 +236,11 @@ public class TwoBullPattern {
 		float closeLow3 = 0.0f;
 		int endDate3 = 0;
 		int beginDate3 = 0;
-
+		boolean attempted = false;
+		
 		try {
+			
+			
 			queryBDCXStmnt.setInt(1, stockID);
 			ResultSet rs1 = queryBDCXStmnt.executeQuery();
 			int loopCount = 0;
@@ -242,9 +251,6 @@ public class TwoBullPattern {
 				int bdcx = rs1.getInt(1);
 				int dateID = rs1.getInt(2);
 
-				if (dateID == 8549) {
-					System.out.println("Attention...");
-				}
 				if (firstLoop && (bdcx == 1 || bdcx == -1)) {
 					// we should just ignore the first bdcx
 					targetCount = 1;
@@ -342,6 +348,7 @@ public class TwoBullPattern {
 							}
 						}
 
+						attempted = true;
 						boolean merged = false;
 						// merge logic
 						if ((bdcx1 < 0 && bdcx2 < 0) || (bdcx1 > 0 && bdcx2 > 0)) { // same sign merge
@@ -586,10 +593,29 @@ public class TwoBullPattern {
 					updateBDW.setInt(2, stockID);
 					updateBDW.setInt(3, dateID);
 					updateBDW.executeUpdate();
+					
+				    if(bdcx>2 && loopCount == 0) {
+				    	//for the last day only
+				    	//we need to reset previous day BDW to zero for daily case
+				    	//but we don't want to erase bdcx=1
+				    	updateBDW.setInt(1, 0);
+						updateBDW.setInt(2, stockID);
+						updateBDW.setInt(3, dateID-1);
+						updateBDW.executeUpdate();
+				    	
+				    }
 					loopCount++;
 					firstLoop = false;
 				}
 
+				//we only need to process last merge, optimized for daily process
+				//once attempted, even not merged we should stop as all previous
+				//records have already been attempted anyway
+				//if total count less than 6, loop through all of them not that 
+				//expensive anyway
+				if(lastDayOnly && attempted) {
+					break;
+				}
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);

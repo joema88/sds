@@ -12,10 +12,11 @@ public class Summary {
 	private static PreparedStatement scUpdateStmnt = null;
 	private static PreparedStatement yp10SumCalStmnt = null;
 	private static PreparedStatement yp10SumUpdateStmnt = null;
-	private static PreparedStatement queryCX520 = null;
+	private static PreparedStatement queryAllCX520 = null;
 	private static PreparedStatement findPreviousCCX = null;
 	private static PreparedStatement updateCCX = null;
 	private static PreparedStatement updateBDCXZero = null;
+	private static PreparedStatement queryLastDayCX520 = null;
 
 	public static void init() {
 		queryStmnt = DB.getSymbolDateIDQueryStmnt();
@@ -23,7 +24,8 @@ public class Summary {
 		scUpdateStmnt = DB.getSCUpdateStmnt();
 		yp10SumCalStmnt = DB.getYP10SumCalStmnt();
 		yp10SumUpdateStmnt = DB.getYP10SumUpdateStmnt();
-		queryCX520 = TwoBullDB.getCurrentCX520Stmnt();
+		queryAllCX520 = TwoBullDB.getCX520HistoryStmnt();
+		queryLastDayCX520 = TwoBullDB.getLastDayCX520Stmnt();
 		findPreviousCCX = TwoBullDB.getPreviousCCXStmnt();
 		updateCCX = TwoBullDB.getCCXUpdateStmnt();
 		updateBDCXZero = TwoBullDB.getBDCXUpdateZero();
@@ -36,18 +38,124 @@ public class Summary {
 
 	}
 
+	public static void processLastDayCCX(String symbol, int stockID) {
+		init();
+		if (symbol != null && symbol.length() > 0) {
+			stockID = DB.getSymbolID(symbol);
+		}
+		try {
+			queryLastDayCX520.setInt(1, stockID);
+			ResultSet rs4 = queryLastDayCX520.executeQuery();
+			if (rs4.next()) {
+				int cx520 = rs4.getInt(1);
+				int dateID = rs4.getInt(2);
+				findPreviousCCX.setInt(1, stockID);
+				findPreviousCCX.setInt(2, dateID);
+				ResultSet rs5 = findPreviousCCX.executeQuery();
+				if (rs5.next()) {
+					int pccx = rs5.getInt(1);
+					int pbdcx = rs5.getInt(2);
+					int ccx = 0;
+					if ((pccx > 0 && cx520 > 0) || (pccx < 0 && cx520 < 0)) {
+						ccx = pccx + cx520;
+						// if (pbdcx != 13 && pbdcx != 1 && pbdcx != -1) { // except this buy point
+						// value, all rest val set
+						// = 0
+						// NOW WE HAVE THE BDW (MERGED RESULT OF BDCX, TAKE OUT 13 DAYS
+						// ON BDCX COLUMN, MAYBE PUT ON BDW? HOW MANY DAYS TO BUY? 13??
+						if (pbdcx != 1 && pbdcx != -1) {
+							updateBDCXZero.setInt(1, stockID);
+							updateBDCXZero.setInt(2, dateID - 1);
+							updateBDCXZero.executeUpdate();
+
+						}
+						pbdcx = pbdcx + cx520;
+
+					} else if ((pccx > 0 && cx520 < 0)) {
+						if (pbdcx == 1) { // as pccx > 0
+							// merge here instead in Bull Pattern Two merge causing trouble
+							findPreviousCCX.setInt(1, stockID);
+							findPreviousCCX.setInt(2, dateID - 1);
+							ResultSet rs6 = findPreviousCCX.executeQuery();
+							if (rs6.next()) {
+								// int ppccx = rs6.getInt(1);
+								int ppbdcx = rs6.getInt(2); // this one <0
+								pbdcx = ppbdcx + cx520 - pbdcx; // merge here
+								ccx = cx520;
+
+								// make pbdcx (=1) zero
+								updateBDCXZero.setInt(1, stockID);
+								updateBDCXZero.setInt(2, dateID - 1);
+								updateBDCXZero.executeUpdate();
+								// make ppbdcx zero
+								updateBDCXZero.setInt(1, stockID);
+								updateBDCXZero.setInt(2, dateID - 2);
+								updateBDCXZero.executeUpdate();
+
+							}
+
+						} else {
+							ccx = cx520;
+							pbdcx = cx520;
+						}
+					} else if ((pccx < 0 && cx520 > 0)) {
+						if (pbdcx == -1) { // as pccx < 0
+							// merge here instead in Bull Pattern Two merge causing trouble
+							findPreviousCCX.setInt(1, stockID);
+							findPreviousCCX.setInt(2, dateID - 1);
+							ResultSet rs7 = findPreviousCCX.executeQuery();
+							if (rs7.next()) {
+								// int ppccx = rs6.getInt(1);
+								int ppbdcx = rs7.getInt(2); // this one >0
+								pbdcx = ppbdcx + cx520 - pbdcx; // merge here
+								ccx = cx520;
+
+								// make pbdcx (=1) zero
+								updateBDCXZero.setInt(1, stockID);
+								updateBDCXZero.setInt(2, dateID - 1);
+								updateBDCXZero.executeUpdate();
+								// make ppbdcx zero
+								updateBDCXZero.setInt(1, stockID);
+								updateBDCXZero.setInt(2, dateID - 2);
+								updateBDCXZero.executeUpdate();
+
+							}
+
+						} else {
+							ccx = cx520;
+							pbdcx = cx520;
+						}
+					} else if (pccx == 0) {
+						ccx = cx520;
+						pbdcx = cx520;
+					}
+
+					updateCCX.setInt(1, ccx);
+					updateCCX.setInt(2, pbdcx);
+					updateCCX.setInt(3, stockID);
+					updateCCX.setInt(4, dateID);
+					updateCCX.executeUpdate();
+
+				}
+
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
+
 	public static void processCCXHistory(String symbol, int stockID) {
 		init();
 		if (symbol != null && symbol.length() > 0) {
 			stockID = DB.getSymbolID(symbol);
 		}
 		try {
-			queryCX520.setInt(1, stockID);
-			ResultSet rs4 = queryCX520.executeQuery();
+			queryAllCX520.setInt(1, stockID);
+			ResultSet rs4 = queryAllCX520.executeQuery();
 			while (rs4.next()) {
 				int cx520 = rs4.getInt(1);
 				int dateID = rs4.getInt(2);
-				if(dateID==8505) {
+				if (dateID == 8505) {
 					System.out.println("Attention...");
 				}
 				findPreviousCCX.setInt(1, stockID);
@@ -59,12 +167,13 @@ public class Summary {
 					int ccx = 0;
 					if ((pccx > 0 && cx520 > 0) || (pccx < 0 && cx520 < 0)) {
 						ccx = pccx + cx520;
-					//	if (pbdcx != 13 && pbdcx != 1 && pbdcx != -1) { // except this buy point value, all rest val set
-																		// = 0
-						//NOW WE HAVE THE BDW (MERGED RESULT OF BDCX, TAKE OUT 13 DAYS
-						//ON BDCX COLUMN, MAYBE PUT ON BDW? HOW MANY DAYS TO BUY? 13??
-						if ( pbdcx != 1 && pbdcx != -1) { 
-						updateBDCXZero.setInt(1, stockID);
+						// if (pbdcx != 13 && pbdcx != 1 && pbdcx != -1) { // except this buy point
+						// value, all rest val set
+						// = 0
+						// NOW WE HAVE THE BDW (MERGED RESULT OF BDCX, TAKE OUT 13 DAYS
+						// ON BDCX COLUMN, MAYBE PUT ON BDW? HOW MANY DAYS TO BUY? 13??
+						if (pbdcx != 1 && pbdcx != -1) {
+							updateBDCXZero.setInt(1, stockID);
 							updateBDCXZero.setInt(2, dateID - 1);
 							updateBDCXZero.executeUpdate();
 
@@ -72,60 +181,60 @@ public class Summary {
 						pbdcx = pbdcx + cx520;
 
 					} else if ((pccx > 0 && cx520 < 0)) {
-						if (pbdcx == 1) { //as pccx > 0
+						if (pbdcx == 1) { // as pccx > 0
 							// merge here instead in Bull Pattern Two merge causing trouble
 							findPreviousCCX.setInt(1, stockID);
 							findPreviousCCX.setInt(2, dateID - 1);
 							ResultSet rs6 = findPreviousCCX.executeQuery();
 							if (rs6.next()) {
 								// int ppccx = rs6.getInt(1);
-								int ppbdcx = rs6.getInt(2); //this one <0
-								pbdcx = ppbdcx+cx520-pbdcx; //merge here
+								int ppbdcx = rs6.getInt(2); // this one <0
+								pbdcx = ppbdcx + cx520 - pbdcx; // merge here
 								ccx = cx520;
-								
-								//make pbdcx (=1) zero
+
+								// make pbdcx (=1) zero
 								updateBDCXZero.setInt(1, stockID);
 								updateBDCXZero.setInt(2, dateID - 1);
 								updateBDCXZero.executeUpdate();
-								//make ppbdcx zero
+								// make ppbdcx zero
 								updateBDCXZero.setInt(1, stockID);
 								updateBDCXZero.setInt(2, dateID - 2);
 								updateBDCXZero.executeUpdate();
 
 							}
 
-						} else { 
+						} else {
 							ccx = cx520;
 							pbdcx = cx520;
 						}
 					} else if ((pccx < 0 && cx520 > 0)) {
-						if (pbdcx == -1) { //as pccx < 0
+						if (pbdcx == -1) { // as pccx < 0
 							// merge here instead in Bull Pattern Two merge causing trouble
 							findPreviousCCX.setInt(1, stockID);
 							findPreviousCCX.setInt(2, dateID - 1);
 							ResultSet rs7 = findPreviousCCX.executeQuery();
 							if (rs7.next()) {
 								// int ppccx = rs6.getInt(1);
-								int ppbdcx = rs7.getInt(2); //this one >0
-								pbdcx = ppbdcx+cx520-pbdcx; //merge here
+								int ppbdcx = rs7.getInt(2); // this one >0
+								pbdcx = ppbdcx + cx520 - pbdcx; // merge here
 								ccx = cx520;
-								
-								//make pbdcx (=1) zero
+
+								// make pbdcx (=1) zero
 								updateBDCXZero.setInt(1, stockID);
 								updateBDCXZero.setInt(2, dateID - 1);
 								updateBDCXZero.executeUpdate();
-								//make ppbdcx zero
+								// make ppbdcx zero
 								updateBDCXZero.setInt(1, stockID);
 								updateBDCXZero.setInt(2, dateID - 2);
 								updateBDCXZero.executeUpdate();
 
 							}
 
-						} else { 
+						} else {
 							ccx = cx520;
 							pbdcx = cx520;
 						}
-					}else if (pccx == 0) {
+					} else if (pccx == 0) {
 						ccx = cx520;
 						pbdcx = cx520;
 					}
