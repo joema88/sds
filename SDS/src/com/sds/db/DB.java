@@ -46,9 +46,24 @@ public class DB {
 	private static PreparedStatement yp10SumCalStmnt = null;
 	private static PreparedStatement yp10SumUpdateStmnt = null;
 	private static PreparedStatement update520CXRange = null;
+	private static PreparedStatement closePriceStmnt = null;
+	private static PreparedStatement lastCloseStmnt = null;
+	private static PreparedStatement cx520Stmnt = null;
 
 	public static void closeConnection() {
 		try {
+			if(cx520Stmnt != null) {
+				cx520Stmnt.close();
+				cx520Stmnt = null;
+			}
+			if(lastCloseStmnt != null) {
+				lastCloseStmnt.close();
+				lastCloseStmnt = null;
+			}
+			if( closePriceStmnt  != null) {
+				closePriceStmnt.close();
+				closePriceStmnt  = null;
+			}
 			if(update520CXStmnt !=null) {
 				update520CXStmnt.close();
 				update520CXStmnt = null;
@@ -350,6 +365,58 @@ public class DB {
 		return update520CXStmnt ;
 	}
 
+	//getClosePrice
+	public static PreparedStatement getClosePriceStmnt() {
+		getConnection();
+
+		if (closePriceStmnt  == null) {
+			try {
+
+				String query = "SELECT CLOSE FROM BBROCK  WHERE STOCKID = ? AND DATEID =? ";
+
+				closePriceStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return closePriceStmnt ;
+	}
+	
+	public static PreparedStatement getCX520Stmnt() {
+		getConnection();
+
+		if (cx520Stmnt  == null) {
+			try {
+
+				String query = "SELECT CX520 FROM BBROCK  WHERE STOCKID = ? AND DATEID =? ";
+
+				cx520Stmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return cx520Stmnt ;
+	}
+	
+	
+	public static PreparedStatement getLastCloseStmnt() {
+		getConnection();
+
+		if (lastCloseStmnt  == null) {
+			try {
+
+				String query = "SELECT CLOSE FROM BBROCK  WHERE STOCKID = ? ORDER BY DATEID DESC LIMIT 1 ";
+
+				lastCloseStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return lastCloseStmnt ;
+	}
 	
 	// scUpdateStmnt
 	public static PreparedStatement getSCUpdateStmnt() {

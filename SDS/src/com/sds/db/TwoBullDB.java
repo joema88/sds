@@ -30,9 +30,19 @@ public class TwoBullDB extends DB {
 	private static PreparedStatement updatePTCP2 = null;
 	private static PreparedStatement queryLastDayCX520 = null;
 	private static PreparedStatement bdcxNoZeroCount = null;
+	private static PreparedStatement ptcp2HistoryStmnt = null;
+	private static PreparedStatement queryNextCX520 = null;
 
 	public static void closeConnection() {
 		try {
+			if( queryNextCX520 != null) {
+				queryNextCX520.close();
+				queryNextCX520 = null;
+			}
+			if(ptcp2HistoryStmnt != null) {
+				ptcp2HistoryStmnt.close();
+				ptcp2HistoryStmnt = null;
+			}
 			if(bdcxNoZeroCount != null) {
 				bdcxNoZeroCount.close();
 				bdcxNoZeroCount = null;
@@ -92,6 +102,36 @@ public class TwoBullDB extends DB {
 		return getQueryEndPrice();
 	}
 
+	//queryNextCX520
+	public static PreparedStatement getNextCX520Stmnt() {
+		if (queryNextCX520 == null) {
+			try {
+
+				String query = "SELECT  DATEID, CLOSE FROM BBROCK WHERE  STOCKID = ? AND DATEID >= ? AND CX520 = ? ORDER BY DATEID ASC";
+
+				queryNextCX520  = DB.getConnection().prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+		return queryNextCX520;
+	}
+		
+	//ptcp2HistoryStmnt
+	public static PreparedStatement getPtcp2HistoryStmnt() {
+		if (ptcp2HistoryStmnt == null) {
+			try {
+
+				String query = "SELECT PTCP2, DAY2, DATEID FROM BBROCK WHERE PTCP2 < -30.0 AND STOCKID = ? AND DATEID >= ? ORDER BY DATEID ASC";
+
+				ptcp2HistoryStmnt  = DB.getConnection().prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+		return ptcp2HistoryStmnt;
+	}
+	
 	public static PreparedStatement getHighLowPrice() {
 		if (queryHighLowPrice == null) {
 			try {
