@@ -63,7 +63,7 @@ public class TwoBullPattern {
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		String symbol ="ZSAN";
+		String symbol ="CIEN";
 		mergeBDCXHistory(symbol, -1,false);
 		updatePTCP2History(symbol, -1,false);
 

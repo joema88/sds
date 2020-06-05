@@ -89,12 +89,13 @@ public class DailyRecordsUploader {
 	}
 
 	//TOD DO (6/4/2020): CCX, BDCX, BDW ARE NOT UPDATED OR CALCULATED IN DAILY ROUTINE
+	//done 6/5/2020
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		String path = "/home/joma/share/test/";
-		boolean currentDateProcessOnly = false;
+		boolean currentDateProcessOnly = true;
 		String cDate = "2020-06-04";
-		int dateCountToBeProcessed = 2;
+		int dateCountToBeProcessed = 1;
 		int loopCount = 0;
 		long t1 = System.currentTimeMillis();
 

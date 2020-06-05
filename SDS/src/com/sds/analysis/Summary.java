@@ -69,7 +69,7 @@ public class Summary {
 							updateBDCXZero.executeUpdate();
 
 						}
-						pbdcx = pbdcx + cx520;
+						pbdcx = pccx + cx520;
 
 					} else if ((pccx > 0 && cx520 < 0)) {
 						if (pbdcx == 1) { // as pccx > 0
@@ -78,9 +78,9 @@ public class Summary {
 							findPreviousCCX.setInt(2, dateID - 1);
 							ResultSet rs6 = findPreviousCCX.executeQuery();
 							if (rs6.next()) {
-								// int ppccx = rs6.getInt(1);
+							    int ppccx = rs6.getInt(1);
 								int ppbdcx = rs6.getInt(2); // this one <0
-								pbdcx = ppbdcx + cx520 - pbdcx; // merge here
+								pbdcx = ppccx + cx520 - pbdcx; // merge here
 								ccx = cx520;
 
 								// make pbdcx (=1) zero
@@ -105,9 +105,9 @@ public class Summary {
 							findPreviousCCX.setInt(2, dateID - 1);
 							ResultSet rs7 = findPreviousCCX.executeQuery();
 							if (rs7.next()) {
-								// int ppccx = rs6.getInt(1);
+							    int ppccx = rs7.getInt(1);
 								int ppbdcx = rs7.getInt(2); // this one >0
-								pbdcx = ppbdcx + cx520 - pbdcx; // merge here
+								pbdcx = ppccx + cx520 - pbdcx; // merge here
 								ccx = cx520;
 
 								// make pbdcx (=1) zero
@@ -304,7 +304,8 @@ public class Summary {
 	}
 
 	public static void main(String[] args) {
-
+		String symbol = "CIEN";
+		processLastDayCCX(symbol, -1);
 	}
 
 }
