@@ -1,0 +1,10 @@
+1. Super bull query
+//CCX 1 to 20, Pass Points sum >5, the bigger the better. 
+//SUM of last 2 or 3 of PTVAL, PTVAL2 has some reference value, SUM PTVAL may be more important
+select a.DATEID,CDATE, a.STOCKID,  DAYS,PTCP, PTVAL,PASS,CLOSE,CCX, PTCP2,DAY2,CX520,BDCX,BT9,BDW,b.SYMBOL FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and ( b.SYMBOL='WST')  order by a.DATEID DeSC limit 2600;
+//aslo observed that perfect BT9 bull is hard to come by
+//we could relax the condition 10 out 9 Teal bar considered as a BT9 bull around AVG5>AVG20 junction
+//i.e. CCX 1 to 20 or CCX -10 to -1 range, For example FF, MNST would qualify
+//and make sense
+
+2. Daily calculation comparison query (CIEN & CIEN2) to see error.

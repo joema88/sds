@@ -7,6 +7,8 @@ import java.sql.*;
 import com.sds.analysis.*;
 import com.sds.db.*;
 
+//focus on pass, ccx, and ptcp2 to select ultr bull candiadte
+//select a.DATEID,CDATE, a.STOCKID,  DAYS,PTCP, PTVAL,PASS,CLOSE,CCX, PTCP2,DAY2,CX520,BDCX,BT9,BDW,b.SYMBOL FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and ( b.SYMBOL='GNUS')  order by a.DATEID DeSC limit 1000;
 public class BuySellBackTestBullTwo {
 	private static PreparedStatement ptcp2HistoryStmnt = null;
 	private static PreparedStatement queryNextCX520 = null;
@@ -19,7 +21,7 @@ public class BuySellBackTestBullTwo {
 
 	public static void main(String[] args) {
 		init();
-		String symbol = "CIDM";
+		String symbol = "NBR";
 		float capital = 10000.0f;
 		try {
 			int stockID = DB.getSymbolID(symbol);
@@ -39,10 +41,12 @@ public class BuySellBackTestBullTwo {
 			float maxGain = 0.0f;
 			float minGain = 0.0f;
 			int txId = 0;
+			float pctp2 = 0.0f;
+			int day2 = 0;
 
 			while (rs1.next()) {
-				float pctp2 = rs1.getFloat(1);
-				int day2 = rs1.getInt(2);
+				pctp2 = rs1.getFloat(1);
+				day2 = rs1.getInt(2);
 				int dateId = rs1.getInt(3);
 				buyPrice = 0.0f;
 				sellPrice = 0.0f;
@@ -104,6 +108,7 @@ public class BuySellBackTestBullTwo {
 						capital = capital * (1.0f + gainLoss / 100.0f);
 						txId++;
 						System.out.println("Transaction " + txId);
+						System.out.println("Correction :"+pctp2 +"  days: "+day2);
 						System.out.println("Buy date :" + buyDate + " at price: " + buyPrice);
 						System.out.println("Sell date :" + sellDate + " at price: " + sellPrice);
 						System.out.println("Whole process Gain/Loss is : " + gainLoss + "%    " + capital);
@@ -139,6 +144,8 @@ public class BuySellBackTestBullTwo {
 
 				txId++;
 				System.out.println("Transaction " + txId);
+				System.out.println("Correction :"+pctp2 +"  days: "+day2);
+				
 				System.out.println("2Buy date :" + buyDate + " at price: " + buyPrice);
 				// System.out.println("Sell date :" + sellDate + " at price: " + sellPrice);
 				System.out.println("So far Gain/Loss is : " + gainLoss + "%    " + capital);

@@ -122,7 +122,7 @@ public class TwoBullDB extends DB {
 		if (ptcp2HistoryStmnt == null) {
 			try {
 
-				String query = "SELECT PTCP2, DAY2, DATEID FROM BBROCK WHERE PTCP2 < -30.0 AND STOCKID = ? AND DATEID >= ? ORDER BY DATEID ASC";
+				String query = "SELECT PTCP2, DAY2, DATEID FROM BBROCK WHERE PTCP2 < -25.0 AND STOCKID = ? AND DATEID >= ? ORDER BY DATEID ASC";
 
 				ptcp2HistoryStmnt  = DB.getConnection().prepareStatement(query);
 			} catch (SQLException e) {
