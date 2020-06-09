@@ -29,6 +29,7 @@ public class DB {
 	//ALTER TABLE BBROCK ADD COLUMN APAS TINYINT DEFAULT 0 AFTER ABT9;
 	//ALTER TABLE BBROCK ADD COLUMN APTV FLOAT DEFAULT 0.0 AFTER APAS;
 	
+	
 	private static Connection dbcon = null;
 	private static PreparedStatement symbolStmnt = null;
 	private static PreparedStatement symbolDateIDQuery = null;

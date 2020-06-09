@@ -12,6 +12,7 @@ public class BackTestData {
 		String path = "/home/joma/share/test/simple/";
 		String symbol = "WLL";
 		
+		
 		BackTestBaseCVS.processStock(path, symbol);
 		System.out.println("Processing teal records...");
 		BackTestTealCVS.processStock(path, symbol);

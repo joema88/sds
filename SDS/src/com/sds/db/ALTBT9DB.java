@@ -90,6 +90,7 @@ public class ALTBT9DB extends DB {
 				String query = "UPDATE BBROCK SET APAS = ? WHERE STOCKID = ? AND DATEID = ? ";
 
 				passPointsUpdate = DB.getConnection().prepareStatement(query);
+				
 
 			}
 
