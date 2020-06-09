@@ -10,7 +10,7 @@ public class BackTestData {
 		// TODO Auto-generated method stub
 		long t1 = System.currentTimeMillis();
 		String path = "/home/joma/share/test/simple/";
-		String symbol = "WST";
+		String symbol = "CRNC";
 		
 		BackTestBaseCVS.processStock(path, symbol);
 		System.out.println("Processing teal records...");
