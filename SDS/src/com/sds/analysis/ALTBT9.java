@@ -18,6 +18,7 @@ public class ALTBT9 {
 		String symbol = "SLS";
 		findAltBT9(symbol, -1);
 		markPassPoints(symbol, -1);
+		
 
 	}
 
