@@ -16,10 +16,44 @@ public class ALTBT9DB extends DB {
 	private static PreparedStatement altBT9Update = null;
 	private static PreparedStatement resetBT9 = null;
 	private static PreparedStatement dateStmnt = null;
+	private static PreparedStatement queryTeal = null;
+	private static PreparedStatement passPriceUpdate = null;
+	private static PreparedStatement passPointUpdate = null;
+	private static PreparedStatement normalBT9Query = null;
+	private static PreparedStatement aptvQuery = null;
+	private static PreparedStatement passPointsQuery = null;
+	private static PreparedStatement passPointsUpdate = null;
 
 	public static void closeConnection() {
 		try {
-
+			if(passPointsUpdate != null) {
+				passPointsUpdate.close();
+				passPointsUpdate = null;
+			}
+			if(passPointsQuery != null) {
+				passPointsQuery.close();
+				passPointsQuery = null;
+			}
+			if(aptvQuery != null) {
+				aptvQuery.close();
+				aptvQuery = null;
+			}
+			if(normalBT9Query != null) {
+				normalBT9Query.close();
+				normalBT9Query = null;
+			}
+			if(passPointUpdate != null) {
+				passPointUpdate.close();
+				passPointUpdate = null;
+			}
+			if(passPriceUpdate != null) {
+				passPriceUpdate.close();
+				passPriceUpdate = null;
+			}
+			if(queryTeal != null) {
+				queryTeal.close();
+				queryTeal = null;
+			}
 			if(dateStmnt != null) {
 				dateStmnt.close();
 				dateStmnt = null;
@@ -45,7 +79,136 @@ public class ALTBT9DB extends DB {
 
 		}
 	}
+	
+	//passPointsUpdate
+	public static PreparedStatement passPointsUpdate() {
 
+		try {
+
+			if (passPointsUpdate == null) {
+
+				String query = "UPDATE BBROCK SET APAS = ? WHERE STOCKID = ? AND DATEID = ? ";
+
+				passPointsUpdate = DB.getConnection().prepareStatement(query);
+
+			}
+
+			
+		} catch (SQLException e) {
+			e.printStackTrace(System.out);
+		}
+
+		return passPointsUpdate;
+	}	
+	
+	
+	//passPointsQuery
+	public static PreparedStatement passPointsQuery() {
+
+		try {
+
+			if (passPointsQuery == null) {
+
+				String query = "SELECT DATEID FROM BBROCK WHERE STOCKID = ? AND DATEID>? AND DATEID<? AND CLOSE >? ORDER BY DATEID ASC";
+
+				passPointsQuery = DB.getConnection().prepareStatement(query);
+
+			}
+
+			
+		} catch (SQLException e) {
+			e.printStackTrace(System.out);
+		}
+
+		return passPointsQuery;
+	}	
+	
+	
+	//aptvQuery
+	public static PreparedStatement aptvQuery() {
+
+		try {
+
+			if (aptvQuery == null) {
+
+				String query = "SELECT DATEID, APTV FROM BBROCK WHERE STOCKID = ? AND ABT9 = 1 ORDER BY DATEID ASC";
+
+				aptvQuery = DB.getConnection().prepareStatement(query);
+
+			}
+
+			
+		} catch (SQLException e) {
+			e.printStackTrace(System.out);
+		}
+
+		return aptvQuery;
+	}	
+	
+	//normalBT9Query
+	public static PreparedStatement normalBT9Query() {
+
+		try {
+
+			if (normalBT9Query == null) {
+
+				String query = "SELECT COUNT(*) FROM BBROCK WHERE STOCKID = ? AND BT9 = 9";
+
+				normalBT9Query = DB.getConnection().prepareStatement(query);
+
+			}
+
+			
+		} catch (SQLException e) {
+			e.printStackTrace(System.out);
+		}
+
+		return normalBT9Query;
+	}	
+	//passPointUpdate
+	public static PreparedStatement passPointUpdate() {
+
+		try {
+
+			if (passPointUpdate == null) {
+
+				String query = "UPDATE BBROCK SET APAS = ?  WHERE STOCKID = ? AND DATEID = ?";
+
+				passPointUpdate = DB.getConnection().prepareStatement(query);
+
+			}
+
+			
+		} catch (SQLException e) {
+			e.printStackTrace(System.out);
+		}
+
+		return passPointUpdate;
+	}
+	
+	//passPriceUpdate
+
+	public static PreparedStatement passPriceUpdate() {
+
+		try {
+
+			if (passPriceUpdate == null) {
+
+				String query = "UPDATE BBROCK SET APTV = ?  WHERE STOCKID = ? AND DATEID = ?";
+
+				passPriceUpdate = DB.getConnection().prepareStatement(query);
+
+			}
+
+			
+		} catch (SQLException e) {
+			e.printStackTrace(System.out);
+		}
+
+		return passPriceUpdate;
+	}
+
+	
 	public static PreparedStatement  resetAltBT9() {
 
 		try {
@@ -66,6 +229,23 @@ public class ALTBT9DB extends DB {
 		return resetBT9;
 	}
 
+	//queryTeal
+	public static PreparedStatement getTealQuery() {
+
+		if (queryTeal == null) {
+			try {
+
+				String query = "SELECT TEAL FROM BBROCK WHERE STOCKID = ? AND DATEID = ?";
+
+				queryTeal = DB.getConnection().prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return queryTeal;
+	}
+	
 	//dateStmnt
 	public static PreparedStatement getDateStmnt() {
 

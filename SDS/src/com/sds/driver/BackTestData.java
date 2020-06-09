@@ -10,7 +10,7 @@ public class BackTestData {
 		// TODO Auto-generated method stub
 		long t1 = System.currentTimeMillis();
 		String path = "/home/joma/share/test/simple/";
-		String symbol = "CRNC";
+		String symbol = "WLL";
 		
 		BackTestBaseCVS.processStock(path, symbol);
 		System.out.println("Processing teal records...");
@@ -32,6 +32,10 @@ public class BackTestData {
 		OneBullPattern.findPassPoints(symbol, -1, false);
 		TwoBullPattern.mergeBDCXHistory(symbol, -1,false);
 		TwoBullPattern.updatePTCP2History(symbol, -1,false);
+		System.out.println("Processing ALTERNATIVE bull pattern one ...");
+		ALTBT9.findAltBT9(symbol, -1);
+		System.out.println("Process marking pass points");
+		ALTBT9.markPassPoints(symbol, -1);
 		long t2 = System.currentTimeMillis();
 		System.out.println("Time cost is " + ((t2 - t1) * 1.0f) / (1000 * 60.0f) + " minutes");
 
