@@ -36,6 +36,7 @@ public class ALTBT9 {
 	private static PreparedStatement passPointsQuery = null;
 	private static PreparedStatement passPointsUpdate = null;
 
+	
 	public static void init() {
 		teal10QueryStmnt = ALTBT9DB.getALTBT9Stmnt();
 		dateIDQueryStmnt = ALTBT9DB.getDateIDQuery();
