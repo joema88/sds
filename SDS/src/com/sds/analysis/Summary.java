@@ -17,6 +17,8 @@ public class Summary {
 	private static PreparedStatement updateCCX = null;
 	private static PreparedStatement updateBDCXZero = null;
 	private static PreparedStatement queryLastDayCX520 = null;
+	private static PreparedStatement SYPTStmnt = null;
+	private static PreparedStatement SYPTUpdate = null;
 
 	public static void init() {
 		queryStmnt = DB.getSymbolDateIDQueryStmnt();
@@ -29,6 +31,8 @@ public class Summary {
 		findPreviousCCX = TwoBullDB.getPreviousCCXStmnt();
 		updateCCX = TwoBullDB.getCCXUpdateStmnt();
 		updateBDCXZero = TwoBullDB.getBDCXUpdateZero();
+		SYPTStmnt = DB.getSYPTStmnt();
+		SYPTUpdate = DB.getSYPTUpdate();
 
 	}
 
@@ -78,7 +82,7 @@ public class Summary {
 							findPreviousCCX.setInt(2, dateID - 1);
 							ResultSet rs6 = findPreviousCCX.executeQuery();
 							if (rs6.next()) {
-							    int ppccx = rs6.getInt(1);
+								int ppccx = rs6.getInt(1);
 								int ppbdcx = rs6.getInt(2); // this one <0
 								pbdcx = ppccx + cx520 - pbdcx; // merge here
 								ccx = cx520;
@@ -105,7 +109,7 @@ public class Summary {
 							findPreviousCCX.setInt(2, dateID - 1);
 							ResultSet rs7 = findPreviousCCX.executeQuery();
 							if (rs7.next()) {
-							    int ppccx = rs7.getInt(1);
+								int ppccx = rs7.getInt(1);
 								int ppbdcx = rs7.getInt(2); // this one >0
 								pbdcx = ppccx + cx520 - pbdcx; // merge here
 								ccx = cx520;
@@ -303,9 +307,36 @@ public class Summary {
 		}
 	}
 
+	public static void processAllYTPSum(int dateID) {
+		try {
+			SYPTStmnt.setInt(1, dateID);
+			ResultSet rs1 = SYPTStmnt.executeQuery();
+			if (rs1.next()) {
+				int tealSum = rs1.getInt(1);
+				int yellowSum = rs1.getInt(2);
+				int pinkSum = rs1.getInt(3);
+
+				int score = tealSum - yellowSum - 2 * pinkSum;
+
+				SYPTUpdate.setInt(1, score);
+				SYPTUpdate.setInt(2, dateID);
+				SYPTUpdate.executeUpdate();
+
+			}
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+
+	}
+
 	public static void main(String[] args) {
-		String symbol = "CIEN";
-		processLastDayCCX(symbol, -1);
+		init();
+		// String symbol = "CIEN";
+		// processLastDayCCX(symbol, -1);
+		for (int dateId = 8923; dateId < 8933; dateId++) {
+			processAllYTPSum(dateId);
+		}
 	}
 
 }

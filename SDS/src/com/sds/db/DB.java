@@ -28,6 +28,7 @@ public class DB {
 	//ALTER TABLE BBROCK ADD COLUMN ABT9 TINYINT DEFAULT 0 AFTER DAY2;
 	//ALTER TABLE BBROCK ADD COLUMN APAS TINYINT DEFAULT 0 AFTER ABT9;
 	//ALTER TABLE BBROCK ADD COLUMN APTV FLOAT DEFAULT 0.0 AFTER APAS;
+	//ALTER TABLE BBROCK ADD COLUMN SYPT INT DEFAULT 0 AFTER APTV;
 	
 	
 	private static Connection dbcon = null;
@@ -53,9 +54,19 @@ public class DB {
 	private static PreparedStatement closePriceStmnt = null;
 	private static PreparedStatement lastCloseStmnt = null;
 	private static PreparedStatement cx520Stmnt = null;
+	private static PreparedStatement SYPTStmnt = null;
+	private static PreparedStatement SYPTUpdate = null;
 
 	public static void closeConnection() {
 		try {
+			if(SYPTUpdate != null) {
+				SYPTUpdate.close();
+				SYPTUpdate = null;
+			}
+			if(SYPTStmnt != null) {
+				SYPTStmnt.close();
+				SYPTStmnt = null;
+			}
 			if(cx520Stmnt != null) {
 				cx520Stmnt.close();
 				cx520Stmnt = null;
@@ -165,6 +176,37 @@ public class DB {
 		return dbcon;
 	}
 
+	//SYPTStmnt
+	public static PreparedStatement getSYPTStmnt() {
+		if( SYPTStmnt == null) {
+			try {
+				String query = "SELECT SUM(TEAL),SUM(YELLOW),SUM(PINK) FROM  BBROCK  WHERE DATEID = ?";
+				SYPTStmnt = getConnection().prepareStatement(query);
+			}catch(Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+			
+		}
+		
+		return SYPTStmnt;
+	}
+	
+	
+	//SYPTUpdate
+	public static PreparedStatement getSYPTUpdate() {
+		if( SYPTUpdate == null) {
+			try {
+				String query = "UPDATE BBROCK SET SYPT = ? WHERE STOCKID = 1 AND DATEID = ?";
+				SYPTUpdate = getConnection().prepareStatement(query);
+			}catch(Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+			
+		}
+		
+		return SYPTUpdate;
+	}
+	
 	public static Statement getStatement() {
 		getConnection();
 		try {
