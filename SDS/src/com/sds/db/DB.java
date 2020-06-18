@@ -58,6 +58,7 @@ public class DB {
 	private static PreparedStatement SYPTUpdate = null;
 	private static PreparedStatement checkHistoryExists = null;
 
+	
 	public static void closeConnection() {
 		try {
 			if( checkHistoryExists != null) {
