@@ -20,7 +20,7 @@ public class BackTestBatch {
 			BufferedReader br = new BufferedReader(new FileReader(file));
 			String line = null;
 			int totalStocks = 0;
-			String lastProcessedStock = "ICEDD";
+			String lastProcessedStock = "ICDD";
 
 			while ((line = br.readLine()) != null) {
 				String symbol = line.strip();
