@@ -11,7 +11,7 @@ public class BackTestData {
 	public static void main(String[] args) {
 
 		String path = "/home/joma/share/test/simple/";
-		String symbol = "WAFU";
+		String symbol = "NETE";
 
 		long t1 = System.currentTimeMillis();
 		
