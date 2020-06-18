@@ -56,9 +56,14 @@ public class DB {
 	private static PreparedStatement cx520Stmnt = null;
 	private static PreparedStatement SYPTStmnt = null;
 	private static PreparedStatement SYPTUpdate = null;
+	private static PreparedStatement checkHistoryExists = null;
 
 	public static void closeConnection() {
 		try {
+			if( checkHistoryExists != null) {
+				checkHistoryExists.close();
+				checkHistoryExists = null;
+			}
 			if(SYPTUpdate != null) {
 				SYPTUpdate.close();
 				SYPTUpdate = null;
@@ -191,6 +196,21 @@ public class DB {
 		return SYPTStmnt;
 	}
 	
+	//select COUNT(*) FROM BBROCK WHERE DATEID=8900;
+	//checkHistoryExists
+	public static PreparedStatement checkHistoryExists() {
+		if( checkHistoryExists == null) {
+			try {
+				String query = "select COUNT(*) FROM BBROCK WHERE DATEID=8900 and STOCKID = ?";
+				checkHistoryExists = getConnection().prepareStatement(query);
+			}catch(Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+			
+		}
+		
+		return checkHistoryExists;
+	}
 	
 	//SYPTUpdate
 	public static PreparedStatement getSYPTUpdate() {

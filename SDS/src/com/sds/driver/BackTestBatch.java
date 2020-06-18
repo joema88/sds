@@ -2,9 +2,12 @@ package com.sds.driver;
 
 import com.sds.file.*;
 import com.sds.analysis.*;
+import com.sds.db.DB;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.*;
+import java.sql.*;
 
 public class BackTestBatch {
 //StrategyReports_TSLA_Base
@@ -12,18 +15,40 @@ public class BackTestBatch {
 	public static void main(String[] args) {
 		try {
 			long t1 = System.currentTimeMillis();
+			PreparedStatement chHistory = DB.checkHistoryExists();
 			String file = "/home/joma/share/test/stocks.txt";
 			BufferedReader br = new BufferedReader(new FileReader(file));
 			String line = null;
 			int totalStocks = 0;
+			String lastProcessedStock = "ICEDD";
 
 			while ((line = br.readLine()) != null) {
 				String symbol = line.strip();
 				if (symbol.length() > 1) {
+					int stockID = DB.getSymbolID(symbol);
+
+					boolean exist = false;
+
+					chHistory.setInt(1, stockID);
+					ResultSet rs1 = chHistory.executeQuery();
+					if (rs1.next()) {
+						if (rs1.getInt(1) > 0) {
+							exist = true;
+							System.out.println("Already processed stock " + symbol);
+						}else {
+							System.out.println("New symbol to be processed "+symbol);
+						}
+					}
+
+					if (symbol.equalsIgnoreCase(lastProcessedStock)) {
+						exist = false;
+					}
 
 					String path = "/home/joma/share/test/simple/";
 					// symbol = "WAFU";
-					if (checkFilesExist(path, symbol)) {
+					// only process those have not been processed
+					// after program restart
+					if (!exist && checkFilesExist(path, symbol)) {
 						BackTestBaseCVS.processStock(path, symbol);
 						System.out.println("Processing teal records...");
 						BackTestTealCVS.processStock(path, symbol);
