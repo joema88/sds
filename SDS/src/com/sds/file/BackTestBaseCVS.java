@@ -9,12 +9,17 @@ import java.sql.*;
 
 import com.sds.util.DateConvertion;
 
-public class BackTestBaseCVS {
+public class BackTestBaseCVS  {
 
 	private static PreparedStatement stmnt = null;
+	private static PreparedStatement symbolStmnt = null;
+	private static PreparedStatement dateStmnt = null;
+	
 
 	public static void init() {
 		stmnt = DB.getBackTestInsertStatement();
+		symbolStmnt = DB.getSymbolInsertStatement();
+		dateStmnt = DB.getDateInsertStatement();
 	}
 
 	public static void main(String[] args) {
@@ -22,8 +27,49 @@ public class BackTestBaseCVS {
 
 	}
 
+	public static boolean checkSymbol(String symbol) {
+		boolean inserted = false;
+		if (!DB.checkSymbolExist(symbol)) {
+			try {
+				int ID = DB.getNextSymbolID();
+				
+				symbolStmnt.setInt(1, ID);
+				symbolStmnt.setString(2, symbol);
+				symbolStmnt.execute();
+				Thread.sleep(10);
+
+				inserted = true;
+			} catch (Exception ex) {
+
+			}
+		}
+		return inserted;
+	}
+
+	public static boolean checkDate(String dateStr) {
+		boolean inserted = false;
+		// java.sql.Date startDate = new java.sql.Date(dateStr);
+		if (!DB.checkDateExist(dateStr)) {
+			try {
+
+				int ID = DB.getNextDateID();
+				
+				dateStmnt.setInt(1, ID);
+				dateStmnt.setString(2, dateStr);
+				dateStmnt.execute();
+				Thread.sleep(10);
+
+				inserted = true;
+			} catch (Exception ex) {
+
+			}
+		}
+		return inserted;
+	}
+
 	public static void processStock(String path,String symbol) {
 		init();
+		checkSymbol(symbol);
 		String csvFile = path+"StrategyReports_"+symbol+"_Base.csv";
 		BufferedReader br = null;
 		String line = "";
@@ -66,6 +112,7 @@ public class BackTestBaseCVS {
 					if (preDate.length() > 0) {
 						String dateStr = DateConvertion.convertDateFormat(preDate);
 						System.out.println(id + ": " + dateStr + " : " + close);
+						checkDate(dateStr);
 						int dateID = DateTable.getDateID(dateStr);
 						int stockID = SymbolTable.getSymbolID(symbol);
 						if (!DB.checkBBRecordExist(stockID, dateID)) {

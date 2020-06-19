@@ -4,6 +4,7 @@ import com.sds.db.DB;
 import java.sql.*;
 import java.io.*;
 import java.util.*;
+import com.sds.util.*;
 
 public class WatchList {
 
@@ -16,7 +17,8 @@ public class WatchList {
 
 		//export(query);
 		//String query1 = "select SYMBOL,A.STOCKID, SUM(PASS),SUM(CCX), SUM(APAS) FROM BBROCK A, SYMBOLS B  WHERE A.STOCKID=B.STOCKID AND A.DATEID<=8936 AND A.DATEID>=8927  GROUP BY SYMBOL, A.STOCKID ORDER BY SUM(PASS)+SUM(APAS) DESC LIMIT 200 ";
-		printUnprocessedStocks(200, query1);
+		//printUnprocessedStocks(200, query1);
+		printUnprocessedStocksBasedOnFiles(200, query1);
 	}
 
 	public static void export(String query) {
@@ -41,6 +43,42 @@ public class WatchList {
 
 	}
 
+	public static void printUnprocessedStocksBasedOnFiles(int num, String query1) {
+		try {
+			FileWriter fr = new FileWriter("C:\\Users\\Udemy\\dockerDevOps\\test\\stocks.txt", true);
+			BufferedWriter br = new BufferedWriter(fr);
+
+			if(query1==null)
+			query1 = "SELECT SYMBOL, STOCKID FROM SYMBOLS ORDER BY STOCKID ASC";
+			Statement stmnt = DB.getStatement();
+			Hashtable exists = BackTestFiles.processedStocks();
+			
+
+			int selectedStockCount = 0;
+			ResultSet rs1 = stmnt.executeQuery(query1);
+			
+			while(rs1.next()){
+				String symbol = rs1.getString(1);
+				int stockID = rs1.getInt(2);
+				if (!exists.containsKey("" + stockID)) {
+					br.write(symbol);
+					br.newLine();
+					System.out.println(symbol);
+					selectedStockCount++;
+					
+					if(selectedStockCount>=num)
+						break;
+				}
+			}
+
+			br.close();
+			fr.close();
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+
+		}
+
+	}
 	public static void printUnprocessedStocks(int num, String query1) {
 		try {
 			FileWriter fr = new FileWriter("C:\\Users\\Udemy\\dockerDevOps\\test\\stocks.txt", true);
