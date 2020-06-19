@@ -266,7 +266,12 @@ public class CSVReader {
 					String[] data = line.split(cvsSplitBy);
 					String symbol = data[0];
 
-					if (symbol.equalsIgnoreCase(stock)) {
+					//symbol must not have small cases or /
+					boolean validScopeSymbol = true;
+					if(symbol.indexOf("/")>=0||symbol.compareTo(symbol.toUpperCase())!=0)
+						validScopeSymbol = false;
+					
+					if (validScopeSymbol&&symbol.equalsIgnoreCase(stock)) {
 
 						if (insertSymbol(symbol, nextSymbolID, symbolStmnt)) {
 							nextSymbolID++;
@@ -650,13 +655,18 @@ public class CSVReader {
 				if (start) {
 					String[] data = line.split(cvsSplitBy);
 					String symbol = data[0];
-					if (insertSymbol(symbol, nextSymbolID, symbolStmnt)) {
+					//symbol must not have small cases or /
+					boolean validScopeSymbol = true;
+					if(symbol.indexOf("/")>=0||symbol.compareTo(symbol.toUpperCase())!=0)
+						validScopeSymbol = false;
+					
+					if (validScopeSymbol&&insertSymbol(symbol, nextSymbolID, symbolStmnt)) {
 						nextSymbolID++;
 					}
 					int stockID = DB.getSymbolID(symbol);
 
 					boolean recordExists = DB.checkBBRecordExist(stockID, currentDateID);
-					if (recordExists && (fileName.toLowerCase().indexOf("base") < 0
+					if (validScopeSymbol&&recordExists && (fileName.toLowerCase().indexOf("base") < 0
 							|| fileName.toLowerCase().indexOf("crx") < 0)) {
 						// update record only
 						String fieldName = "TEAL";
@@ -672,7 +682,7 @@ public class CSVReader {
 							updateBBRecord(stockID, currentDateID, fieldName, 1);
 						}
 
-					} else {
+					} else if(validScopeSymbol){
 						// new code
 						float percentage = 0.0f;
 						try {
@@ -911,7 +921,7 @@ public class CSVReader {
 						// new code
 
 						// insert records;
-						if (!recordExists && fileName.toLowerCase().indexOf("crx") < 0) {
+						if (validScopeSymbol&&!recordExists && fileName.toLowerCase().indexOf("crx") < 0) {
 							try {
 								// System.out.println(symbol + ": " + percentage + ": " + close + ": " +
 								// netChange + ": " + atr
@@ -954,7 +964,7 @@ public class CSVReader {
 								ex.printStackTrace(System.out);
 							}
 							// insert records;
-						} else if (fileName.toLowerCase().indexOf("crx") >= 0) {
+						} else if (validScopeSymbol&&fileName.toLowerCase().indexOf("crx") >= 0) {
 							// update 520CX
 							try {
 								if (((int) atr) < 1) {
