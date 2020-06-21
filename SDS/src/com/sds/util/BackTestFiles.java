@@ -47,12 +47,14 @@ public class BackTestFiles {
 		Enumeration en = all.keys();
 		int loop = 0;
 		while (en.hasMoreElements()) {
-			System.out.println(en.nextElement().toString());
+			System.out.println(en.nextElement().toString().strip());
 			loop++;
 
 		}
 
 		System.out.println("Total symbol count " + loop);
+		System.out.println("           ");
+		System.out.println(" -------------------------------- ");
 		return all;
 	}
 }
