@@ -22,10 +22,9 @@ public class BackTestBatch {
 			int totalStocks = 0;
 			String lastProcessedStock = "ICDD";
 
-			
 			while ((line = br.readLine()) != null) {
 				String symbol = line.strip();
-				if (symbol.length() > 1) {
+				if (symbol.length() >= 1) {
 					int stockID = DB.getSymbolID(symbol);
 
 					boolean exist = false;
@@ -36,8 +35,8 @@ public class BackTestBatch {
 						if (rs1.getInt(1) > 0) {
 							exist = true;
 							System.out.println("Already processed stock " + symbol);
-						}else {
-							System.out.println("New symbol to be processed "+symbol);
+						} else {
+							System.out.println("New symbol to be processed " + symbol);
 						}
 					}
 
@@ -50,6 +49,9 @@ public class BackTestBatch {
 					// only process those have not been processed
 					// after program restart
 					if (!exist && checkFilesExist(path, symbol)) {
+						long t3 = System.currentTimeMillis();
+
+						totalStocks++;
 						BackTestBaseCVS.processStock(path, symbol);
 						System.out.println("Processing teal records...");
 						BackTestTealCVS.processStock(path, symbol);
@@ -74,6 +76,11 @@ public class BackTestBatch {
 						ALTBT9.findAltBT9(symbol, -1);
 						System.out.println("Process marking pass points");
 						ALTBT9.markPassPoints(symbol, -1);
+						long t4 = System.currentTimeMillis();
+						System.out.println("Time cost is " + ((t4 - t3) * 1.0f) / (1000 * 60.0f) + " minutes");
+						System.out.println("Last stock processed is " + symbol);
+						System.out.println(totalStocks + " stock processed...sleep 4 seconds");
+						Thread.sleep(4000);
 					}
 				}
 
