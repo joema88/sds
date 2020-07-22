@@ -34,6 +34,7 @@ public class BackTestFiles {
 		for (File file : files) {
 			String fileName = file.getName();
 			String tag1 = "StrategyReports_";
+			//try {
 			String symbol = fileName.substring(tag1.length());
 			String tag2 = "_";
 			symbol = symbol.substring(0, symbol.indexOf(tag2));
@@ -42,6 +43,9 @@ public class BackTestFiles {
 			// System.out.println(file.getName());
 			// System.out.println("Symbol "+symbol);
 			all.put(symbol, symbol);
+			//}catch(Exception ex) {
+			//	ex.printStackTrace(System.out);
+			//}
 		}
 
 		Enumeration en = all.keys();

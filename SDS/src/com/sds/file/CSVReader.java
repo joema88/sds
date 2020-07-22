@@ -266,12 +266,12 @@ public class CSVReader {
 					String[] data = line.split(cvsSplitBy);
 					String symbol = data[0];
 
-					//symbol must not have small cases or /
+					// symbol must not have small cases or /
 					boolean validScopeSymbol = true;
-					if(symbol.indexOf("/")>=0||symbol.compareTo(symbol.toUpperCase())!=0)
+					if (symbol.indexOf("/") >= 0 || symbol.compareTo(symbol.toUpperCase()) != 0)
 						validScopeSymbol = false;
-					
-					if (validScopeSymbol&&symbol.equalsIgnoreCase(stock)) {
+
+					if (validScopeSymbol && symbol.equalsIgnoreCase(stock)) {
 
 						if (insertSymbol(symbol, nextSymbolID, symbolStmnt)) {
 							nextSymbolID++;
@@ -655,18 +655,18 @@ public class CSVReader {
 				if (start) {
 					String[] data = line.split(cvsSplitBy);
 					String symbol = data[0];
-					//symbol must not have small cases or /
+					// symbol must not have small cases or /
 					boolean validScopeSymbol = true;
-					if(symbol.indexOf("/")>=0||symbol.compareTo(symbol.toUpperCase())!=0)
+					if (symbol.indexOf("/") >= 0 || symbol.compareTo(symbol.toUpperCase()) != 0)
 						validScopeSymbol = false;
-					
-					if (validScopeSymbol&&insertSymbol(symbol, nextSymbolID, symbolStmnt)) {
+
+					if (validScopeSymbol && insertSymbol(symbol, nextSymbolID, symbolStmnt)) {
 						nextSymbolID++;
 					}
 					int stockID = DB.getSymbolID(symbol);
 
 					boolean recordExists = DB.checkBBRecordExist(stockID, currentDateID);
-					if (validScopeSymbol&&recordExists && (fileName.toLowerCase().indexOf("base") < 0
+					if (validScopeSymbol && recordExists && (fileName.toLowerCase().indexOf("base") < 0
 							|| fileName.toLowerCase().indexOf("crx") < 0)) {
 						// update record only
 						String fieldName = "TEAL";
@@ -682,7 +682,7 @@ public class CSVReader {
 							updateBBRecord(stockID, currentDateID, fieldName, 1);
 						}
 
-					} else if(validScopeSymbol){
+					} else if (validScopeSymbol) {
 						// new code
 						float percentage = 0.0f;
 						try {
@@ -817,9 +817,13 @@ public class CSVReader {
 							}
 							String s3 = s1.substring(s1.indexOf(",") + 1, s1.length());
 							try {
-								if (!s3.strip().equalsIgnoreCase("NaN"))
+								if (!s3.strip().equalsIgnoreCase("NaN")) {
 									atr = Float.parseFloat(s3.replace(",", ""));
+								} else {
+									atr = -1000.0f;
+								}
 							} catch (Exception ex) {
+								atr = -8000.0f;
 								System.out.println("atr parse error...");
 								ex.printStackTrace(System.out);
 
@@ -859,9 +863,13 @@ public class CSVReader {
 							}
 							String s3 = s1.substring(s1.indexOf(",") + 1, s1.length());
 							try {
-								if (!s3.strip().equalsIgnoreCase("NaN"))
+								if (!s3.strip().equalsIgnoreCase("NaN")) {
 									atr = Float.parseFloat(s3.replace(",", ""));
+								} else {
+									atr = -1000.0f;
+								}
 							} catch (Exception ex) {
+								atr = -8000.0f;
 								System.out.println("atr parse error..." + symbol);
 								ex.printStackTrace(System.out);
 
@@ -880,9 +888,13 @@ public class CSVReader {
 							}
 							String s3 = s1.substring(s1.indexOf("\",") + 2, s1.length());
 							try {
-								if (!s3.strip().equalsIgnoreCase("NaN"))
+								if (!s3.strip().equalsIgnoreCase("NaN")) {
 									atr = Float.parseFloat(s3.replace(",", ""));
+								} else {
+									atr = -1000.0f;
+								}
 							} catch (Exception ex) {
+								atr = -8000.0f;
 								System.out.println("atr parse error...");
 								ex.printStackTrace(System.out);
 
@@ -921,7 +933,7 @@ public class CSVReader {
 						// new code
 
 						// insert records;
-						if (validScopeSymbol&&!recordExists && fileName.toLowerCase().indexOf("crx") < 0) {
+						if (validScopeSymbol && !recordExists && fileName.toLowerCase().indexOf("crx") < 0) {
 							try {
 								// System.out.println(symbol + ": " + percentage + ": " + close + ": " +
 								// netChange + ": " + atr
@@ -932,6 +944,9 @@ public class CSVReader {
 								rockStmnt.setFloat(3, percentage);
 								rockStmnt.setFloat(4, close);
 								rockStmnt.setFloat(5, netChange);
+								if(atr>-999.0f&&atr<-7999.0f) {
+									atr = 0.0f;
+								}
 								rockStmnt.setFloat(6, atr);
 								rockStmnt.setFloat(7, open);
 								rockStmnt.setFloat(8, high);
@@ -964,10 +979,16 @@ public class CSVReader {
 								ex.printStackTrace(System.out);
 							}
 							// insert records;
-						} else if (validScopeSymbol&&fileName.toLowerCase().indexOf("crx") >= 0) {
+						} else if (validScopeSymbol && fileName.toLowerCase().indexOf("crx") >= 0) {
 							// update 520CX
 							try {
-								if (((int) atr) < 1) {
+								if (((int) atr) < -999 && ((int) atr) > -1001) {
+									// basecrx file 0 means below thus -1
+									update520CXStmnt.setInt(1, -10);
+								} else if (((int) atr) < -7999 && ((int) atr) > -8001) {
+									// basecrx file 0 means below thus -1
+									update520CXStmnt.setInt(1, -20);
+								} else if (((int) atr) < 1) {
 									// basecrx file 0 means below thus -1
 									update520CXStmnt.setInt(1, -1);
 								} else {

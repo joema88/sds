@@ -21,7 +21,7 @@ public class BackTestBatch {
 			String line = null;
 			int totalStocks = 0;
 			String lastProcessedStock = "ICDD";
-
+			
 			while ((line = br.readLine()) != null) {
 				String symbol = line.strip();
 				if (symbol.length() >= 1) {

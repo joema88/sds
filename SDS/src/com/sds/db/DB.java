@@ -47,10 +47,20 @@ public class DB {
 	private static PreparedStatement SYPTStmnt = null;
 	private static PreparedStatement SYPTUpdate = null;
 	private static PreparedStatement checkHistoryExists = null;
+	private static PreparedStatement stockIds = null;
+	private static PreparedStatement dBullStmnt = null;
 
 	
 	public static void closeConnection() {
 		try {
+			if( stockIds != null) {
+				stockIds.close();
+				stockIds = null;
+			}
+			if( dBullStmnt != null) {
+				dBullStmnt.close();
+				dBullStmnt = null;
+			}
 			if( checkHistoryExists != null) {
 				checkHistoryExists.close();
 				checkHistoryExists = null;
@@ -173,6 +183,37 @@ public class DB {
 		return dbcon;
 	}
 
+	//SYPTStmnt
+	public static PreparedStatement getAllStockIDs() {
+		if( stockIds == null) {
+			try {
+				String query = "SELECT DISTINCT(STOCKID) FROM  BBROCK WHERE STOCKID>=?";
+				stockIds  = getConnection().prepareStatement(query);
+			}catch(Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+			
+		}
+		
+		return stockIds ;
+	}
+	
+	public static PreparedStatement getDBulls() {
+		if( dBullStmnt == null) {
+			try {
+				//String query = "select a.DATEID,a.STOCKID, CDATE, PASS,APAS,b.SYMBOL, CLOSE, MARKCAP FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and ((PASS>=1 and APAS>=1) OR  a.DATEID =?) AND a.STOCKID= ? AND a.DATEID>=8454 ORDER BY a.DATEID ASC";
+				String query = "select a.DATEID,a.STOCKID, CDATE, PASS,APAS,b.SYMBOL, CLOSE, MARKCAP FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID AND a.STOCKID= ? AND a.DATEID>=8454 ORDER BY a.DATEID ASC";
+				
+				dBullStmnt  = getConnection().prepareStatement(query);
+			}catch(Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+			
+		}
+		
+		return dBullStmnt ;
+	}
+	
 	//SYPTStmnt
 	public static PreparedStatement getSYPTStmnt() {
 		if( SYPTStmnt == null) {

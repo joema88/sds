@@ -334,8 +334,9 @@ public class Summary {
 		init();
 		// String symbol = "CIEN";
 		// processLastDayCCX(symbol, -1);
-		for (int dateId = 8923; dateId < 8933; dateId++) {
+		for (int dateId = 1; dateId < 8933; dateId++) {
 			processAllYTPSum(dateId);
+			System.out.println("Done "+dateId);
 		}
 	}
 
