@@ -18,6 +18,7 @@ public class DB {
 	//1. CREATE TABLE SYMBOLS(STOCKID SMALLINT, SYMBOL VARCHAR(10), PRIMARY KEY(STOCKID)); 
 	 //2. CREATE TABLE DATES(DATEID SMALLINT, CDATE DATE, PRIMARY KEY(DATEID)); 
 	//3. CREATE TABLE BBROCK(STOCKID SMALLINT, DATEID SMALLINT, PERCENT FLOAT DEFAULT 0.0, CLOSE FLOAT DEFAULT 0.0,NETCHANGE FLOAT DEFAULT 0.0, ATR FLOAT DEFAULT 0.0, OPEN FLOAT DEFAULT 0.0,HIGH FLOAT DEFAULT 0.0, LOW FLOAT DEFAULT 0.0,LOW52 FLOAT DEFAULT 0.0,HIGH52 FLOAT DEFAULT 0.0, MARKCAP FLOAT DEFAULT 0.0,VOLUME INT DEFAULT 0, YELLOW TINYINT DEFAULT 0,TEAL TINYINT  DEFAULT 0, PINK TINYINT DEFAULT 0, SC5 SMALLINT DEFAULT 0,YP10 TINYINT DEFAULT 0, BT9 SMALLINT DEFAULT 0,TSC5 SMALLINT DEFAULT 0,DAYS SMALLINT DEFAULT 0, PTVAL FLOAT DEFAULT 0.0, PTCP FLOAT DEFAULT 0.0, PASS TINYINT DEFAULT 0,CX520 TINYINT DEFAULT 0, CCX SMALLINT DEFAULT 0 ,BDCX SMALLINT DEFAULT 0, BDW SMALLINT DEFAULT 0,PTCP2 FLOAT DEFAULT 0.0, DAY2 SMALLINT DEFAULT 0, ABT9 TINYINT DEFAULT 0, APAS TINYINT DEFAULT 0, PRIMARY KEY (STOCKID, DATEID),APTV FLOAT DEFAULT 0.0, 
+	//ALTER TABLE BBROCK ADD COLUMN BPY SMALLINT DEFAULT 0;
 	// SYPT INT DEFAULT 0, FOREIGN KEY (STOCKID) REFERENCES SYMBOLS(STOCKID) ON DELETE CASCADE, FOREIGN KEY (DATEID) REFERENCES DATES(DATEID));
 	
 	
@@ -49,10 +50,20 @@ public class DB {
 	private static PreparedStatement checkHistoryExists = null;
 	private static PreparedStatement stockIds = null;
 	private static PreparedStatement dBullStmnt = null;
+	private static PreparedStatement queryPYStmnt  = null;
+	private static PreparedStatement updateBPYStmnt = null;
 
 	
 	public static void closeConnection() {
 		try {
+			if( updateBPYStmnt != null) {
+				updateBPYStmnt.close();
+				updateBPYStmnt = null;
+			}
+			if( queryPYStmnt != null) {
+				queryPYStmnt.close();
+				queryPYStmnt = null;
+			}
 			if( stockIds != null) {
 				stockIds.close();
 				stockIds = null;
@@ -203,6 +214,7 @@ public class DB {
 			try {
 				//String query = "select a.DATEID,a.STOCKID, CDATE, PASS,APAS,b.SYMBOL, CLOSE, MARKCAP FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and ((PASS>=1 and APAS>=1) OR  a.DATEID =?) AND a.STOCKID= ? AND a.DATEID>=8454 ORDER BY a.DATEID ASC";
 				String query = "select a.DATEID,a.STOCKID, CDATE, PASS,APAS,b.SYMBOL, CLOSE, MARKCAP FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID AND a.STOCKID= ? AND a.DATEID>=8454 ORDER BY a.DATEID ASC";
+				//String query = "select a.DATEID,a.STOCKID, CDATE, PASS,APAS,b.SYMBOL, CLOSE, MARKCAP FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID AND a.STOCKID= ? AND a.DATEID>=1 ORDER BY a.DATEID ASC";
 				
 				dBullStmnt  = getConnection().prepareStatement(query);
 			}catch(Exception ex) {
@@ -553,7 +565,27 @@ public class DB {
 		return queryStockIDStmnt;
 	}
 
-	
+	//updateBPYStmnt = null;
+		public static PreparedStatement getUpdateBPYStmnt() {
+			getConnection();
+
+			if (updateBPYStmnt == null) {
+				try {
+
+					// select SUM(TEAL), SUM(YELLOW), SUM(PINK) FROM BBROCK a, SYMBOLS b WHERE
+					// a.STOCKID = b.STOCKID and b.SYMBOL = ? AND DATEID>=? AND DATEID<=?;
+
+					String query = "UPDATE BBROCK SET BPY = ? WHERE STOCKID =  ? AND DATEID =?";
+					updateBPYStmnt = dbcon.prepareStatement(query);
+				} catch (SQLException e) {
+					e.printStackTrace(System.out);
+				}
+			}
+
+			return updateBPYStmnt;
+		}
+
+		
 	//updateT9Stmnt = null;
 	public static PreparedStatement getUpdateT9Stmnt() {
 		getConnection();
@@ -574,7 +606,25 @@ public class DB {
 		return updateT9Stmnt;
 	}
 
-	
+	// queryPYStmnt
+		public static PreparedStatement getPYQueryStmnt() {
+			getConnection();
+
+			if (queryPYStmnt == null) {
+				try {
+
+					
+					String query = "select PINK,YELLOW, DATEID, BPY FROM BBROCK WHERE STOCKID = ? AND DATEID>=?  ORDER BY DATEID ASC";
+					queryPYStmnt  = dbcon.prepareStatement(query);
+				} catch (SQLException e) {
+					e.printStackTrace(System.out);
+				}
+			}
+
+			return queryPYStmnt ;
+		}
+
+		
 	// queryTealStmnt
 	public static PreparedStatement getTealQueryStmnt() {
 		getConnection();
