@@ -109,8 +109,11 @@ public class BPY {
 	}
 
 	public static void main(String[] args) {
+		long t1 = System.currentTimeMillis();
 		for(int k=1; k<=6368; k++) {
 		  processStockHistory(null, k, 0);
+		  long t2 = System.currentTimeMillis();
+		  System.out.println("Total "+k+" stocks processed, cost time "+(t2-t1)/(1000*60)+" minutes");
 		  try {
 			  Thread.sleep(2000);
 		  }catch(Exception ex) {

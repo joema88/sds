@@ -67,6 +67,7 @@ public class BackTestBatch {
 						Summary.processCCXHistory(symbol, 0);
 						System.out.println("Processing PT9...");
 						PT9.processStockHistory(symbol, 0, 0);
+						BPY.processStockHistory(symbol, 0,0);
 						System.out.println("Processing bull pattern one ...");
 						OneBullPattern.processStock(symbol, -1, -1, false);
 						OneBullPattern.findPassPoints(symbol, -1, false);

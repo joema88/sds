@@ -52,10 +52,15 @@ public class DB {
 	private static PreparedStatement dBullStmnt = null;
 	private static PreparedStatement queryPYStmnt  = null;
 	private static PreparedStatement updateBPYStmnt = null;
+	private static PreparedStatement stocks = null;
 
 	
 	public static void closeConnection() {
 		try {
+			if(stocks != null) {
+				stocks.close();
+				stocks = null;
+			}
 			if( updateBPYStmnt != null) {
 				updateBPYStmnt.close();
 				updateBPYStmnt = null;
@@ -208,6 +213,22 @@ public class DB {
 		
 		return stockIds ;
 	}
+	
+	
+	public static PreparedStatement getAllStocks() {
+		if( stocks == null) {
+			try {
+				String query = "SELECT SYMBOL FROM  SYMBOLS WHERE STOCKID>= ?";
+				stocks  = getConnection().prepareStatement(query);
+			}catch(Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+			
+		}
+		
+		return stocks ;
+	}
+	
 	
 	public static PreparedStatement getDBulls() {
 		if( dBullStmnt == null) {

@@ -16,9 +16,10 @@ public class ALTBT9 {
 
 	public static void main(String[] args) {
 		String symbol = "SLS";
-		findAltBT9(symbol, -1);
-		markPassPoints(symbol, -1);
-		
+		// findAltBT9(symbol, -1);
+		// markPassPoints(symbol, -1);
+
+		reprocessAllStocks();
 
 	}
 
@@ -35,9 +36,35 @@ public class ALTBT9 {
 	private static PreparedStatement aptvQuery = null;
 	private static PreparedStatement passPointsQuery = null;
 	private static PreparedStatement passPointsUpdate = null;
+	private static PreparedStatement getAllStocks = null;
 
-	
+	public static void reprocessAllStocks() {
+		try {
+			long t1 = System.currentTimeMillis();
+			init();
+			getAllStocks.setInt(1, 1);
+			ResultSet rs = getAllStocks.executeQuery();
+			int count = 0;
+			while (rs.next()) {
+				String symbol = rs.getString(1);
+				findAltBT9(symbol, -1);
+				markPassPoints(symbol, -1);
+				long t2 = System.currentTimeMillis();
+				count++;
+				System.out.println(count+" stocks have been processed...cost "+(t2-t1)/(1000*60)+" minutes");
+				try {
+					Thread.sleep(2000);
+				} catch (Exception ex) {
+
+				}
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
+
 	public static void init() {
+		getAllStocks = DB.getAllStocks();
 		teal10QueryStmnt = ALTBT9DB.getALTBT9Stmnt();
 		dateIDQueryStmnt = ALTBT9DB.getDateIDQuery();
 		altBT9Update = ALTBT9DB.getAltBT9Update();
@@ -146,7 +173,7 @@ public class ALTBT9 {
 					passPointsUpdate.executeUpdate();
 				}
 			}
-			
+
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}

@@ -22,6 +22,7 @@ public class DailyRecordsUploader {
 			while (rs.next()) {
 				int stockID = rs.getInt(1);
 				PT9.processStockToday("", stockID, dateID);
+				BPY.processStockToday("", stockID, dateID);
 				PreparedStatement stmnt1 = DB.getTYPDSumByStockIDStmnt();
 				stmnt1.setInt(1, stockID);
 				stmnt1.setInt(2, dateID - 4);
@@ -98,7 +99,7 @@ public class DailyRecordsUploader {
 		// TODO Auto-generated method stub
 		String path = "/home/joma/share/test/";
 		boolean currentDateProcessOnly = true;
-		String cDate = "2020-07-22";
+		String cDate = "2020-07-23";
 		int dateCountToBeProcessed = 1;
 		int loopCount = 0;
 		long t1 = System.currentTimeMillis();
