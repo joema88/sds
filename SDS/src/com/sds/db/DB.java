@@ -10,18 +10,33 @@ public class DB {
 	 * index_length) / 1024 / 1024, 1) AS 'DB Size in MB' FROM
 	 * information_schema.tables GROUP BY table_schema;
 	 */
-	
-	//SQL
-	//select a.DATEID,CDATE, a.STOCKID, CLOSE, ATR,TEAL, YELLOW, PINK, SC5,BT9,TSC5,DAYS,PTVAL, PTCP, PASS, CX520,CCX, b.SYMBOL FROM BBROCK a, SYMBOLS b, DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.SYMBOL='MAR' order by a.DATEID DESC limit 300;
-	
-	//create BBROCK table
-	//1. CREATE TABLE SYMBOLS(STOCKID SMALLINT, SYMBOL VARCHAR(10), PRIMARY KEY(STOCKID)); 
-	 //2. CREATE TABLE DATES(DATEID SMALLINT, CDATE DATE, PRIMARY KEY(DATEID)); 
-	//3. CREATE TABLE BBROCK(STOCKID SMALLINT, DATEID SMALLINT, PERCENT FLOAT DEFAULT 0.0, CLOSE FLOAT DEFAULT 0.0,NETCHANGE FLOAT DEFAULT 0.0, ATR FLOAT DEFAULT 0.0, OPEN FLOAT DEFAULT 0.0,HIGH FLOAT DEFAULT 0.0, LOW FLOAT DEFAULT 0.0,LOW52 FLOAT DEFAULT 0.0,HIGH52 FLOAT DEFAULT 0.0, MARKCAP FLOAT DEFAULT 0.0,VOLUME INT DEFAULT 0, YELLOW TINYINT DEFAULT 0,TEAL TINYINT  DEFAULT 0, PINK TINYINT DEFAULT 0, SC5 SMALLINT DEFAULT 0,YP10 TINYINT DEFAULT 0, BT9 SMALLINT DEFAULT 0,TSC5 SMALLINT DEFAULT 0,DAYS SMALLINT DEFAULT 0, PTVAL FLOAT DEFAULT 0.0, PTCP FLOAT DEFAULT 0.0, PASS TINYINT DEFAULT 0,CX520 TINYINT DEFAULT 0, CCX SMALLINT DEFAULT 0 ,BDCX SMALLINT DEFAULT 0, BDW SMALLINT DEFAULT 0,PTCP2 FLOAT DEFAULT 0.0, DAY2 SMALLINT DEFAULT 0, ABT9 TINYINT DEFAULT 0, APAS TINYINT DEFAULT 0, PRIMARY KEY (STOCKID, DATEID),APTV FLOAT DEFAULT 0.0, 
-	//ALTER TABLE BBROCK ADD COLUMN BPY SMALLINT DEFAULT 0;
-	// SYPT INT DEFAULT 0, FOREIGN KEY (STOCKID) REFERENCES SYMBOLS(STOCKID) ON DELETE CASCADE, FOREIGN KEY (DATEID) REFERENCES DATES(DATEID));
-	
-	
+
+	// SQL
+	// select a.DATEID,CDATE, a.STOCKID, CLOSE, ATR,TEAL, YELLOW, PINK,
+	// SC5,BT9,TSC5,DAYS,PTVAL, PTCP, PASS, CX520,CCX, b.SYMBOL FROM BBROCK a,
+	// SYMBOLS b, DATES c WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and
+	// b.SYMBOL='MAR' order by a.DATEID DESC limit 300;
+
+	// create BBROCK table
+	// 1. CREATE TABLE SYMBOLS(STOCKID SMALLINT, SYMBOL VARCHAR(10), PRIMARY
+	// KEY(STOCKID));
+	// 2. CREATE TABLE DATES(DATEID SMALLINT, CDATE DATE, PRIMARY KEY(DATEID));
+	// 3. CREATE TABLE BBROCK(STOCKID SMALLINT, DATEID SMALLINT, PERCENT FLOAT
+	// DEFAULT 0.0, CLOSE FLOAT DEFAULT 0.0,NETCHANGE FLOAT DEFAULT 0.0, ATR FLOAT
+	// DEFAULT 0.0, OPEN FLOAT DEFAULT 0.0,HIGH FLOAT DEFAULT 0.0, LOW FLOAT DEFAULT
+	// 0.0,LOW52 FLOAT DEFAULT 0.0,HIGH52 FLOAT DEFAULT 0.0, MARKCAP FLOAT DEFAULT
+	// 0.0,VOLUME INT DEFAULT 0, YELLOW TINYINT DEFAULT 0,TEAL TINYINT DEFAULT 0,
+	// PINK TINYINT DEFAULT 0, SC5 SMALLINT DEFAULT 0,YP10 TINYINT DEFAULT 0, BT9
+	// SMALLINT DEFAULT 0,TSC5 SMALLINT DEFAULT 0,DAYS SMALLINT DEFAULT 0, PTVAL
+	// FLOAT DEFAULT 0.0, PTCP FLOAT DEFAULT 0.0, PASS TINYINT DEFAULT 0,CX520
+	// TINYINT DEFAULT 0, CCX SMALLINT DEFAULT 0 ,BDCX SMALLINT DEFAULT 0, BDW
+	// SMALLINT DEFAULT 0,PTCP2 FLOAT DEFAULT 0.0, DAY2 SMALLINT DEFAULT 0, ABT9
+	// TINYINT DEFAULT 0, APAS TINYINT DEFAULT 0, PRIMARY KEY (STOCKID, DATEID),APTV
+	// FLOAT DEFAULT 0.0,
+	// ALTER TABLE BBROCK ADD COLUMN BPY SMALLINT DEFAULT 0;
+	// SYPT INT DEFAULT 0, FOREIGN KEY (STOCKID) REFERENCES SYMBOLS(STOCKID) ON
+	// DELETE CASCADE, FOREIGN KEY (DATEID) REFERENCES DATES(DATEID));
+
 	private static Connection dbcon = null;
 	private static PreparedStatement symbolStmnt = null;
 	private static PreparedStatement symbolDateIDQuery = null;
@@ -50,78 +65,97 @@ public class DB {
 	private static PreparedStatement checkHistoryExists = null;
 	private static PreparedStatement stockIds = null;
 	private static PreparedStatement dBullStmnt = null;
-	private static PreparedStatement queryPYStmnt  = null;
+	private static PreparedStatement queryPYStmnt = null;
 	private static PreparedStatement updateBPYStmnt = null;
 	private static PreparedStatement stocks = null;
+	private static PreparedStatement tealSumStmnt = null;
+	private static PreparedStatement dailyPriceStmnt = null;
+	private static PreparedStatement stockIDStmnt = null;
+	private static PreparedStatement startDateIdStmnt = null;
 
-	
 	public static void closeConnection() {
 		try {
-			if(stocks != null) {
+			if (startDateIdStmnt != null) {
+				startDateIdStmnt.close();
+				startDateIdStmnt = null;
+			}
+			if (stockIDStmnt != null) {
+				stockIDStmnt.close();
+				stockIDStmnt = null;
+			}
+			if (dailyPriceStmnt != null) {
+				dailyPriceStmnt.close();
+				dailyPriceStmnt = null;
+			}
+			if (tealSumStmnt != null) {
+				tealSumStmnt.close();
+				tealSumStmnt = null;
+			}
+			if (stocks != null) {
 				stocks.close();
 				stocks = null;
 			}
-			if( updateBPYStmnt != null) {
+			if (updateBPYStmnt != null) {
 				updateBPYStmnt.close();
 				updateBPYStmnt = null;
 			}
-			if( queryPYStmnt != null) {
+			if (queryPYStmnt != null) {
 				queryPYStmnt.close();
 				queryPYStmnt = null;
 			}
-			if( stockIds != null) {
+			if (stockIds != null) {
 				stockIds.close();
 				stockIds = null;
 			}
-			if( dBullStmnt != null) {
+			if (dBullStmnt != null) {
 				dBullStmnt.close();
 				dBullStmnt = null;
 			}
-			if( checkHistoryExists != null) {
+			if (checkHistoryExists != null) {
 				checkHistoryExists.close();
 				checkHistoryExists = null;
 			}
-			if(SYPTUpdate != null) {
+			if (SYPTUpdate != null) {
 				SYPTUpdate.close();
 				SYPTUpdate = null;
 			}
-			if(SYPTStmnt != null) {
+			if (SYPTStmnt != null) {
 				SYPTStmnt.close();
 				SYPTStmnt = null;
 			}
-			if(cx520Stmnt != null) {
+			if (cx520Stmnt != null) {
 				cx520Stmnt.close();
 				cx520Stmnt = null;
 			}
-			if(lastCloseStmnt != null) {
+			if (lastCloseStmnt != null) {
 				lastCloseStmnt.close();
 				lastCloseStmnt = null;
 			}
-			if( closePriceStmnt  != null) {
+			if (closePriceStmnt != null) {
 				closePriceStmnt.close();
-				closePriceStmnt  = null;
+				closePriceStmnt = null;
 			}
-			if(update520CXStmnt !=null) {
+			if (update520CXStmnt != null) {
 				update520CXStmnt.close();
 				update520CXStmnt = null;
 			}
-			if(update520CXRange !=null) {
+			if (update520CXRange != null) {
 				update520CXRange.close();
 				update520CXRange = null;
 			}
-			if(yp10SumUpdateStmnt != null) {
+			if (yp10SumUpdateStmnt != null) {
 				yp10SumUpdateStmnt.close();
 				yp10SumUpdateStmnt = null;
 			}
-			if(yp10SumCalStmnt != null) {
+			if (yp10SumCalStmnt != null) {
 				yp10SumCalStmnt.close();
 				yp10SumCalStmnt = null;
 			}
-			if(typSumbyStockIDStmnt != null) {
+			if (typSumbyStockIDStmnt != null) {
 				typSumbyStockIDStmnt.close();
 				typSumbyStockIDStmnt = null;
 			}
-			if(queryStockIDStmnt != null) {
+			if (queryStockIDStmnt != null) {
 				queryStockIDStmnt.close();
 				queryStockIDStmnt = null;
 			}
@@ -183,7 +217,6 @@ public class DB {
 		}
 	}
 
-	
 	public static Connection getConnection() {
 
 		try {
@@ -199,100 +232,165 @@ public class DB {
 		return dbcon;
 	}
 
-	//SYPTStmnt
+	// SYPTStmnt
 	public static PreparedStatement getAllStockIDs() {
-		if( stockIds == null) {
+		if (stockIds == null) {
 			try {
 				String query = "SELECT DISTINCT(STOCKID) FROM  BBROCK WHERE STOCKID>=?";
-				stockIds  = getConnection().prepareStatement(query);
-			}catch(Exception ex) {
+				stockIds = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
 			}
-			
+
 		}
-		
-		return stockIds ;
+
+		return stockIds;
 	}
-	
-	
+
 	public static PreparedStatement getAllStocks() {
-		if( stocks == null) {
+		if (stocks == null) {
 			try {
 				String query = "SELECT SYMBOL FROM  SYMBOLS WHERE STOCKID>= ?";
-				stocks  = getConnection().prepareStatement(query);
-			}catch(Exception ex) {
+				stocks = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
 			}
-			
+
 		}
-		
-		return stocks ;
+
+		return stocks;
 	}
-	
-	
-	public static PreparedStatement getDBulls() {
-		if( dBullStmnt == null) {
+
+	public static int getStartDateId(int stockId) {
+		int startDateId = 0;
+		try {
+			getStartDateIdStmnt();
+			startDateIdStmnt.setInt(1, stockId);
+			ResultSet rs = startDateIdStmnt.executeQuery();
+			if (rs.next()) {
+				startDateId = rs.getInt(1);
+			}
+		} catch (Exception ex) {
+
+		}
+		return startDateId;
+
+	}
+
+	// startDateIdStmnt
+	public static PreparedStatement getStartDateIdStmnt() {
+		if (startDateIdStmnt == null) {
 			try {
-				//String query = "select a.DATEID,a.STOCKID, CDATE, PASS,APAS,b.SYMBOL, CLOSE, MARKCAP FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and ((PASS>=1 and APAS>=1) OR  a.DATEID =?) AND a.STOCKID= ? AND a.DATEID>=8454 ORDER BY a.DATEID ASC";
-				String query = "select a.DATEID,a.STOCKID, CDATE, PASS,APAS,b.SYMBOL, CLOSE, MARKCAP FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID AND a.STOCKID= ? AND a.DATEID>=8454 ORDER BY a.DATEID ASC";
-				//String query = "select a.DATEID,a.STOCKID, CDATE, PASS,APAS,b.SYMBOL, CLOSE, MARKCAP FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID AND a.STOCKID= ? AND a.DATEID>=1 ORDER BY a.DATEID ASC";
-				
-				dBullStmnt  = getConnection().prepareStatement(query);
-			}catch(Exception ex) {
+				String query = "select  DATEID from BBROCK WHERE STOCKID=? ORDER BY DATEID ASC limit 1";
+
+				startDateIdStmnt = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
 			}
-			
+
 		}
-		
-		return dBullStmnt ;
+
+		return startDateIdStmnt;
 	}
-	
-	//SYPTStmnt
+
+	public static PreparedStatement getDailyPrice() {
+		if (dailyPriceStmnt == null) {
+			try {
+				String query = "select CLOSE, DATEID from BBROCK WHERE STOCKID=? and DATEID>=? and DATEID<=? ORDER BY DATEID ASC";
+
+				dailyPriceStmnt = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return dailyPriceStmnt;
+	}
+
+	public static PreparedStatement getSumTeal() {
+		if (tealSumStmnt == null) {
+			try {
+				String query = "select SUM(TEAL), SUM(PINK), SUM(YELLOW) from BBROCK WHERE STOCKID=? and DATEID>=? and DATEID<=?";
+
+				tealSumStmnt = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return tealSumStmnt;
+	}
+
+	public static PreparedStatement getDBulls() {
+		if (dBullStmnt == null) {
+			try {
+				// String query = "select a.DATEID,a.STOCKID, CDATE, PASS,APAS,b.SYMBOL, CLOSE,
+				// MARKCAP FROM BBROCK a, SYMBOLS b,DATES c WHERE a.STOCKID = b.STOCKID and
+				// a.DATEID=c.DATEID and ((PASS>=1 and APAS>=1) OR a.DATEID =?) AND a.STOCKID= ?
+				// AND a.DATEID>=8454 ORDER BY a.DATEID ASC";
+				String query = "select a.DATEID,a.STOCKID, CDATE, PASS,APAS,b.SYMBOL, CLOSE, MARKCAP FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID AND a.STOCKID= ? AND a.DATEID>=8454 ORDER BY a.DATEID ASC";
+				// String query = "select a.DATEID,a.STOCKID, CDATE, PASS,APAS,b.SYMBOL, CLOSE,
+				// MARKCAP FROM BBROCK a, SYMBOLS b,DATES c WHERE a.STOCKID = b.STOCKID and
+				// a.DATEID=c.DATEID AND a.STOCKID= ? AND a.DATEID>=1 ORDER BY a.DATEID ASC";
+
+				dBullStmnt = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return dBullStmnt;
+	}
+
+	// SYPTStmnt
 	public static PreparedStatement getSYPTStmnt() {
-		if( SYPTStmnt == null) {
+		if (SYPTStmnt == null) {
 			try {
 				String query = "SELECT SUM(TEAL),SUM(YELLOW),SUM(PINK) FROM  BBROCK  WHERE DATEID = ?";
 				SYPTStmnt = getConnection().prepareStatement(query);
-			}catch(Exception ex) {
+			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
 			}
-			
+
 		}
-		
+
 		return SYPTStmnt;
 	}
-	
-	//select COUNT(*) FROM BBROCK WHERE DATEID=8900;
-	//checkHistoryExists
+
+	// select COUNT(*) FROM BBROCK WHERE DATEID=8900;
+	// checkHistoryExists
 	public static PreparedStatement checkHistoryExists() {
-		if( checkHistoryExists == null) {
+		if (checkHistoryExists == null) {
 			try {
 				String query = "select COUNT(*) FROM BBROCK WHERE DATEID=8900 and STOCKID = ?";
 				checkHistoryExists = getConnection().prepareStatement(query);
-			}catch(Exception ex) {
+			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
 			}
-			
+
 		}
-		
+
 		return checkHistoryExists;
 	}
-	
-	//SYPTUpdate
+
+	// SYPTUpdate
 	public static PreparedStatement getSYPTUpdate() {
-		if( SYPTUpdate == null) {
+		if (SYPTUpdate == null) {
 			try {
 				String query = "UPDATE BBROCK SET SYPT = ? WHERE STOCKID = 1 AND DATEID = ?";
 				SYPTUpdate = getConnection().prepareStatement(query);
-			}catch(Exception ex) {
+			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
 			}
-			
+
 		}
-		
+
 		return SYPTUpdate;
 	}
-	
+
 	public static Statement getStatement() {
 		getConnection();
 		try {
@@ -402,6 +500,58 @@ public class DB {
 	}
 
 	// SELECT our_date FROM our_table WHERE idate >= '1997-05-05';
+	public static int getParallelStock(int dateID, int stockID) {
+		int stockId = 0;
+		try {
+			getStockIDsStmnt();
+			stockIDStmnt.setInt(1, dateID);
+			
+			ResultSet rs = stockIDStmnt.executeQuery();
+
+			int[] stocks = new int[7000];
+			int count = 0;
+			while(rs.next()) {
+				stocks[count] = rs.getInt(1);
+				count++;
+			}
+			
+	        double a1 = Math.random();
+			
+			int stockIdRandom = (int) (10000 * a1);
+			
+			while(count>1 && (stockId<1 ||stockId == stockID)) {
+			   stockId = stocks[stockIdRandom%count];
+			   System.out.println("Generate stockId "+stockId+" for "+stockID);
+			   a1 = Math.random();
+			   stockIdRandom = (int) (10000 * a1);
+			}
+			
+			rs.close();
+		} catch (SQLException e) {
+			e.printStackTrace(System.out);
+		}
+
+		return stockId;
+	}
+
+	public static PreparedStatement getStockIDsStmnt() {
+		getConnection();
+
+		if (stockIDStmnt == null) {
+			try {
+
+				String query = "SELECT STOCKID FROM BBROCK  WHERE  DATEID =? ";
+
+				stockIDStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return stockIDStmnt;
+	}
+	
+	// SELECT our_date FROM our_table WHERE idate >= '1997-05-05';
 	public static boolean checkDateExist(String date) {
 		boolean exist = true;
 		getStatement();
@@ -442,6 +592,8 @@ public class DB {
 		return exist;
 	}
 
+	
+
 	public static boolean checkBBRecordExist(int stockID, int dateID) {
 		boolean exist = true;
 		getStatement();
@@ -465,43 +617,43 @@ public class DB {
 	public static PreparedStatement get520CXRangeUpdate() {
 		getConnection();
 
-		if (update520CXRange  == null) {
+		if (update520CXRange == null) {
 			try {
 
 				String query = "UPDATE BBROCK SET CX520 = ? WHERE STOCKID = ? AND DATEID >=? ";
 
-				update520CXRange   = dbcon.prepareStatement(query);
+				update520CXRange = dbcon.prepareStatement(query);
 			} catch (SQLException e) {
 				e.printStackTrace(System.out);
 			}
 		}
 
-		return update520CXRange ;
+		return update520CXRange;
 	}
-	
-	//update520CXStmnt 
+
+	// update520CXStmnt
 	public static PreparedStatement get520CXUpdateStmnt() {
 		getConnection();
 
-		if (update520CXStmnt  == null) {
+		if (update520CXStmnt == null) {
 			try {
 
 				String query = "UPDATE BBROCK SET CX520 = ? WHERE STOCKID = ? AND DATEID =? ";
 
-				update520CXStmnt  = dbcon.prepareStatement(query);
+				update520CXStmnt = dbcon.prepareStatement(query);
 			} catch (SQLException e) {
 				e.printStackTrace(System.out);
 			}
 		}
 
-		return update520CXStmnt ;
+		return update520CXStmnt;
 	}
 
-	//getClosePrice
+	// getClosePrice
 	public static PreparedStatement getClosePriceStmnt() {
 		getConnection();
 
-		if (closePriceStmnt  == null) {
+		if (closePriceStmnt == null) {
 			try {
 
 				String query = "SELECT CLOSE FROM BBROCK  WHERE STOCKID = ? AND DATEID =? ";
@@ -512,13 +664,13 @@ public class DB {
 			}
 		}
 
-		return closePriceStmnt ;
+		return closePriceStmnt;
 	}
-	
+
 	public static PreparedStatement getCX520Stmnt() {
 		getConnection();
 
-		if (cx520Stmnt  == null) {
+		if (cx520Stmnt == null) {
 			try {
 
 				String query = "SELECT CX520 FROM BBROCK  WHERE STOCKID = ? AND DATEID =? ";
@@ -529,14 +681,13 @@ public class DB {
 			}
 		}
 
-		return cx520Stmnt ;
+		return cx520Stmnt;
 	}
-	
-	
+
 	public static PreparedStatement getLastCloseStmnt() {
 		getConnection();
 
-		if (lastCloseStmnt  == null) {
+		if (lastCloseStmnt == null) {
 			try {
 
 				String query = "SELECT CLOSE FROM BBROCK  WHERE STOCKID = ? ORDER BY DATEID DESC LIMIT 1 ";
@@ -547,9 +698,9 @@ public class DB {
 			}
 		}
 
-		return lastCloseStmnt ;
+		return lastCloseStmnt;
 	}
-	
+
 	// scUpdateStmnt
 	public static PreparedStatement getSCUpdateStmnt() {
 		getConnection();
@@ -568,14 +719,13 @@ public class DB {
 		return scUpdateStmnt;
 	}
 
-	//queryStockIDStmnt
+	// queryStockIDStmnt
 	public static PreparedStatement getStockIDQueryStmnt() {
 		getConnection();
 
 		if (queryStockIDStmnt == null) {
 			try {
 
-			
 				String query = "SELECT STOCKID FROM BBROCK WHERE  DATEID =? ORDER BY STOCKID ASC";
 				queryStockIDStmnt = dbcon.prepareStatement(query);
 			} catch (SQLException e) {
@@ -586,28 +736,27 @@ public class DB {
 		return queryStockIDStmnt;
 	}
 
-	//updateBPYStmnt = null;
-		public static PreparedStatement getUpdateBPYStmnt() {
-			getConnection();
+	// updateBPYStmnt = null;
+	public static PreparedStatement getUpdateBPYStmnt() {
+		getConnection();
 
-			if (updateBPYStmnt == null) {
-				try {
+		if (updateBPYStmnt == null) {
+			try {
 
-					// select SUM(TEAL), SUM(YELLOW), SUM(PINK) FROM BBROCK a, SYMBOLS b WHERE
-					// a.STOCKID = b.STOCKID and b.SYMBOL = ? AND DATEID>=? AND DATEID<=?;
+				// select SUM(TEAL), SUM(YELLOW), SUM(PINK) FROM BBROCK a, SYMBOLS b WHERE
+				// a.STOCKID = b.STOCKID and b.SYMBOL = ? AND DATEID>=? AND DATEID<=?;
 
-					String query = "UPDATE BBROCK SET BPY = ? WHERE STOCKID =  ? AND DATEID =?";
-					updateBPYStmnt = dbcon.prepareStatement(query);
-				} catch (SQLException e) {
-					e.printStackTrace(System.out);
-				}
+				String query = "UPDATE BBROCK SET BPY = ? WHERE STOCKID =  ? AND DATEID =?";
+				updateBPYStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
 			}
-
-			return updateBPYStmnt;
 		}
 
-		
-	//updateT9Stmnt = null;
+		return updateBPYStmnt;
+	}
+
+	// updateT9Stmnt = null;
 	public static PreparedStatement getUpdateT9Stmnt() {
 		getConnection();
 
@@ -628,24 +777,22 @@ public class DB {
 	}
 
 	// queryPYStmnt
-		public static PreparedStatement getPYQueryStmnt() {
-			getConnection();
+	public static PreparedStatement getPYQueryStmnt() {
+		getConnection();
 
-			if (queryPYStmnt == null) {
-				try {
+		if (queryPYStmnt == null) {
+			try {
 
-					
-					String query = "select PINK,YELLOW, DATEID, BPY FROM BBROCK WHERE STOCKID = ? AND DATEID>=?  ORDER BY DATEID ASC";
-					queryPYStmnt  = dbcon.prepareStatement(query);
-				} catch (SQLException e) {
-					e.printStackTrace(System.out);
-				}
+				String query = "select PINK,YELLOW, DATEID, BPY FROM BBROCK WHERE STOCKID = ? AND DATEID>=?  ORDER BY DATEID ASC";
+				queryPYStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
 			}
-
-			return queryPYStmnt ;
 		}
 
-		
+		return queryPYStmnt;
+	}
+
 	// queryTealStmnt
 	public static PreparedStatement getTealQueryStmnt() {
 		getConnection();
@@ -666,7 +813,6 @@ public class DB {
 		return queryTealStmnt;
 	}
 
-	
 	public static PreparedStatement getTYPDSumByStockIDStmnt() {
 		getConnection();
 
@@ -678,17 +824,16 @@ public class DB {
 
 				String query = "select SUM(TEAL), SUM(YELLOW), SUM(PINK) FROM BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=?";
 
-				typSumbyStockIDStmnt  = dbcon.prepareStatement(query);
+				typSumbyStockIDStmnt = dbcon.prepareStatement(query);
 			} catch (SQLException e) {
 				e.printStackTrace(System.out);
 			}
 		}
 
-		return typSumbyStockIDStmnt ;
+		return typSumbyStockIDStmnt;
 	}
 
-	
-	//yp10SumUpdateStmnt
+	// yp10SumUpdateStmnt
 	public static PreparedStatement getYP10SumUpdateStmnt() {
 		getConnection();
 
@@ -708,9 +853,8 @@ public class DB {
 
 		return yp10SumUpdateStmnt;
 	}
-	
-	
-	//yp10SumCalStmnt
+
+	// yp10SumCalStmnt
 	public static PreparedStatement getYP10SumCalStmnt() {
 		getConnection();
 
@@ -730,7 +874,7 @@ public class DB {
 
 		return yp10SumCalStmnt;
 	}
-	
+
 	// typSumQueryStmnt
 	public static PreparedStatement getTYPDSumQueryStmnt() {
 		getConnection();
@@ -801,8 +945,6 @@ public class DB {
 		return backTestYellowUpdateStmnt;
 	}
 
-	
-	
 	public static PreparedStatement getBackTestPinkUpdateStmnt() {
 		getConnection();
 
@@ -898,19 +1040,19 @@ public class DB {
 
 		// $$$$$$$$ SQL
 		/*
-		 *  CREATE TABLE BBROCK(STOCKID SMALLINT, DATEID SMALLINT, PERCENT
-		 * FLOAT DEFAULT 0.0, CLOSE FLOAT DEFAULT 0.0,NETCHANGE FLOAT DEFAULT 0.0, ATR
-		 * FLOAT DEFAULT 0.0, OPEN FLOAT DEFAULT 0.0,HIGH FLOAT DEFAULT 0.0, LOW FLOAT
-		 * DEFAULT 0.0,LOW52 FLOAT DEFAULT 0.0,HIGH52 FLOAT DEFAULT 0.0, MARKCAP FLOAT
-		 * DEFAULT 0.0,VOLUME INT DEFAULT 0, YELLOW TINYINT DEFAULT 0,TEAL TINYINT
-		 * DEFAULT 0, PINK TINYINT DEFAULT 0, SC5 SMALLINT DEFAULT 0, SC10C SMALLINT
-		 * DEFAULT 0, SC15 SMALLINT DEFAULT 0, TSC INT DEFAULT 0,BT9 SMALLINT DEFAULT 0,
-		 * PTVAL FLOAT DEFAULT 0.0, PTCP FLOAT DEFAULT 0.0, PASS TINYINT DEFAULT 0,
-		 * PRIMARY KEY (STOCKID, DATEID), FOREIGN KEY (STOCKID) REFERENCES
-		 * SYMBOLS(STOCKID) ON DELETE CASCADE, FOREIGN KEY (DATEID) REFERENCES
-		 * DATES(DATEID)); //select a.DATEID,CDATE, a.STOCKID, CLOSE, ATR,TEAL, YELLOW,
-		 * PINK, BTC,BYC,BPC,BTS,BYS,BPS,BBS,PTVAL, PTCP,BT9, MERGE, MARKCAP, VOLUME
-		 * FROM BBROCK a, SYMBOLS b, DATES c WHERE a.STOCKID = b.STOCKID and
+		 * CREATE TABLE BBROCK(STOCKID SMALLINT, DATEID SMALLINT, PERCENT FLOAT DEFAULT
+		 * 0.0, CLOSE FLOAT DEFAULT 0.0,NETCHANGE FLOAT DEFAULT 0.0, ATR FLOAT DEFAULT
+		 * 0.0, OPEN FLOAT DEFAULT 0.0,HIGH FLOAT DEFAULT 0.0, LOW FLOAT DEFAULT
+		 * 0.0,LOW52 FLOAT DEFAULT 0.0,HIGH52 FLOAT DEFAULT 0.0, MARKCAP FLOAT DEFAULT
+		 * 0.0,VOLUME INT DEFAULT 0, YELLOW TINYINT DEFAULT 0,TEAL TINYINT DEFAULT 0,
+		 * PINK TINYINT DEFAULT 0, SC5 SMALLINT DEFAULT 0, SC10C SMALLINT DEFAULT 0,
+		 * SC15 SMALLINT DEFAULT 0, TSC INT DEFAULT 0,BT9 SMALLINT DEFAULT 0, PTVAL
+		 * FLOAT DEFAULT 0.0, PTCP FLOAT DEFAULT 0.0, PASS TINYINT DEFAULT 0, PRIMARY
+		 * KEY (STOCKID, DATEID), FOREIGN KEY (STOCKID) REFERENCES SYMBOLS(STOCKID) ON
+		 * DELETE CASCADE, FOREIGN KEY (DATEID) REFERENCES DATES(DATEID)); //select
+		 * a.DATEID,CDATE, a.STOCKID, CLOSE, ATR,TEAL, YELLOW, PINK,
+		 * BTC,BYC,BPC,BTS,BYS,BPS,BBS,PTVAL, PTCP,BT9, MERGE, MARKCAP, VOLUME FROM
+		 * BBROCK a, SYMBOLS b, DATES c WHERE a.STOCKID = b.STOCKID and
 		 * a.DATEID=c.DATEID and b.SYMBOL='LYG';
 		 */
 		// $$$$$$$$$ SQL
