@@ -10,8 +10,19 @@ public class SlowBull {
 	// within 24 days, 21 Teals at least, slow bull evaluation //failed
 	// but make it variables
 	// 30 days, 4 failed max, >=26 teals, twice, the next higher
-	private static int eDays = 30;
-	private static int tDays = 30;
+	//30/30 seems good choiceS
+	//----------------
+	//eDay=40, tDays = 36 results
+	//6368 stocks have been processed, time cost in minutes... 466
+	//Average peak yield 29.46227
+	//Average trough yield -16.858486
+	//Success rate 371/2538
+	//Average peak random yield 32.134335
+	//Average trough random yield -20.745579
+	//Success random rate 417/2538
+	//-------------
+	private static int eDays = 40;
+	private static int tDays = 36;
 	private static int startDateID = 1;
 	private static int daysForHold = 250; // 3 months
 	private static int totalSC = 0;
@@ -69,7 +80,8 @@ public class SlowBull {
 						int sumTeal = rs2.getInt(1);
 						int pink = rs2.getInt(2);
 						int yellow = rs2.getInt(3);
-						if (sumTeal >= tDays) {
+						//if (sumTeal >= tDays) {
+						if ((pink+yellow) >= tDays) {
 							// evaluate price action
 							found = true;
 							k = daysForHold + k + eDays;

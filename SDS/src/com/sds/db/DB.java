@@ -36,7 +36,16 @@ public class DB {
 	// ALTER TABLE BBROCK ADD COLUMN BPY SMALLINT DEFAULT 0;
 	// SYPT INT DEFAULT 0, FOREIGN KEY (STOCKID) REFERENCES SYMBOLS(STOCKID) ON
 	// DELETE CASCADE, FOREIGN KEY (DATEID) REFERENCES DATES(DATEID));
-
+	/* ALTER TABLE BBROCK ADD COLUMN TSM SMALLINT DEFAULT 0;
+	ALTER TABLE BBROCK ADD COLUMN TOM TINYINT DEFAULT 0;
+	ALTER TABLE BBROCK ADD COLUMN PSM SMALLINT DEFAULT 0;
+	ALTER TABLE BBROCK ADD COLUMN POM TINYINT DEFAULT 0;
+	ALTER TABLE BBROCK ADD COLUMN YSM SMALLINT DEFAULT 0;
+	ALTER TABLE BBROCK ADD COLUMN YOM TINYINT DEFAULT 0;
+	ALTER TABLE BBROCK ADD COLUMN NSM SMALLINT DEFAULT 0;
+	ALTER TABLE BBROCK ADD COLUMN NOM TINYINT DEFAULT 0;
+	ALTER TABLE BBROCK ADD COLUMN DSM SMALLINT DEFAULT 0;
+*/
 	private static Connection dbcon = null;
 	private static PreparedStatement symbolStmnt = null;
 	private static PreparedStatement symbolDateIDQuery = null;
@@ -72,9 +81,29 @@ public class DB {
 	private static PreparedStatement dailyPriceStmnt = null;
 	private static PreparedStatement stockIDStmnt = null;
 	private static PreparedStatement startDateIdStmnt = null;
-
+	private static PreparedStatement colorSumUpdateStmnt = null;
+	private static PreparedStatement colorOMUpdateStmnt = null;
+	private static PreparedStatement colorSumStmnt = null;
+	private static PreparedStatement noColorSumStmnt = null;
+	
 	public static void closeConnection() {
 		try {
+			if( noColorSumStmnt != null) {
+				noColorSumStmnt.close();
+				noColorSumStmnt = null;
+			}
+			if( colorSumStmnt != null) {
+				colorSumStmnt.close();
+				colorSumStmnt = null;
+			}
+			if( colorOMUpdateStmnt != null) {
+				colorOMUpdateStmnt.close();
+				colorOMUpdateStmnt = null;
+			}
+			if(colorSumUpdateStmnt != null) {
+				colorSumUpdateStmnt.close();
+				colorSumUpdateStmnt = null;
+			}
 			if (startDateIdStmnt != null) {
 				startDateIdStmnt.close();
 				startDateIdStmnt = null;
@@ -736,6 +765,83 @@ public class DB {
 		return queryStockIDStmnt;
 	}
 
+	
+	public static PreparedStatement getUpdateColorSumStmnt() {
+		getConnection();
+
+		if (colorSumUpdateStmnt == null) {
+			try {
+
+				// select SUM(TEAL), SUM(YELLOW), SUM(PINK) FROM BBROCK a, SYMBOLS b WHERE
+				// a.STOCKID = b.STOCKID and b.SYMBOL = ? AND DATEID>=? AND DATEID<=?;
+
+				String query = "UPDATE BBROCK SET TSM = ?, NSM = ?, YSM = ?, PSM = ?, DSM = ?  WHERE STOCKID =  ? AND DATEID =?";
+				colorSumUpdateStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return colorSumUpdateStmnt;
+	}
+	
+	public static PreparedStatement getNoColorSumStmnt() {
+		getConnection();
+
+		if (noColorSumStmnt == null) {
+			try {
+
+				// select SUM(TEAL), SUM(YELLOW), SUM(PINK) FROM BBROCK a, SYMBOLS b WHERE
+				// a.STOCKID = b.STOCKID and b.SYMBOL = ? AND DATEID>=? AND DATEID<=?;
+
+				String query = "SELECT COUNT(*) FROM BBROCK  WHERE STOCKID =  ? AND DATEID>=? AND DATEID <=? AND TEAL=0 AND YELLOW=0 AND PINK=0";
+				noColorSumStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return noColorSumStmnt;
+	}
+
+	public static PreparedStatement getColorSumStmnt() {
+		getConnection();
+
+		if (colorSumStmnt == null) {
+			try {
+
+				// select SUM(TEAL), SUM(YELLOW), SUM(PINK) FROM BBROCK a, SYMBOLS b WHERE
+				// a.STOCKID = b.STOCKID and b.SYMBOL = ? AND DATEID>=? AND DATEID<=?;
+
+				String query = "SELECT SUM(TEAL), SUM(YELLOW), SUM(PINK), COUNT(*) FROM BBROCK  WHERE STOCKID =  ? AND DATEID>=? AND DATEID <=?";
+				colorSumStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return colorSumStmnt;
+	}
+	
+	public static PreparedStatement getOMColorUpdateStmnt() {
+		getConnection();
+
+		if (colorOMUpdateStmnt == null) {
+			try {
+
+				// select SUM(TEAL), SUM(YELLOW), SUM(PINK) FROM BBROCK a, SYMBOLS b WHERE
+				// a.STOCKID = b.STOCKID and b.SYMBOL = ? AND DATEID>=? AND DATEID<=?;
+
+				String query = "UPDATE BBROCK SET TOM = ?, NOM = ?, YOM = ?, POM = ?  WHERE STOCKID =  ? AND DATEID =?";
+				colorOMUpdateStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return colorOMUpdateStmnt;
+	}
+	
 	// updateBPYStmnt = null;
 	public static PreparedStatement getUpdateBPYStmnt() {
 		getConnection();
