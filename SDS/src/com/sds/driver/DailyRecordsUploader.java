@@ -81,6 +81,11 @@ public class DailyRecordsUploader {
 				//need to optimize the following calls not to do entire history
 				// DONE 6/5/2020
 				TwoBullPattern.updatePTCP2History("", stockID,true);
+				
+				//color summary and ranking
+				ColorSummary.updateColorSummary(stockID, dateID);
+				ColorSummary.updateOMColorSummary(stockID, dateID);
+				ColorSummary.updateColorRanking(stockID, dateID);
 			}
 			
 			//calculate all the sum of teal, yellow and pink of that day
@@ -99,7 +104,7 @@ public class DailyRecordsUploader {
 		// TODO Auto-generated method stub
 		String path = "/home/joma/share/test/";
 		boolean currentDateProcessOnly = true;
-		String cDate = "2020-07-24";
+		String cDate = "2020-07-28";
 		int dateCountToBeProcessed = 1;
 		int loopCount = 0;
 		long t1 = System.currentTimeMillis();

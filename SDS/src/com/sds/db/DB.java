@@ -45,6 +45,9 @@ public class DB {
 	ALTER TABLE BBROCK ADD COLUMN NSM SMALLINT DEFAULT 0;
 	ALTER TABLE BBROCK ADD COLUMN NOM TINYINT DEFAULT 0;
 	ALTER TABLE BBROCK ADD COLUMN DSM SMALLINT DEFAULT 0;
+	ALTER TABLE BBROCK ADD COLUMN MOR FLOAT DEFAULT 0.0;
+    ALTER TABLE BBROCK ADD COLUMN YOR FLOAT DEFAULT 0.0;
+    ALTER TABLE BBROCK ADD COLUMN TRK FLOAT DEFAULT 0.0;
 */
 	private static Connection dbcon = null;
 	private static PreparedStatement symbolStmnt = null;
@@ -85,9 +88,19 @@ public class DB {
 	private static PreparedStatement colorOMUpdateStmnt = null;
 	private static PreparedStatement colorSumStmnt = null;
 	private static PreparedStatement noColorSumStmnt = null;
+	private static PreparedStatement colorRankingUpdateStmnt = null;
+	private static PreparedStatement colorCalSumStmnt = null;
 	
 	public static void closeConnection() {
 		try {
+			if(colorCalSumStmnt != null) {
+				colorCalSumStmnt.close();
+				colorCalSumStmnt = null;
+			}
+			if(colorRankingUpdateStmnt != null) {
+				colorRankingUpdateStmnt.close();
+				colorRankingUpdateStmnt = null;
+			}
 			if( noColorSumStmnt != null) {
 				noColorSumStmnt.close();
 				noColorSumStmnt = null;
@@ -550,7 +563,7 @@ public class DB {
 			
 			while(count>1 && (stockId<1 ||stockId == stockID)) {
 			   stockId = stocks[stockIdRandom%count];
-			   System.out.println("Generate stockId "+stockId+" for "+stockID);
+			 //  System.out.println("Generate stockId "+stockId+" for "+stockID);
 			   a1 = Math.random();
 			   stockIdRandom = (int) (10000 * a1);
 			}
@@ -678,6 +691,26 @@ public class DB {
 		return update520CXStmnt;
 	}
 
+	
+	//select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, CLOSE, MOR, YOR, TRK,(MOR+YOR+TRK) as TTR, PASS, APAS, BT9,TSM,YSM,PSM,DSM FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and a.STOCKID=509  order by a.DATEID DeSC limit 550;
+	public static PreparedStatement checkRankPriceStmnt() {
+		getConnection();
+
+		if (closePriceStmnt == null) {
+			try {
+
+				String query = "select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, CLOSE, MOR, YOR, TRK,(MOR+YOR+TRK) as TTR, PASS, APAS, BT9,TSM,YSM,PSM,DSM FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and a.STOCKID=?  and  a.DATEID >= ? and a.DATEID <= ? ";
+
+				closePriceStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return closePriceStmnt;
+	}
+	
+	
 	// getClosePrice
 	public static PreparedStatement getClosePriceStmnt() {
 		getConnection();
@@ -804,6 +837,45 @@ public class DB {
 		return noColorSumStmnt;
 	}
 
+	
+	public static PreparedStatement getColorCalSumStmnt() {
+		getConnection();
+
+		if (colorCalSumStmnt == null) {
+			try {
+
+				// select SUM(TEAL), SUM(YELLOW), SUM(PINK) FROM BBROCK a, SYMBOLS b WHERE
+				// a.STOCKID = b.STOCKID and b.SYMBOL = ? AND DATEID>=? AND DATEID<=?;
+
+				String query = "SELECT TSM, YSM, PSM, DSM, TOM, POM,YOM FROM BBROCK  WHERE STOCKID =  ? AND DATEID =?";
+				colorCalSumStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return colorCalSumStmnt;
+	}
+	
+	public static PreparedStatement updateColorRankingStmnt() {
+		getConnection();
+
+		if (colorRankingUpdateStmnt == null) {
+			try {
+
+				// select SUM(TEAL), SUM(YELLOW), SUM(PINK) FROM BBROCK a, SYMBOLS b WHERE
+				// a.STOCKID = b.STOCKID and b.SYMBOL = ? AND DATEID>=? AND DATEID<=?;
+
+				String query = "UPDATE BBROCK SET MOR = ?, YOR = ?, TRK = ?  WHERE STOCKID =  ? AND DATEID =?";
+				colorRankingUpdateStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return colorRankingUpdateStmnt;
+	}
+	
 	public static PreparedStatement getColorSumStmnt() {
 		getConnection();
 
