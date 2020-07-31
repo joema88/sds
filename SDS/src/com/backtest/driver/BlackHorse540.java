@@ -5,7 +5,7 @@ import java.util.*;
 
 import com.sds.db.DB;
 
-public class ColorRankBlackHorse {
+public class BlackHorse540 {
 	// DATEID = 8455, count = 5203, 2018/7/18 starting point
 	// private static int startDateID = 8455;
 
@@ -48,7 +48,7 @@ public class ColorRankBlackHorse {
 			excludeStocks.put("4034", "4034");
 			excludeStocks.put("4702", "4702");
 			excludeStocks.put("3116", "3116");
-			excludeStocks.put("2631", "2631");//okay, 2631
+			excludeStocks.put("2631", "2631");// okay, 2631
 			excludeStocks.put("4691", "4691");
 			excludeStocks.put("4262", "4262");
 			excludeStocks.put("4264", "4264");
@@ -76,9 +76,8 @@ public class ColorRankBlackHorse {
 			excludeStocks.put("5881", "5881");
 			excludeStocks.put("5376", "5376");
 			excludeStocks.put("5488", "5488");
-			//add WIMI, 3775 all zero case to bull, to new to caluculate
-			
-			
+			// add WIMI, 3775 all zero case to bull, to new to caluculate
+
 			long t1 = System.currentTimeMillis();
 			PreparedStatement dailyPrice = DB.getDailyPrice();
 
@@ -92,7 +91,7 @@ public class ColorRankBlackHorse {
 			while (rs.next()) {
 				sc++;
 				int stockID = rs.getInt(1);
-				if (!excludeStocks.containsKey(""+stockID))
+				if (!excludeStocks.containsKey("" + stockID))
 					for (int k = startDateID; k <= 8964; k++) {
 						// check TRK+YOR+MOR<-0.5 continuously and within 40 days, close +50%
 						// logic: within a few days up, no TEAL, the stock still make big progress
@@ -109,7 +108,7 @@ public class ColorRankBlackHorse {
 						int lDateId = 0;
 						colorRankPriceCheckStmnt.setInt(1, stockID);
 						colorRankPriceCheckStmnt.setInt(2, k);
-						colorRankPriceCheckStmnt.setInt(3, k + 39);
+						colorRankPriceCheckStmnt.setInt(3, k + 19);
 
 						ResultSet rs1 = colorRankPriceCheckStmnt.executeQuery();
 						// select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, CLOSE, MOR, YOR,
@@ -126,18 +125,11 @@ public class ColorRankBlackHorse {
 							yor = rs1.getFloat(7);
 							trk = rs1.getFloat(8);
 							sumTYM = rs1.getFloat(9);
-							if (mor > 0.05) {
-								toleranceCount++;
-							}
-							if (yor > 0.05) {
-								toleranceCount++;
-							}
-							if (trk > 0.05) {
-								toleranceCount++;
-							}
-							if (sumTYM > -2.0 || toleranceCount >= 1) {
-								break;
-							}
+							/*
+							 * if (mor > 0.05) { toleranceCount++; } if (yor > 0.05) { toleranceCount++; }
+							 * if (trk > 0.05) { toleranceCount++; } if (sumTYM > -2.0 || toleranceCount >=
+							 * 1) { break; }
+							 */
 							if (hPrice < 0.0001f) {
 								hPrice = cPrice;
 								lPrice = cPrice;
@@ -177,13 +169,13 @@ public class ColorRankBlackHorse {
 			System.out.println(sc + " stocks have been processed, time cost in minutes... " + (t3 - t1) / (1000 * 60));
 			System.out.println("Average peak yield " + 100.0f * peakYield / totalCount);
 			System.out.println("Average trough yield " + 100.0f * troughYield / totalCount);
-			System.out.println("totalHC: "+totalHC+"  totalLC: "+totalLC);
-			
+			System.out.println("totalHC: " + totalHC + "  totalLC: " + totalLC);
+
 			System.out.println("Success rate " + totalSC + "/" + totalCount);
 			System.out.println("Average peak random yield " + 100.0f * peakYieldRandom / totalCountRandom);
 			System.out.println("Average trough random yield " + 100.0f * troughYieldRandom / totalCountRandom);
-			System.out.println("totalRandomHC: "+totalRandomHC+"  totalRandomLC: "+totalRandomLC);
-			
+			System.out.println("totalRandomHC: " + totalRandomHC + "  totalRandomLC: " + totalRandomLC);
+
 			System.out.println("Success random rate " + totalSCRandom + "/" + totalCountRandom);
 
 		} catch (Exception ex) {
@@ -206,6 +198,7 @@ public class ColorRankBlackHorse {
 			int maxDays = 0;
 
 			int count = 0;
+			boolean exist = false;
 			while (rs.next()) {
 				float price = rs.getFloat(1);
 				int dateId = rs.getInt(2);
@@ -218,54 +211,58 @@ public class ColorRankBlackHorse {
 				if (price > maxPrice) {
 					maxPrice = price;
 					maxDays = count;
+					exist = true;
 				}
 
 				if (price < minPrice) {
 					minPrice = price;
 					minDays = count;
+					exist = true;
 				}
 
 				count++;
 			}
 
-			float pYield = (maxPrice - startPrice) / startPrice;
-			float tYield = (minPrice - startPrice) / startPrice;
-			if (pYield > yieldQaulified1) {
-				totalHC++;
-				totalSC++;
-	          if(pYield>3.0f)
-					System.out.println("Find suspected high yield " + pYield + " for stock " + stockId);
-				if (debug)
-					System.out.println("Find up qualified yield " + pYield + " for stock " + stockId);
-			}
+			if (exist) {
+				float pYield = (maxPrice - startPrice) / startPrice;
+				float tYield = (minPrice - startPrice) / startPrice;
+				if (pYield > yieldQaulified1) {
+					totalHC++;
+					totalSC++;
+					if (pYield > 3.0f)
+						System.out.println("Find suspected high yield " + pYield + " for stock " + stockId);
+					if (debug)
+						System.out.println("Find up qualified yield " + pYield + " for stock " + stockId);
+				}
 
-			if (pYield < yieldQaulified2) {
-				totalSC++;
-				totalLC++;
-				 if(pYield<-0.8f)
+				if (pYield < yieldQaulified2) {
+					totalSC++;
+					totalLC++;
+					if (pYield < -0.8f)
 						System.out.println("Find suspected low yield " + pYield + " for stock " + stockId);
-				
-				if (debug)
-					System.out.println("Find down qualified yield " + pYield + " for stock " + stockId);
-			}
 
-			peakYield = peakYield + pYield;
-			troughYield = troughYield + tYield;
-			totalCount++;
-			if (debug) {
-				System.out.println("Average peak yield " + 100.0f * peakYield / totalCount);
-				System.out.println(
-						"TotalCount " + totalCount + " peakYield " + peakYield + " troughYield " + troughYield);
-				System.out.println("Average trough yield " + 100.0f * troughYield / totalCount);
-				System.out.println("Success rate " + totalSC + "/" + totalCount);
-			}
+					if (debug)
+						System.out.println("Find down qualified yield " + pYield + " for stock " + stockId);
+				}
 
-			int compareStockID = 0;
-			do {
-				compareStockID = DB.getParallelStock(dateID, stockId);
-			}while(excludeStocks.containsKey(""+compareStockID));
-			
-			checkRandomYield(dailyPrice, dateID, holdDays, compareStockID);
+				peakYield = peakYield + pYield;
+				troughYield = troughYield + tYield;
+				totalCount++;
+				if (debug) {
+					System.out.println("Average peak yield " + 100.0f * peakYield / totalCount);
+					System.out.println(
+							"TotalCount " + totalCount + " peakYield " + peakYield + " troughYield " + troughYield);
+					System.out.println("Average trough yield " + 100.0f * troughYield / totalCount);
+					System.out.println("Success rate " + totalSC + "/" + totalCount);
+				}
+
+				int compareStockID = 0;
+				do {
+					compareStockID = DB.getParallelStock(dateID, stockId);
+				} while (excludeStocks.containsKey("" + compareStockID));
+
+				checkRandomYield(dailyPrice, dateID, holdDays, compareStockID);
+			}
 
 		} catch (Exception ex) {
 
@@ -287,6 +284,8 @@ public class ColorRankBlackHorse {
 			int maxDays = 0;
 
 			int count = 0;
+			boolean exist = false;
+
 			while (rs.next()) {
 				float price = rs.getFloat(1);
 				int dateId = rs.getInt(2);
@@ -299,44 +298,47 @@ public class ColorRankBlackHorse {
 				if (price > maxPrice) {
 					maxPrice = price;
 					maxDays = count;
+					exist = true;
 				}
 
 				if (price < minPrice) {
 					minPrice = price;
 					minDays = count;
+					exist = true;
 				}
 
 				count++;
 			}
 
-			float pYield = (maxPrice - startPrice) / startPrice;
-			float tYield = (minPrice - startPrice) / startPrice;
-			if (pYield > yieldQaulified1) {
-				totalSCRandom++;
-				totalRandomHC++;
-				 if(pYield>3.0f)
+			if (exist) {
+				float pYield = (maxPrice - startPrice) / startPrice;
+				float tYield = (minPrice - startPrice) / startPrice;
+				if (pYield > yieldQaulified1) {
+					totalSCRandom++;
+					totalRandomHC++;
+					if (pYield > 3.0f)
 						System.out.println("Find suspected random high yield " + pYield + " for stock " + stockId);
-				
-			}
 
-			if (pYield < yieldQaulified2) {
-				totalSCRandom++;
-				totalRandomLC++;
-				 if(pYield<-0.8f)
+				}
+
+				if (pYield < yieldQaulified2) {
+					totalSCRandom++;
+					totalRandomLC++;
+					if (pYield < -0.8f)
 						System.out.println("Find suspected random low yield " + pYield + " for stock " + stockId);
 
+				}
+				peakYieldRandom = peakYieldRandom + pYield;
+				troughYieldRandom = troughYieldRandom + tYield;
+				totalCountRandom++;
+
+				if (debug) {
+					System.out.println("Average peak random yield " + 100.0f * peakYieldRandom / totalCountRandom);
+					System.out.println("Average trough random yield " + 100.0f * troughYieldRandom / totalCountRandom);
+
+					System.out.println("Success random rate " + totalSCRandom + "/" + totalCountRandom);
+				}
 			}
-			peakYieldRandom = peakYieldRandom + pYield;
-			troughYieldRandom = troughYieldRandom + tYield;
-			totalCountRandom++;
-
-			if (debug) {
-				System.out.println("Average peak random yield " + 100.0f * peakYieldRandom / totalCountRandom);
-				System.out.println("Average trough random yield " + 100.0f * troughYieldRandom / totalCountRandom);
-
-				System.out.println("Success random rate " + totalSCRandom + "/" + totalCountRandom);
-			}
-
 		} catch (Exception ex) {
 
 		}

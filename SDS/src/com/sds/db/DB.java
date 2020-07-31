@@ -90,6 +90,7 @@ public class DB {
 	private static PreparedStatement noColorSumStmnt = null;
 	private static PreparedStatement colorRankingUpdateStmnt = null;
 	private static PreparedStatement colorCalSumStmnt = null;
+	private static PreparedStatement colorRankSumStmnt = null;
 	
 	public static void closeConnection() {
 		try {
@@ -894,6 +895,24 @@ public class DB {
 
 		return colorSumStmnt;
 	}
+	
+	public static PreparedStatement getColorRankSumStmnt() {
+		getConnection();
+
+		if (colorRankSumStmnt == null) {
+			try {
+
+				
+				String query = "SELECT SUM(MOR), SUM(YOR), SUM(TRK), COUNT(*) FROM BBROCK  WHERE STOCKID =  ? AND DATEID>=? AND DATEID <=?";
+				colorRankSumStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return colorRankSumStmnt;
+	}
+	
 	
 	public static PreparedStatement getOMColorUpdateStmnt() {
 		getConnection();
