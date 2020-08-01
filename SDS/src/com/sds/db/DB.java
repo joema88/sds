@@ -36,18 +36,26 @@ public class DB {
 	// ALTER TABLE BBROCK ADD COLUMN BPY SMALLINT DEFAULT 0;
 	// SYPT INT DEFAULT 0, FOREIGN KEY (STOCKID) REFERENCES SYMBOLS(STOCKID) ON
 	// DELETE CASCADE, FOREIGN KEY (DATEID) REFERENCES DATES(DATEID));
-	/* ALTER TABLE BBROCK ADD COLUMN TSM SMALLINT DEFAULT 0;
-	ALTER TABLE BBROCK ADD COLUMN TOM TINYINT DEFAULT 0;
-	ALTER TABLE BBROCK ADD COLUMN PSM SMALLINT DEFAULT 0;
-	ALTER TABLE BBROCK ADD COLUMN POM TINYINT DEFAULT 0;
-	ALTER TABLE BBROCK ADD COLUMN YSM SMALLINT DEFAULT 0;
-	ALTER TABLE BBROCK ADD COLUMN YOM TINYINT DEFAULT 0;
-	ALTER TABLE BBROCK ADD COLUMN NSM SMALLINT DEFAULT 0;
-	ALTER TABLE BBROCK ADD COLUMN NOM TINYINT DEFAULT 0;
-	ALTER TABLE BBROCK ADD COLUMN DSM SMALLINT DEFAULT 0;
-	ALTER TABLE BBROCK ADD COLUMN MOR FLOAT DEFAULT 0.0;
-    ALTER TABLE BBROCK ADD COLUMN YOR FLOAT DEFAULT 0.0;
-    ALTER TABLE BBROCK ADD COLUMN TRK FLOAT DEFAULT 0.0;
+	/* ALTER TABLE BBROCK ADD COLUMN TSM SMALLINT DEFAULT 0; //Teal color total summary between two days
+	ALTER TABLE BBROCK ADD COLUMN TOM TINYINT DEFAULT 0;  //Teal color moving one month summary
+	ALTER TABLE BBROCK ADD COLUMN PSM SMALLINT DEFAULT 0; //Pink color total summary between two days
+	ALTER TABLE BBROCK ADD COLUMN POM TINYINT DEFAULT 0;  //Pink color moving one month summary
+	ALTER TABLE BBROCK ADD COLUMN YSM SMALLINT DEFAULT 0; //Yellow color total summary between two days
+	ALTER TABLE BBROCK ADD COLUMN YOM TINYINT DEFAULT 0;  //Yellow color moving one month summary
+	ALTER TABLE BBROCK ADD COLUMN NSM SMALLINT DEFAULT 0; //No color total summary between two days
+	ALTER TABLE BBROCK ADD COLUMN NOM TINYINT DEFAULT 0; //No color moving one month summary
+	ALTER TABLE BBROCK ADD COLUMN DSM SMALLINT DEFAULT 0;  //Total days 
+	ALTER TABLE BBROCK ADD COLUMN MOR FLOAT DEFAULT 0.0;  //the current month color rank measurement
+    ALTER TABLE BBROCK ADD COLUMN YOR FLOAT DEFAULT 0.0;  // 1 year color rank measurement
+    ALTER TABLE BBROCK ADD COLUMN TRK FLOAT DEFAULT 0.0;  //Total color rank since having data
+    //dateId - 252 ( 1 year )
+    //mor = 1.0f * (tom - yom - 2 * pom) / 25.0f;
+    //float trk = 1.0f * (tSum - ySum - 2 * pSum) / (1.0f * dSUM);
+    //yor = 1.0f * ((tSum - tSum1) - (ySum - ySum1) - 2 * (pSum - pSum1)) / (1.0f * (dSUM - dSUM1));
+    ALTER TABLE BBROCK ADD COLUMN UPC FLOAT DEFAULT 0.0;  //up percentage from the lowest (after highest) within last 30 days
+    ALTER TABLE BBROCK ADD COLUMN UDS TINYINT DEFAULT 0;  //days between current and lowest after (after highest) within last 30 days
+    ALTER TABLE BBROCK ADD COLUMN DPC FLOAT DEFAULT 0.0;  //down percentage from the highest within last 30 days
+    ALTER TABLE BBROCK ADD COLUMN DDS TINYINT DEFAULT 0;  //days between current and highest within last 30 days
 */
 	private static Connection dbcon = null;
 	private static PreparedStatement symbolStmnt = null;
@@ -91,9 +99,46 @@ public class DB {
 	private static PreparedStatement colorRankingUpdateStmnt = null;
 	private static PreparedStatement colorCalSumStmnt = null;
 	private static PreparedStatement colorRankSumStmnt = null;
+	private static PreparedStatement dateIDRange = null;
+	private static PreparedStatement dateIdByPrice = null;
+	private static PreparedStatement minClose = null;
+	private static PreparedStatement maxClose = null;
+	private static PreparedStatement  priceByDateID = null;
+	private static PreparedStatement distanceChangeUpdate = null;
+	private static PreparedStatement dateIDStmnt = null;
+	private static PreparedStatement dateIDExistStmnt = null;
+	
 	
 	public static void closeConnection() {
 		try {
+			if(dateIDStmnt != null) {
+				dateIDStmnt.close();
+				dateIDStmnt = null;
+			}
+			if(distanceChangeUpdate != null) {
+				distanceChangeUpdate.close();
+				distanceChangeUpdate = null;
+			}
+			if( priceByDateID != null) {
+				priceByDateID.close();
+				priceByDateID = null;
+			}
+			if(dateIDRange != null) {
+				dateIDRange.close();
+				dateIDRange = null;
+			}
+			if(minClose != null) {
+				minClose.close();
+				minClose = null;
+			}
+			if(maxClose != null) {
+				maxClose.close();
+				maxClose = null;
+			}
+			if(dateIDRange != null) {
+				dateIDRange.close();
+				dateIDRange = null;
+			}
 			if(colorCalSumStmnt != null) {
 				colorCalSumStmnt.close();
 				colorCalSumStmnt = null;
@@ -303,7 +348,78 @@ public class DB {
 
 		return stocks;
 	}
+	
+	public static PreparedStatement getStockDateIDRange() {
+		if (dateIDRange == null) {
+			try {
+				String query = "select MIN(DATEID), MAX(DATEID) FROM BBROCK WHERE STOCKID = ? ";
+				dateIDRange = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
 
+		}
+
+		return dateIDRange;
+	}
+	
+	public static PreparedStatement getMaxClose() {
+		if (maxClose == null) {
+			try {
+				String query = "select MAX(CLOSE) FROM BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=?";
+				maxClose  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return maxClose ;
+	}
+	
+	public static PreparedStatement getMinClose() {
+		if (minClose == null) {
+			try {
+				String query = "select MIN(CLOSE) FROM BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=?";
+				minClose  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return minClose ;
+	}
+
+	public static PreparedStatement getDateIDbyPrice() {
+		if (dateIdByPrice == null) {
+			try {
+				String query = "select DATEID FROM BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=? AND CLOSE>? AND CLOSE<? ORDER BY DATEID DESC";
+				dateIdByPrice  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return dateIdByPrice ;
+	}
+	
+	public static PreparedStatement getPriceByDateID() {
+		if (priceByDateID == null) {
+			try {
+				String query = "select CLOSE FROM BBROCK WHERE STOCKID = ? AND DATEID=? ";
+				priceByDateID  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return priceByDateID;
+	}
+	
+	
 	public static int getStartDateId(int stockId) {
 		int startDateId = 0;
 		try {
@@ -434,6 +550,20 @@ public class DB {
 		return SYPTUpdate;
 	}
 
+	public static PreparedStatement getUpdateUpDownDistance() {
+		if (distanceChangeUpdate == null) {
+			try {
+				String query = "UPDATE BBROCK SET UPC = ?, UDS = ?, DPC = ?, DDS= ?  WHERE STOCKID = ? AND DATEID = ?";
+				distanceChangeUpdate = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return distanceChangeUpdate;
+	}
+	
 	public static Statement getStatement() {
 		getConnection();
 		try {
@@ -447,6 +577,7 @@ public class DB {
 		return stmnt;
 	}
 
+	
 	public static int getNextDateID() {
 		int nextID = 1;
 		getStatement();
@@ -577,6 +708,23 @@ public class DB {
 		return stockId;
 	}
 
+	public static PreparedStatement checkDateIDExistsStmnt() {
+		getConnection();
+
+		if (dateIDExistStmnt == null) {
+			try {
+
+				String query = "SELECT COUNT(*) FROM BBROCK  WHERE STOCKID = ? AND DATEID =? ";
+
+				dateIDExistStmnt  = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return dateIDExistStmnt ;
+	}
+	
 	public static PreparedStatement getStockIDsStmnt() {
 		getConnection();
 
@@ -913,6 +1061,22 @@ public class DB {
 		return colorRankSumStmnt;
 	}
 	
+	public static PreparedStatement getDateIDStmnt() {
+		getConnection();
+
+		if (dateIDStmnt == null) {
+			try {
+
+				
+				String query = "SELECT DATEID FROM BBROCK  WHERE STOCKID =  ? AND DATEID>=? AND DATEID <=? ORDER BY DATEID DESC";
+				dateIDStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return dateIDStmnt;
+	}
 	
 	public static PreparedStatement getOMColorUpdateStmnt() {
 		getConnection();
