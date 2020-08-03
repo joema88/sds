@@ -109,10 +109,15 @@ public class DB {
 	private static PreparedStatement dateIDExistStmnt = null;
 	private static PreparedStatement oldStocks = null;
 	private static PreparedStatement dateIDStartStmnt = null;
+	private static PreparedStatement qualifiedLowStmnt = null;
 	
 	
 	public static void closeConnection() {
 		try {
+			if(qualifiedLowStmnt != null) {
+				qualifiedLowStmnt.close();
+				qualifiedLowStmnt = null;
+			}
 			if(dateIDStartStmnt != null) {
 				dateIDStartStmnt.close();
 				dateIDStartStmnt = null;
@@ -865,6 +870,25 @@ public class DB {
 		return update520CXStmnt;
 	}
 
+	
+	public static PreparedStatement getQualifiedLowStmnt() {
+		getConnection();
+
+		if (qualifiedLowStmnt == null) {
+			try {
+
+				String query = "select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, CLOSE, UPC, UDS, DPC, DDS FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and a.STOCKID=?  and  a.DATEID = ? ";
+
+				qualifiedLowStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return qualifiedLowStmnt;
+	}
+	
+	
 	
 	//select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, CLOSE, MOR, YOR, TRK,(MOR+YOR+TRK) as TTR, PASS, APAS, BT9,TSM,YSM,PSM,DSM FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and a.STOCKID=509  order by a.DATEID DeSC limit 550;
 	public static PreparedStatement checkRankPriceStmnt() {
