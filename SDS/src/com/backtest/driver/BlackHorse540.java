@@ -92,7 +92,7 @@ public class BlackHorse540 {
 				sc++;
 				int stockID = rs.getInt(1);
 				if (!excludeStocks.containsKey("" + stockID))
-					for (int k = startDateID; k <= 8964; k++) {
+					for (int k = startDateID; k <= 8968; k++) {
 						// check TRK+YOR+MOR<-0.5 continuously and within 40 days, close +50%
 						// logic: within a few days up, no TEAL, the stock still make big progress
 						// big money explosive buy, MRNA, NVAX as examples
