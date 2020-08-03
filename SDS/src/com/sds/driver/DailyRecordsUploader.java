@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.Calendar;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+
 import com.sds.analysis.*;
 //WATCH ETSY  FOR BDW MERGE BEHAVIOR
 public class DailyRecordsUploader {
@@ -86,6 +87,9 @@ public class DailyRecordsUploader {
 				ColorSummary.updateColorSummary(stockID, dateID);
 				ColorSummary.updateOMColorSummary(stockID, dateID);
 				ColorSummary.updateColorRanking(stockID, dateID);
+				
+				//process up and down
+				UpDownMeasure.processTodayUpDown(stockID, dateID);
 			}
 			
 			//calculate all the sum of teal, yellow and pink of that day
@@ -104,7 +108,7 @@ public class DailyRecordsUploader {
 		// TODO Auto-generated method stub
 		String path = "/home/joma/share/test/";
 		boolean currentDateProcessOnly = true;
-		String cDate = "2020-07-29";
+		String cDate = "2020-07-30";
 		int dateCountToBeProcessed = 1;
 		int loopCount = 0;
 		long t1 = System.currentTimeMillis();

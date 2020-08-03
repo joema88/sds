@@ -107,10 +107,20 @@ public class DB {
 	private static PreparedStatement distanceChangeUpdate = null;
 	private static PreparedStatement dateIDStmnt = null;
 	private static PreparedStatement dateIDExistStmnt = null;
+	private static PreparedStatement oldStocks = null;
+	private static PreparedStatement dateIDStartStmnt = null;
 	
 	
 	public static void closeConnection() {
 		try {
+			if(dateIDStartStmnt != null) {
+				dateIDStartStmnt.close();
+				dateIDStartStmnt = null;
+			}
+			if(oldStocks != null) {
+				oldStocks.close();
+				oldStocks = null;
+			}
 			if(dateIDStmnt != null) {
 				dateIDStmnt.close();
 				dateIDStmnt = null;
@@ -320,6 +330,21 @@ public class DB {
 		return dbcon;
 	}
 
+	//GET OLD STOCKS
+	public static PreparedStatement getOldStockIDs() {
+		if (oldStocks == null) {
+			try {
+				String query = "SELECT DISTINCT(STOCKID) FROM  BBROCK WHERE DATEID=?";
+				oldStocks = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return oldStocks;
+	}
+	
 	// SYPTStmnt
 	public static PreparedStatement getAllStockIDs() {
 		if (stockIds == null) {
@@ -930,6 +955,23 @@ public class DB {
 		return scUpdateStmnt;
 	}
 
+	// queryStockIDStmnt
+	public static PreparedStatement getDateIDStarttmnt() {
+		getConnection();
+
+		if (dateIDStartStmnt == null) {
+			try {
+
+				String query = "SELECT DATEID FROM BBROCK WHERE  STOCKID =? ORDER BY DATEID ASC limit 1";
+				dateIDStartStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return dateIDStartStmnt;
+	}
+	
 	// queryStockIDStmnt
 	public static PreparedStatement getStockIDQueryStmnt() {
 		getConnection();

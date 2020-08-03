@@ -19,7 +19,7 @@ public class Summary {
 	private static PreparedStatement queryLastDayCX520 = null;
 	private static PreparedStatement SYPTStmnt = null;
 	private static PreparedStatement SYPTUpdate = null;
-
+	
 	public static void init() {
 		queryStmnt = DB.getSymbolDateIDQueryStmnt();
 		typSumQueryStmnt = DB.getTYPDSumQueryStmnt();
@@ -33,7 +33,7 @@ public class Summary {
 		updateBDCXZero = TwoBullDB.getBDCXUpdateZero();
 		SYPTStmnt = DB.getSYPTStmnt();
 		SYPTUpdate = DB.getSYPTUpdate();
-
+	
 	}
 
 	public static void processDailyStocks(String date) {

@@ -14,50 +14,83 @@ public class ColorSummary {
 	private static PreparedStatement colorCalSumStmnt = null;
 	// DATEID = 8455, count = 5203, 2018/7/18 starting point
 	private static int startDateID = 8455;
+	private static boolean oldStocksCal = true;
+	private static PreparedStatement dateIDStartStmnt = null;
+	private static PreparedStatement oldStocks = null;
+	private static int oldStockSelectDateId = 8400;
 
 	// 2019/7/19, start here so we have one year ranking also, 252 days 1 year
 	// private static int startDateID = 8707;
 	// correct daily cal
 	// private static int startDateID = 8964;
 	private static void init() {
-		queryColorSumStmnt = DB.getColorSumStmnt();
-		updateColorSumStmnt = DB.getUpdateColorSumStmnt();
-		updateColorOMStmnt = DB.getOMColorUpdateStmnt();
-		noColorSumStmnt = DB.getNoColorSumStmnt();
-		colorCalSumStmnt = DB.getColorCalSumStmnt();
-		updateColorRankingStmnt = DB.updateColorRankingStmnt();
+		if (queryColorSumStmnt == null) {
+			queryColorSumStmnt = DB.getColorSumStmnt();
+			updateColorSumStmnt = DB.getUpdateColorSumStmnt();
+			updateColorOMStmnt = DB.getOMColorUpdateStmnt();
+			noColorSumStmnt = DB.getNoColorSumStmnt();
+			colorCalSumStmnt = DB.getColorCalSumStmnt();
+			updateColorRankingStmnt = DB.updateColorRankingStmnt();
+			dateIDStartStmnt = DB.getDateIDStarttmnt();
+			oldStocks = DB.getOldStockIDs();
+		}
 
 	}
 
 	public static void main(String[] args) {
 		try {
-
+			init();
 			long t1 = System.currentTimeMillis();
-			PreparedStatement allStocks = DB.getAllStockIDs();
-			allStocks.setInt(1, 1);
+			ResultSet rs = null;
+			if (!oldStocksCal) {
+				PreparedStatement allStocks = DB.getAllStockIDs();
+				allStocks.setInt(1, 1);
+				rs = allStocks.executeQuery();
+			} else {
+				oldStocks.setInt(1, 8400);
+				rs = oldStocks.executeQuery();
+				
+			}
 
-			ResultSet rs = allStocks.executeQuery();
 			int sc = 0;
 			System.out.println("-----------Begin---------");
 			while (rs.next()) {
 				sc++;
 				int stockID = rs.getInt(1);
-				for (int k = startDateID; k <= 8964; k++) {
-					if (k < 8964) {
+				startDateID  = getStockStartDateID(stockID);
+				System.out.println("StockID "+stockID +" startDateID "+startDateID);
+				for (int k = startDateID+252; k <= 8966; k++) {
+					//if (k < 8964) {
 
-					} else {
+					//} else {
 						updateColorSummary(stockID, k);
 						updateOMColorSummary(stockID, k);
 						updateColorRanking(stockID, k);
-					}
+					//}
 				}
 				long t2 = System.currentTimeMillis();
 				System.out.println(sc + " total stocks processed, time cost " + (t2 - t1) / (1000 * 60));
-				Thread.sleep(100);
+				Thread.sleep(2000);
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}
+
+	}
+
+	public static int getStockStartDateID(int stockID) {
+		int startDateId = 0;
+		try {
+			dateIDStartStmnt.setInt(1, stockID);
+			ResultSet rsd = dateIDStartStmnt.executeQuery();
+			rsd.next();
+			startDateId = rsd.getInt(1);
+			rsd.close();
+			rsd = null;
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+		return startDateId;
 
 	}
 

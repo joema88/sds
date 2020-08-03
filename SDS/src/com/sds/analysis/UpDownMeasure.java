@@ -1,4 +1,4 @@
-package com.backtest.driver;
+package com.sds.analysis;
 
 import java.sql.*;
 import java.util.*;
@@ -248,6 +248,111 @@ public class UpDownMeasure {
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}
+	}
+
+	public static void processTodayUpDown(int stockID, int dateId) {
+		try {
+			PreparedStatement maxClose = DB.getMaxClose();
+			PreparedStatement minClose = DB.getMinClose();
+			PreparedStatement getDateIDByPrice = DB.getDateIDbyPrice();
+			PreparedStatement distanceChangeUpdate = DB.getUpdateUpDownDistance();
+			PreparedStatement dateIDStmnt = DB.getDateIDStmnt();
+			PreparedStatement priceByDateID = DB.getPriceByDateID();
+		
+			dateIDStmnt.setInt(1, stockID);
+			dateIDStmnt.setInt(2, dateId - upDownDays - 10);
+			dateIDStmnt.setInt(3, dateId);
+
+			ResultSet dateIDCount = dateIDStmnt.executeQuery();
+
+			int dateIdStart = 0;
+			int count = 0;
+			while (dateIDCount.next()) {
+				dateIdStart = dateIDCount.getInt(1);
+				count++;
+				if (count == upDownDays)
+					break;
+			}
+
+			maxClose.setInt(1, stockID);
+			maxClose.setInt(2, dateIdStart);
+			maxClose.setInt(3, dateId);
+			ResultSet xpRS = maxClose.executeQuery();
+
+			xpRS.next();
+
+			float maxPrice = xpRS.getFloat(1);
+			xpRS.close();
+			xpRS = null;
+
+			getDateIDByPrice.setInt(1, stockID);
+			getDateIDByPrice.setInt(2, dateIdStart);
+			getDateIDByPrice.setInt(3, dateId);
+			getDateIDByPrice.setFloat(4, maxPrice - 0.0001f);
+			getDateIDByPrice.setFloat(5, maxPrice + 0.0001f);
+
+			ResultSet xDateIDStmnt = getDateIDByPrice.executeQuery();
+
+			xDateIDStmnt.next();
+
+			int xDateID = xDateIDStmnt.getInt(1);
+			xDateIDStmnt.close();
+			xDateIDStmnt = null;
+
+			minClose.setInt(1, stockID);
+			minClose.setInt(2, xDateID);
+			minClose.setInt(3, dateId);
+
+			ResultSet mpRS = minClose.executeQuery();
+
+			mpRS.next();
+
+			float minPrice = mpRS.getFloat(1);
+			mpRS.close();
+			mpRS = null;
+
+			getDateIDByPrice.setInt(1, stockID);
+			getDateIDByPrice.setInt(2, xDateID);
+			getDateIDByPrice.setInt(3, dateId);
+			getDateIDByPrice.setFloat(4, minPrice - 0.0001f);
+			getDateIDByPrice.setFloat(5, minPrice + 0.0001f);
+
+			ResultSet mDateIDStmnt = getDateIDByPrice.executeQuery();
+
+			mDateIDStmnt.next();
+
+			int mDateID = mDateIDStmnt.getInt(1);
+
+			priceByDateID.setInt(1, stockID);
+			priceByDateID.setInt(2, dateId);
+
+			ResultSet cPriceStmnt = priceByDateID.executeQuery();
+
+			cPriceStmnt.next();
+
+			float cPrice = cPriceStmnt.getFloat(1);
+
+			float maxDrop = 100.0f * (cPrice - maxPrice) / maxPrice;
+			float upFromMin = 100.0f * (cPrice - minPrice) / minPrice;
+			int maxDistance = dateId - xDateID + 1;
+			if (maxDistance > upDownDays)
+				maxDistance = upDownDays;
+			int minDistsance = dateId - mDateID + 1;
+			if (minDistsance > upDownDays)
+				minDistsance = upDownDays;
+			distanceChangeUpdate.setFloat(1, upFromMin);
+			distanceChangeUpdate.setInt(2, minDistsance);
+			distanceChangeUpdate.setFloat(3, maxDrop);
+			distanceChangeUpdate.setInt(4, maxDistance);
+			distanceChangeUpdate.setInt(5, stockID);
+			distanceChangeUpdate.setInt(6, dateId);
+
+			distanceChangeUpdate.executeUpdate();
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+
 	}
 
 	public static void checkYield(PreparedStatement dailyPrice, int dateID, int holdDays, int stockId) {
