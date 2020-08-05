@@ -33,7 +33,7 @@ public class UpDownMeasure {
 	private static float yieldQaulified2 = -0.5f;
 	private static boolean debug = true;
 	private static Hashtable excludeStocks = null;
-	private static int currentDateID = 8966;
+	private static int currentDateID = 8969;
 	private static int upDownDays = 30;
 
 	public static void main(String[] args) {
@@ -182,7 +182,7 @@ public class UpDownMeasure {
 							xDateIDStmnt = null;
 
 							minClose.setInt(1, stockID);
-							minClose.setInt(2, xDateID);
+							minClose.setInt(2, dateIdStart);
 							minClose.setInt(3, k);
 
 							ResultSet mpRS = minClose.executeQuery();
@@ -194,7 +194,7 @@ public class UpDownMeasure {
 							mpRS = null;
 
 							getDateIDByPrice.setInt(1, stockID);
-							getDateIDByPrice.setInt(2, xDateID);
+							getDateIDByPrice.setInt(2, dateIdStart);
 							getDateIDByPrice.setInt(3, k);
 							getDateIDByPrice.setFloat(4, minPrice - 0.0001f);
 							getDateIDByPrice.setFloat(5, minPrice + 0.0001f);
