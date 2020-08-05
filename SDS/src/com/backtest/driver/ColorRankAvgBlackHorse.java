@@ -94,7 +94,7 @@ public class ColorRankAvgBlackHorse {
 				sc++;
 				int stockID = rs.getInt(1);
 				if (!excludeStocks.containsKey("" + stockID))
-					for (int k = startDateID; k <= 8964; k++) {
+					for (int k = startDateID; k <= 8969; k++) {
 						// check TRK+YOR+MOR<-0.5 continuously and within 40 days, close +50%
 						// logic: within a few days up, no TEAL, the stock still make big progress
 						// big money explosive buy, MRNA, NVAX as examples
@@ -124,12 +124,11 @@ public class ColorRankAvgBlackHorse {
 							count = rsSum.getInt(4);
 							rsSum.close();
 							rsSum = null;
-							if((morSum+yorSum +trkSum)<-81.0f) {
-							//System.out.println("stockID "+stockID+" : trkSum  "+trkSum +": count "+count+" k "+k);
-							}
+							
 						}
 
-						if (trkSum < -0.1 && ((morSum+yorSum +trkSum) / (count * 1.0f)) < -2.0f) {
+						//if (trkSum < -0.1 && ((morSum+yorSum +trkSum) / (count * 1.0f)) < -2.0f) 
+						if (trkSum < -0.1 && ((morSum+yorSum +trkSum) / (count * 1.0f)) < -1.5f) {
 							colorRankPriceCheckStmnt.setInt(1, stockID);
 							colorRankPriceCheckStmnt.setInt(2, k);
 							colorRankPriceCheckStmnt.setInt(3, k + 39);

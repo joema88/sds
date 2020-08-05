@@ -93,7 +93,7 @@ public class ColorRankBlackHorse {
 				sc++;
 				int stockID = rs.getInt(1);
 				if (!excludeStocks.containsKey(""+stockID))
-					for (int k = startDateID; k <= 8964; k++) {
+					for (int k = startDateID; k <= 8969; k++) {
 						// check TRK+YOR+MOR<-0.5 continuously and within 40 days, close +50%
 						// logic: within a few days up, no TEAL, the stock still make big progress
 						// big money explosive buy, MRNA, NVAX as examples
@@ -174,6 +174,7 @@ public class ColorRankBlackHorse {
 				Thread.sleep(100);
 			}
 			long t3 = System.currentTimeMillis();
+			/*
 			System.out.println(sc + " stocks have been processed, time cost in minutes... " + (t3 - t1) / (1000 * 60));
 			System.out.println("Average peak yield " + 100.0f * peakYield / totalCount);
 			System.out.println("Average trough yield " + 100.0f * troughYield / totalCount);
@@ -185,7 +186,7 @@ public class ColorRankBlackHorse {
 			System.out.println("totalRandomHC: "+totalRandomHC+"  totalRandomLC: "+totalRandomLC);
 			
 			System.out.println("Success random rate " + totalSCRandom + "/" + totalCountRandom);
-
+*/
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}

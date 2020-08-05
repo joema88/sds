@@ -300,7 +300,7 @@ public class UpDownMeasure {
 			xDateIDStmnt = null;
 
 			minClose.setInt(1, stockID);
-			minClose.setInt(2, xDateID);
+			minClose.setInt(2, dateIdStart);
 			minClose.setInt(3, dateId);
 
 			ResultSet mpRS = minClose.executeQuery();
@@ -312,7 +312,7 @@ public class UpDownMeasure {
 			mpRS = null;
 
 			getDateIDByPrice.setInt(1, stockID);
-			getDateIDByPrice.setInt(2, xDateID);
+			getDateIDByPrice.setInt(2, dateIdStart);
 			getDateIDByPrice.setInt(3, dateId);
 			getDateIDByPrice.setFloat(4, minPrice - 0.0001f);
 			getDateIDByPrice.setFloat(5, minPrice + 0.0001f);
