@@ -48,6 +48,8 @@ public class DB {
 	ALTER TABLE BBROCK ADD COLUMN MOR FLOAT DEFAULT 0.0;  //the current month color rank measurement
     ALTER TABLE BBROCK ADD COLUMN YOR FLOAT DEFAULT 0.0;  // 1 year color rank measurement
     ALTER TABLE BBROCK ADD COLUMN TRK FLOAT DEFAULT 0.0;  //Total color rank since having data
+    ALTER TABLE BBROCK ADD COLUMN DM FLOAT DEFAULT 0.0;
+    ALTER TABLE BBROCK ADD COLUMN DA TINYINT DEFAULT 0;
     //dateId - 252 ( 1 year )
     //mor = 1.0f * (tom - yom - 2 * pom) / 25.0f;
     //float trk = 1.0f * (tSum - ySum - 2 * pSum) / (1.0f * dSUM);
@@ -110,10 +112,31 @@ public class DB {
 	private static PreparedStatement oldStocks = null;
 	private static PreparedStatement dateIDStartStmnt = null;
 	private static PreparedStatement qualifiedLowStmnt = null;
+	private static PreparedStatement dateIdByUPC = null;
+	private static PreparedStatement dateIdByDPC = null;
+	private static PreparedStatement updateMaxUpDown = null;
+	private static PreparedStatement upcStmnt = null;
 	
 	
 	public static void closeConnection() {
 		try {
+			if( upcStmnt != null) {
+				upcStmnt.close();
+				upcStmnt = null;
+			}
+			
+			if( updateMaxUpDown!= null) {
+				updateMaxUpDown.close();
+				updateMaxUpDown = null;
+			}
+			if(dateIdByDPC != null) {
+				dateIdByDPC.close();
+				dateIdByDPC = null;
+			}
+			if(dateIdByUPC != null) {
+				dateIdByUPC.close();
+				dateIdByUPC = null;
+			}
 			if(qualifiedLowStmnt != null) {
 				qualifiedLowStmnt.close();
 				qualifiedLowStmnt = null;
@@ -407,6 +430,34 @@ public class DB {
 		return maxClose ;
 	}
 	
+	public static PreparedStatement getMaxUPC() {
+		if (maxClose == null) {
+			try {
+				String query = "select MAX(UPC) FROM BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=?";
+				maxClose  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return maxClose ;
+	}
+	
+	public static PreparedStatement getMinDPC() {
+		if (minClose == null) {
+			try {
+				String query = "select MIN(DPC) FROM BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=?";
+				minClose  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return minClose ;
+	}
+	
 	public static PreparedStatement getMinClose() {
 		if (minClose == null) {
 			try {
@@ -421,6 +472,35 @@ public class DB {
 		return minClose ;
 	}
 
+	public static PreparedStatement getDateIDbyUPC() {
+		if (dateIdByUPC == null) {
+			try {
+				String query = "select DATEID FROM BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=? AND UPC>? AND UPC<? ORDER BY DATEID DESC";
+				dateIdByUPC   = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return dateIdByUPC  ;
+	}
+	
+	
+	public static PreparedStatement getDateIDbyDPC() {
+		if (dateIdByDPC == null) {
+			try {
+				String query = "select DATEID FROM BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=? AND DPC>? AND DPC<? ORDER BY DATEID DESC";
+				dateIdByDPC = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return dateIdByDPC ;
+	}
+	
 	public static PreparedStatement getDateIDbyPrice() {
 		if (dateIdByPrice == null) {
 			try {
@@ -580,10 +660,25 @@ public class DB {
 		return SYPTUpdate;
 	}
 
+	public static PreparedStatement updateMaxUpDown() {
+		if (updateMaxUpDown == null) {
+			try {
+				String query = "UPDATE BBROCK SET DM = ?, DA = ? WHERE STOCKID = ? AND DATEID = ?";
+				updateMaxUpDown = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return updateMaxUpDown;
+	}
+	
+	
 	public static PreparedStatement getUpdateUpDownDistance() {
 		if (distanceChangeUpdate == null) {
 			try {
-				String query = "UPDATE BBROCK SET UPC = ?, UDS = ?, DPC = ?, DDS= ?  WHERE STOCKID = ? AND DATEID = ?";
+				String query = "UPDATE BBROCK SET UPC = ?, UDS = ?, DPC = ?, DDS= ?, DM=?, DA=?  WHERE STOCKID = ? AND DATEID = ?";
 				distanceChangeUpdate = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
@@ -927,6 +1022,23 @@ public class DB {
 		return closePriceStmnt;
 	}
 
+	public static PreparedStatement getUPCStmnt() {
+		getConnection();
+
+		if (upcStmnt == null) {
+			try {
+
+				String query = "SELECT UPC,DPC, CLOSE FROM BBROCK  WHERE STOCKID = ? AND DATEID =? ";
+
+				upcStmnt  = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return upcStmnt ;
+	}
+	
 	public static PreparedStatement getCX520Stmnt() {
 		getConnection();
 

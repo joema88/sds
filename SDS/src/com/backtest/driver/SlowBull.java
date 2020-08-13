@@ -58,6 +58,8 @@ public class SlowBull {
 				// 7/17/2020
 				// dBulls.setInt(1, 8958);
 				// start 7/20, 8458
+				//2010 9/23, 1267 stocks
+				int minStart = 6488;
 				int startId = DB.getStartDateId(stockID);
 
 				for (int k = startId; k < 8962 - daysForHold;) {

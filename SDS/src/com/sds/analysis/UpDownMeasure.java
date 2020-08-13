@@ -33,10 +33,15 @@ public class UpDownMeasure {
 	private static float yieldQaulified2 = -0.5f;
 	private static boolean debug = true;
 	private static Hashtable excludeStocks = null;
-	private static int currentDateID = 8969;
+	private static int currentDateID = 8971;
 	private static int upDownDays = 30;
 
 	public static void main(String[] args) {
+
+		processUpDownHistory();
+	}
+
+	public static void processUpDownHistory() {
 		try {
 
 			excludeStocks = new Hashtable();
@@ -118,6 +123,7 @@ public class UpDownMeasure {
 				// if (!ignore||!excludeStocks.containsKey("" + stockID))
 				if (!ignore)
 					for (int k = currentDateID; k >= strtDateId; k--) {
+						// for (int k = currentDateID; k >= currentDateID; k--) {
 						boolean exist = false;
 						int adjustment = 0;
 						do {
@@ -217,22 +223,31 @@ public class UpDownMeasure {
 
 							float maxDrop = 100.0f * (cPrice - maxPrice) / maxPrice;
 							float upFromMin = 100.0f * (cPrice - minPrice) / minPrice;
-							int maxDistance = k - xDateID + 1;
+							int maxDistance = k - xDateID;
 							if (maxDistance > upDownDays)
 								maxDistance = upDownDays;
-							int minDistsance = k - mDateID + 1;
+							int minDistsance = k - mDateID;
 							if (minDistsance > upDownDays)
 								minDistsance = upDownDays;
+
+							float changePercentage = maxDrop + upFromMin;
+							int changeDays = maxDistance - minDistsance;
+							if (changeDays < 0)
+								changeDays = minDistsance - maxDistance;
+
 							distanceChangeUpdate.setFloat(1, upFromMin);
 							distanceChangeUpdate.setInt(2, minDistsance);
 							distanceChangeUpdate.setFloat(3, maxDrop);
 							distanceChangeUpdate.setInt(4, maxDistance);
-							distanceChangeUpdate.setInt(5, stockID);
-							distanceChangeUpdate.setInt(6, k);
+							distanceChangeUpdate.setFloat(5, changePercentage);
+							distanceChangeUpdate.setInt(6, changeDays);
+							distanceChangeUpdate.setInt(7, stockID);
+							distanceChangeUpdate.setInt(8, k);
+							
 
 							distanceChangeUpdate.executeUpdate();
 						} catch (Exception ex) {
-
+							ex.printStackTrace(System.out);
 						}
 
 					}
@@ -258,7 +273,7 @@ public class UpDownMeasure {
 			PreparedStatement distanceChangeUpdate = DB.getUpdateUpDownDistance();
 			PreparedStatement dateIDStmnt = DB.getDateIDStmnt();
 			PreparedStatement priceByDateID = DB.getPriceByDateID();
-		
+
 			dateIDStmnt.setInt(1, stockID);
 			dateIDStmnt.setInt(2, dateId - upDownDays - 10);
 			dateIDStmnt.setInt(3, dateId);
@@ -334,18 +349,27 @@ public class UpDownMeasure {
 
 			float maxDrop = 100.0f * (cPrice - maxPrice) / maxPrice;
 			float upFromMin = 100.0f * (cPrice - minPrice) / minPrice;
-			int maxDistance = dateId - xDateID + 1;
+
+			int maxDistance = dateId - xDateID;
 			if (maxDistance > upDownDays)
 				maxDistance = upDownDays;
-			int minDistsance = dateId - mDateID + 1;
+			int minDistsance = dateId - mDateID;
 			if (minDistsance > upDownDays)
 				minDistsance = upDownDays;
+
+			float changePercentage = maxDrop + upFromMin;
+			int changeDays = maxDistance - minDistsance;
+			if (changeDays < 0)
+				changeDays = minDistsance - maxDistance;
+
 			distanceChangeUpdate.setFloat(1, upFromMin);
 			distanceChangeUpdate.setInt(2, minDistsance);
 			distanceChangeUpdate.setFloat(3, maxDrop);
 			distanceChangeUpdate.setInt(4, maxDistance);
-			distanceChangeUpdate.setInt(5, stockID);
-			distanceChangeUpdate.setInt(6, dateId);
+			distanceChangeUpdate.setFloat(5, changePercentage);// DM
+			distanceChangeUpdate.setInt(6, changeDays);// DA
+			distanceChangeUpdate.setInt(7, stockID);
+			distanceChangeUpdate.setInt(8, dateId);
 
 			distanceChangeUpdate.executeUpdate();
 
@@ -515,5 +539,4 @@ public class UpDownMeasure {
 
 		}
 	}
-
 }
