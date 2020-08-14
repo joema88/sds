@@ -33,8 +33,9 @@ public class UpDownMeasure {
 	private static float yieldQaulified2 = -0.5f;
 	private static boolean debug = true;
 	private static Hashtable excludeStocks = null;
-	private static int currentDateID = 8971;
-	private static int upDownDays = 30;
+	private static int currentDateID = 8977;
+	private static int upDays = 30; // this is used to measure 40% up days
+	private static int downDays = 250; // this is used to measure 60% down days
 
 	public static void main(String[] args) {
 
@@ -92,6 +93,7 @@ public class UpDownMeasure {
 			PreparedStatement getDateIDByPrice = DB.getDateIDbyPrice();
 			PreparedStatement distanceChangeUpdate = DB.getUpdateUpDownDistance();
 			PreparedStatement dateIDStmnt = DB.getDateIDStmnt();
+			PreparedStatement resetUpDownToZero = DB.resetUpDownToZero();
 
 			colorRankPriceCheckStmnt = DB.checkRankPriceStmnt();
 			PreparedStatement allStocks = DB.getAllStockIDs();
@@ -117,9 +119,11 @@ public class UpDownMeasure {
 				int endDateId = dateRS.getInt(2);
 
 				boolean ignore = false;
-				if (endDateId < currentDateID)
+				if (endDateId < currentDateID) {
+					resetUpDownToZero.setInt(1, stockID);
+					resetUpDownToZero.executeUpdate();
 					ignore = true;
-
+				}
 				// if (!ignore||!excludeStocks.containsKey("" + stockID))
 				if (!ignore)
 					for (int k = currentDateID; k >= strtDateId; k--) {
@@ -146,71 +150,6 @@ public class UpDownMeasure {
 						} while (!exist);
 
 						try {
-							dateIDStmnt.setInt(1, stockID);
-							dateIDStmnt.setInt(2, k - upDownDays - 10);
-							dateIDStmnt.setInt(3, k);
-
-							ResultSet dateIDCount = dateIDStmnt.executeQuery();
-
-							int dateIdStart = 0;
-							int count = 0;
-							while (dateIDCount.next()) {
-								dateIdStart = dateIDCount.getInt(1);
-								count++;
-								if (count == upDownDays)
-									break;
-							}
-
-							maxClose.setInt(1, stockID);
-							maxClose.setInt(2, dateIdStart);
-							maxClose.setInt(3, k);
-							System.out.println("dateIdStart " + dateIdStart + " k " + k);
-							ResultSet xpRS = maxClose.executeQuery();
-
-							xpRS.next();
-
-							float maxPrice = xpRS.getFloat(1);
-							xpRS.close();
-							xpRS = null;
-
-							getDateIDByPrice.setInt(1, stockID);
-							getDateIDByPrice.setInt(2, dateIdStart);
-							getDateIDByPrice.setInt(3, k);
-							getDateIDByPrice.setFloat(4, maxPrice - 0.0001f);
-							getDateIDByPrice.setFloat(5, maxPrice + 0.0001f);
-
-							ResultSet xDateIDStmnt = getDateIDByPrice.executeQuery();
-
-							xDateIDStmnt.next();
-
-							int xDateID = xDateIDStmnt.getInt(1);
-							xDateIDStmnt.close();
-							xDateIDStmnt = null;
-
-							minClose.setInt(1, stockID);
-							minClose.setInt(2, dateIdStart);
-							minClose.setInt(3, k);
-
-							ResultSet mpRS = minClose.executeQuery();
-
-							mpRS.next();
-
-							float minPrice = mpRS.getFloat(1);
-							mpRS.close();
-							mpRS = null;
-
-							getDateIDByPrice.setInt(1, stockID);
-							getDateIDByPrice.setInt(2, dateIdStart);
-							getDateIDByPrice.setInt(3, k);
-							getDateIDByPrice.setFloat(4, minPrice - 0.0001f);
-							getDateIDByPrice.setFloat(5, minPrice + 0.0001f);
-
-							ResultSet mDateIDStmnt = getDateIDByPrice.executeQuery();
-
-							mDateIDStmnt.next();
-
-							int mDateID = mDateIDStmnt.getInt(1);
-
 							priceByDateID.setInt(1, stockID);
 							priceByDateID.setInt(2, k);
 
@@ -218,33 +157,104 @@ public class UpDownMeasure {
 							ResultSet cPriceStmnt = priceByDateID.executeQuery();
 
 							cPriceStmnt.next();
-
 							float cPrice = cPriceStmnt.getFloat(1);
 
-							float maxDrop = 100.0f * (cPrice - maxPrice) / maxPrice;
+							dateIDStmnt.setInt(1, stockID);
+							dateIDStmnt.setInt(2, k - downDays - 20);
+							dateIDStmnt.setInt(3, k);
+
+							ResultSet dateIDCount = dateIDStmnt.executeQuery();
+
+							int dateIdStartUp = 0;
+							int dateIdStartDown = 0;
+							int dateIdStart = 0;
+							int count = 0;
+							while (dateIDCount.next()) {
+								dateIdStart = dateIDCount.getInt(1);
+								count++;
+								if (count == upDays) {// 30days
+									dateIdStartUp = dateIdStart;
+								}
+								if (count == downDays) { // 250days
+									dateIdStartDown = dateIdStart;
+									break;
+								}
+							}
+
+							maxClose.setInt(1, stockID);
+							maxClose.setInt(2, dateIdStartDown);
+							maxClose.setInt(3, k);
+							System.out.println("dateIdStartDown " + dateIdStartDown + " k " + k);
+							ResultSet xpRS = maxClose.executeQuery();
+
+							int xDateID = 0;
+							float maxDrop = 0.0f;
+							int tempDateId = 0;
+							float tempDrop = 0.0f;
+							float temMaxPrice = 0.0f;
+							while (xpRS.next()) {
+								tempDateId = xpRS.getInt(1);
+								temMaxPrice = xpRS.getFloat(2);
+								tempDrop = -100.0f * ((temMaxPrice - cPrice) / temMaxPrice);
+								if (xDateID == 0) { // get the last year biggest price drop regardless
+									xDateID = tempDateId;
+									maxDrop = tempDrop;
+								} else if (tempDrop < -60.0f && tempDateId > xDateID) {
+									// essentially we want to find the closest point to current
+									// which has a 60% price drop
+									xDateID = tempDateId;
+									maxDrop = tempDrop;
+								}
+							}
+
+							minClose.setInt(1, stockID);
+							minClose.setInt(2, dateIdStartUp);
+							minClose.setInt(3, k);
+
+							ResultSet mpRS = minClose.executeQuery();
+
+							mpRS.next();
+
+							float minPrice = mpRS.getFloat(1);
+							int mDateID = mpRS.getInt(2);
+							mpRS.close();
+							mpRS = null;
+
 							float upFromMin = 100.0f * (cPrice - minPrice) / minPrice;
 							int maxDistance = k - xDateID;
-							if (maxDistance > upDownDays)
-								maxDistance = upDownDays;
+							if (maxDistance > downDays)
+								maxDistance = downDays;
 							int minDistsance = k - mDateID;
-							if (minDistsance > upDownDays)
-								minDistsance = upDownDays;
+							if (minDistsance > upDays)
+								minDistsance = upDays;
 
-							float changePercentage = maxDrop + upFromMin;
+							float changePercentage = 100.0f * ((100.0f + maxDrop) / 100.0f)
+									* ((100.0f + upFromMin) / 100.0f) - 100.0f;
 							int changeDays = maxDistance - minDistsance;
 							if (changeDays < 0)
 								changeDays = minDistsance - maxDistance;
 
+							// "UPDATE BBROCK SET UPC = ?, UDS = ?, DPC = ?, DDS= ?, DM=?,
+							//DA=?  WHERE STOCKID = ? AND DATEID = ?";
 							distanceChangeUpdate.setFloat(1, upFromMin);
-							distanceChangeUpdate.setInt(2, minDistsance);
+							if (minDistsance > 255) {
+								distanceChangeUpdate.setInt(2, 255);
+							} else {
+								distanceChangeUpdate.setInt(2, minDistsance);
+							}
 							distanceChangeUpdate.setFloat(3, maxDrop);
-							distanceChangeUpdate.setInt(4, maxDistance);
+							if (maxDistance > 255) {
+								distanceChangeUpdate.setInt(4, 255);
+							} else {
+								distanceChangeUpdate.setInt(4, maxDistance);
+							}
 							distanceChangeUpdate.setFloat(5, changePercentage);
 							distanceChangeUpdate.setInt(6, changeDays);
 							distanceChangeUpdate.setInt(7, stockID);
 							distanceChangeUpdate.setInt(8, k);
+							System.out.println("k "+k+" changeDays " +changeDays+ " changePercentage "+changePercentage+" upFromMin "+upFromMin+" minDistsance "+minDistsance+" maxDrop "+maxDrop);
+							System.out.println("changeDays "+changeDays+" minDistsance" +minDistsance+", maxDistance  "+maxDistance);
 							
-
 							distanceChangeUpdate.executeUpdate();
 						} catch (Exception ex) {
 							ex.printStackTrace(System.out);
@@ -269,53 +279,71 @@ public class UpDownMeasure {
 		try {
 			PreparedStatement maxClose = DB.getMaxClose();
 			PreparedStatement minClose = DB.getMinClose();
-			PreparedStatement getDateIDByPrice = DB.getDateIDbyPrice();
 			PreparedStatement distanceChangeUpdate = DB.getUpdateUpDownDistance();
 			PreparedStatement dateIDStmnt = DB.getDateIDStmnt();
 			PreparedStatement priceByDateID = DB.getPriceByDateID();
 
 			dateIDStmnt.setInt(1, stockID);
-			dateIDStmnt.setInt(2, dateId - upDownDays - 10);
+			dateIDStmnt.setInt(2, dateId - downDays - 20);
 			dateIDStmnt.setInt(3, dateId);
 
 			ResultSet dateIDCount = dateIDStmnt.executeQuery();
 
 			int dateIdStart = 0;
 			int count = 0;
+
+			int dateIdStartUp = 0;
+			int dateIdStartDown = 0;
+
 			while (dateIDCount.next()) {
 				dateIdStart = dateIDCount.getInt(1);
 				count++;
-				if (count == upDownDays)
+				if (count == upDays) {// 30days
+					dateIdStartUp = dateIdStart;
+				}
+				if (count == downDays) { // 250days
+					dateIdStartDown = dateIdStart;
 					break;
+				}
 			}
 
+			priceByDateID.setInt(1, stockID);
+			priceByDateID.setInt(2, dateId);
+
+			System.out.println(stockID + " " + dateId);
+			ResultSet cPriceStmnt = priceByDateID.executeQuery();
+
+			cPriceStmnt.next();
+			float cPrice = cPriceStmnt.getFloat(1);
+
 			maxClose.setInt(1, stockID);
-			maxClose.setInt(2, dateIdStart);
+			maxClose.setInt(2, dateIdStartDown);
 			maxClose.setInt(3, dateId);
+			System.out.println("dateIdStartDown " + dateIdStartDown + " dateId " + dateId);
 			ResultSet xpRS = maxClose.executeQuery();
 
-			xpRS.next();
-
-			float maxPrice = xpRS.getFloat(1);
-			xpRS.close();
-			xpRS = null;
-
-			getDateIDByPrice.setInt(1, stockID);
-			getDateIDByPrice.setInt(2, dateIdStart);
-			getDateIDByPrice.setInt(3, dateId);
-			getDateIDByPrice.setFloat(4, maxPrice - 0.0001f);
-			getDateIDByPrice.setFloat(5, maxPrice + 0.0001f);
-
-			ResultSet xDateIDStmnt = getDateIDByPrice.executeQuery();
-
-			xDateIDStmnt.next();
-
-			int xDateID = xDateIDStmnt.getInt(1);
-			xDateIDStmnt.close();
-			xDateIDStmnt = null;
+			int xDateID = 0;
+			float maxDrop = 0.0f;
+			int tempDateId = 0;
+			float tempDrop = 0.0f;
+			float temMaxPrice = 0.0f;
+			while (xpRS.next()) {
+				tempDateId = xpRS.getInt(1);
+				temMaxPrice = xpRS.getFloat(2);
+				tempDrop = -100.0f * ((temMaxPrice - cPrice) / temMaxPrice);
+				if (xDateID == 0) { // get the last year biggest price drop regardless
+					xDateID = tempDateId;
+					maxDrop = tempDrop;
+				} else if (tempDrop < -60.0f && tempDateId > xDateID) {
+					// essentially we want to find the closest point to current
+					// which has a 60% price drop
+					xDateID = tempDateId;
+					maxDrop = tempDrop;
+				}
+			}
 
 			minClose.setInt(1, stockID);
-			minClose.setInt(2, dateIdStart);
+			minClose.setInt(2, dateIdStartUp);
 			minClose.setInt(3, dateId);
 
 			ResultSet mpRS = minClose.executeQuery();
@@ -323,41 +351,20 @@ public class UpDownMeasure {
 			mpRS.next();
 
 			float minPrice = mpRS.getFloat(1);
+			int mDateID = mpRS.getInt(2);
 			mpRS.close();
 			mpRS = null;
 
-			getDateIDByPrice.setInt(1, stockID);
-			getDateIDByPrice.setInt(2, dateIdStart);
-			getDateIDByPrice.setInt(3, dateId);
-			getDateIDByPrice.setFloat(4, minPrice - 0.0001f);
-			getDateIDByPrice.setFloat(5, minPrice + 0.0001f);
-
-			ResultSet mDateIDStmnt = getDateIDByPrice.executeQuery();
-
-			mDateIDStmnt.next();
-
-			int mDateID = mDateIDStmnt.getInt(1);
-
-			priceByDateID.setInt(1, stockID);
-			priceByDateID.setInt(2, dateId);
-
-			ResultSet cPriceStmnt = priceByDateID.executeQuery();
-
-			cPriceStmnt.next();
-
-			float cPrice = cPriceStmnt.getFloat(1);
-
-			float maxDrop = 100.0f * (cPrice - maxPrice) / maxPrice;
 			float upFromMin = 100.0f * (cPrice - minPrice) / minPrice;
-
 			int maxDistance = dateId - xDateID;
-			if (maxDistance > upDownDays)
-				maxDistance = upDownDays;
+			if (maxDistance > downDays)
+				maxDistance = downDays;
 			int minDistsance = dateId - mDateID;
-			if (minDistsance > upDownDays)
-				minDistsance = upDownDays;
+			if (minDistsance > upDays)
+				minDistsance = upDays;
 
-			float changePercentage = maxDrop + upFromMin;
+			float changePercentage = 100.0f * ((100.0f + maxDrop) / 100.0f) * ((100.0f + upFromMin) / 100.0f) - 100.0f;
+
 			int changeDays = maxDistance - minDistsance;
 			if (changeDays < 0)
 				changeDays = minDistsance - maxDistance;
@@ -366,8 +373,8 @@ public class UpDownMeasure {
 			distanceChangeUpdate.setInt(2, minDistsance);
 			distanceChangeUpdate.setFloat(3, maxDrop);
 			distanceChangeUpdate.setInt(4, maxDistance);
-			distanceChangeUpdate.setFloat(5, changePercentage);// DM
-			distanceChangeUpdate.setInt(6, changeDays);// DA
+			distanceChangeUpdate.setFloat(5, changePercentage);
+			distanceChangeUpdate.setInt(6, changeDays);
 			distanceChangeUpdate.setInt(7, stockID);
 			distanceChangeUpdate.setInt(8, dateId);
 

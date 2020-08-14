@@ -49,15 +49,15 @@ public class DB {
     ALTER TABLE BBROCK ADD COLUMN YOR FLOAT DEFAULT 0.0;  // 1 year color rank measurement
     ALTER TABLE BBROCK ADD COLUMN TRK FLOAT DEFAULT 0.0;  //Total color rank since having data
     ALTER TABLE BBROCK ADD COLUMN DM FLOAT DEFAULT 0.0;
-    ALTER TABLE BBROCK ADD COLUMN DA TINYINT DEFAULT 0;
+    ALTER TABLE BBROCK ADD COLUMN DA TINYINT UNSIGNED DEFAULT 0;
     //dateId - 252 ( 1 year )
     //mor = 1.0f * (tom - yom - 2 * pom) / 25.0f;
     //float trk = 1.0f * (tSum - ySum - 2 * pSum) / (1.0f * dSUM);
     //yor = 1.0f * ((tSum - tSum1) - (ySum - ySum1) - 2 * (pSum - pSum1)) / (1.0f * (dSUM - dSUM1));
     ALTER TABLE BBROCK ADD COLUMN UPC FLOAT DEFAULT 0.0;  //up percentage from the lowest (after highest) within last 30 days
-    ALTER TABLE BBROCK ADD COLUMN UDS TINYINT DEFAULT 0;  //days between current and lowest after (after highest) within last 30 days
+    ALTER TABLE BBROCK ADD COLUMN UDS TINYINT UNSIGNED DEFAULT 0;  //days between current and lowest after (after highest) within last 30 days
     ALTER TABLE BBROCK ADD COLUMN DPC FLOAT DEFAULT 0.0;  //down percentage from the highest within last 30 days
-    ALTER TABLE BBROCK ADD COLUMN DDS TINYINT DEFAULT 0;  //days between current and highest within last 30 days
+    ALTER TABLE BBROCK ADD COLUMN DDS TINYINT UNSIGNED DEFAULT 0;  //days between current and highest within last 30 days
 */
 	private static Connection dbcon = null;
 	private static PreparedStatement symbolStmnt = null;
@@ -116,10 +116,15 @@ public class DB {
 	private static PreparedStatement dateIdByDPC = null;
 	private static PreparedStatement updateMaxUpDown = null;
 	private static PreparedStatement upcStmnt = null;
+	private static PreparedStatement resetUpDownToZero = null;
 	
 	
 	public static void closeConnection() {
 		try {
+			if( resetUpDownToZero != null) {
+				resetUpDownToZero.close();
+				resetUpDownToZero = null;
+			}
 			if( upcStmnt != null) {
 				upcStmnt.close();
 				upcStmnt = null;
@@ -416,10 +421,12 @@ public class DB {
 		return dateIDRange;
 	}
 	
+	//SELECT DATEID, CLOSE, DPC, UPC FROM BBROCK WHERE STOCKID=2626 
+	// AND DATEID<=8720 AND DATEID>8470 ORDER BY CLOSE DESC, DATEID DESC LIMIT 20;
 	public static PreparedStatement getMaxClose() {
 		if (maxClose == null) {
 			try {
-				String query = "select MAX(CLOSE) FROM BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=?";
+				String query = "select DATEID, CLOSE FROM BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=?  ORDER BY CLOSE DESC, DATEID DESC LIMIT 20";
 				maxClose  = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
@@ -461,7 +468,7 @@ public class DB {
 	public static PreparedStatement getMinClose() {
 		if (minClose == null) {
 			try {
-				String query = "select MIN(CLOSE) FROM BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=?";
+				String query = "select CLOSE, DATEID FROM BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=? ORDER BY CLOSE ASC LIMIT 1";
 				minClose  = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
@@ -687,6 +694,20 @@ public class DB {
 		}
 
 		return distanceChangeUpdate;
+	}
+	
+	public static PreparedStatement resetUpDownToZero() {
+		if (resetUpDownToZero == null) {
+			try {
+				String query = "UPDATE BBROCK SET UPC = 0.0, UDS = 0, DPC = 0.0, DDS= 0, DM=0.0, DA=0  WHERE STOCKID = ? ";
+				resetUpDownToZero = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return resetUpDownToZero;
 	}
 	
 	public static Statement getStatement() {
