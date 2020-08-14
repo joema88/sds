@@ -192,6 +192,7 @@ public class UpDownMeasure {
 							int tempDateId = 0;
 							float tempDrop = 0.0f;
 							float temMaxPrice = 0.0f;
+							float maxPrice = 0.0f;
 							while (xpRS.next()) {
 								tempDateId = xpRS.getInt(1);
 								temMaxPrice = xpRS.getFloat(2);
@@ -199,11 +200,13 @@ public class UpDownMeasure {
 								if (xDateID == 0) { // get the last year biggest price drop regardless
 									xDateID = tempDateId;
 									maxDrop = tempDrop;
+									maxPrice = temMaxPrice;
 								} else if (tempDrop < -60.0f && tempDateId > xDateID) {
 									// essentially we want to find the closest point to current
 									// which has a 60% price drop
 									xDateID = tempDateId;
 									maxDrop = tempDrop;
+									maxPrice = temMaxPrice;
 								}
 							}
 
@@ -228,8 +231,12 @@ public class UpDownMeasure {
 							if (minDistsance > upDays)
 								minDistsance = upDays;
 
-							float changePercentage = 100.0f * ((100.0f + maxDrop) / 100.0f)
-									* ((100.0f + upFromMin) / 100.0f) - 100.0f;
+							//this measure what it feels like if you invest fixed amount of money
+							//at the top and the bottom average loss
+							//let us assume invest $1000 at each point at maxPrice and minPrice
+							float shares = 1000.0f/maxPrice + 1000.0f/minPrice;
+							float totalWorth = shares*cPrice;
+							float changePercentage = 100.0f*(totalWorth - 2000.0f)/2000.0f;
 							int changeDays = maxDistance - minDistsance;
 							if (changeDays < 0)
 								changeDays = minDistsance - maxDistance;
@@ -327,6 +334,7 @@ public class UpDownMeasure {
 			int tempDateId = 0;
 			float tempDrop = 0.0f;
 			float temMaxPrice = 0.0f;
+			float maxPrice = 0.0f;
 			while (xpRS.next()) {
 				tempDateId = xpRS.getInt(1);
 				temMaxPrice = xpRS.getFloat(2);
@@ -334,11 +342,13 @@ public class UpDownMeasure {
 				if (xDateID == 0) { // get the last year biggest price drop regardless
 					xDateID = tempDateId;
 					maxDrop = tempDrop;
+					maxPrice = temMaxPrice;
 				} else if (tempDrop < -60.0f && tempDateId > xDateID) {
 					// essentially we want to find the closest point to current
 					// which has a 60% price drop
 					xDateID = tempDateId;
 					maxDrop = tempDrop;
+					maxPrice = temMaxPrice;
 				}
 			}
 
@@ -363,7 +373,15 @@ public class UpDownMeasure {
 			if (minDistsance > upDays)
 				minDistsance = upDays;
 
-			float changePercentage = 100.0f * ((100.0f + maxDrop) / 100.0f) * ((100.0f + upFromMin) / 100.0f) - 100.0f;
+		
+			//this measure what it feels like if you invest fixed amount of money
+			//at the top and the bottom average loss
+			//let us assume invest $1000 at each point at maxPrice and minPrice
+			float shares = 1000.0f/maxPrice + 1000.0f/minPrice;
+			float totalWorth = shares*cPrice;
+			float changePercentage = 100.0f*(totalWorth - 2000.0f)/2000.0f;
+//			float changePercentage = 100.0f * ((100.0f + maxDrop) / 100.0f) * ((100.0f + upFromMin) / 100.0f) - 100.0f;
+
 
 			int changeDays = maxDistance - minDistsance;
 			if (changeDays < 0)
