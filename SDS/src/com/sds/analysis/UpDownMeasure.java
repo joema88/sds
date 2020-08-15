@@ -388,10 +388,19 @@ public class UpDownMeasure {
 				changeDays = minDistsance - maxDistance;
 
 			distanceChangeUpdate.setFloat(1, upFromMin);
-			distanceChangeUpdate.setInt(2, minDistsance);
+			if (minDistsance > 255) {
+				distanceChangeUpdate.setInt(2, 255);
+			} else {
+				distanceChangeUpdate.setInt(2, minDistsance);
+			}
 			distanceChangeUpdate.setFloat(3, maxDrop);
-			distanceChangeUpdate.setInt(4, maxDistance);
-			distanceChangeUpdate.setFloat(5, changePercentage);
+			if (maxDistance > 255) {
+				distanceChangeUpdate.setInt(4, 255);
+			} else {
+				distanceChangeUpdate.setInt(4, maxDistance);
+			}
+			
+	     	distanceChangeUpdate.setFloat(5, changePercentage);
 			distanceChangeUpdate.setInt(6, changeDays);
 			distanceChangeUpdate.setInt(7, stockID);
 			distanceChangeUpdate.setInt(8, dateId);
