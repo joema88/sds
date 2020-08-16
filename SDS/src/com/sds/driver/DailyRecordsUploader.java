@@ -90,8 +90,10 @@ public class DailyRecordsUploader {
 				
 				//process up and down
 				UpDownMeasure.processTodayUpDown(stockID, dateID);
-				//process max delta and distance in days
-				//UpDownMeasure.processTodayMaxDelta(stockID, dateID);
+				//process TODAY'S max delta and distance in days
+				UpDownMeasure.processTodayDMA(stockID, dateID);
+				//process today AVGDM and DM Rank
+				UpDownMeasure.processTodayDMRankAvgDM(stockID, dateID);
 			}
 			
 			//calculate all the sum of teal, yellow and pink of that day
@@ -110,7 +112,7 @@ public class DailyRecordsUploader {
 		// TODO Auto-generated method stub
 		String path = "/home/joma/share/test/";
 		boolean currentDateProcessOnly = true;
-		String cDate = "2020-08-12";
+		String cDate = "2020-08-14";
 		int dateCountToBeProcessed = 1;
 		int loopCount = 0;
 		long t1 = System.currentTimeMillis();

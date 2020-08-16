@@ -48,8 +48,11 @@ public class DB {
 	ALTER TABLE BBROCK ADD COLUMN MOR FLOAT DEFAULT 0.0;  //the current month color rank measurement
     ALTER TABLE BBROCK ADD COLUMN YOR FLOAT DEFAULT 0.0;  // 1 year color rank measurement
     ALTER TABLE BBROCK ADD COLUMN TRK FLOAT DEFAULT 0.0;  //Total color rank since having data
-    ALTER TABLE BBROCK ADD COLUMN DM FLOAT DEFAULT 0.0;
-    ALTER TABLE BBROCK ADD COLUMN DA TINYINT UNSIGNED DEFAULT 0;
+    ALTER TABLE BBROCK ADD COLUMN DM FLOAT DEFAULT 0.0;  //MAX DELTA OF CURRENT UPC AND PAST 250 DAYS' DPC
+    ALTER TABLE BBROCK ADD COLUMN DA TINYINT UNSIGNED DEFAULT 0; //DM DAY DIFFERENCE
+    ALTER TABLE BBROCK ADD COLUMN ADM FLOAT DEFAULT 0.0; //AVG DM OF THE PAST 250 DAYS
+    ALTER TABLE BBROCK ADD COLUMN RK TINYINT UNSIGNED DEFAULT 0; //RANK OF CURRENT DM COMPARED TO LAST 250 DAYS, HIGHEST RK = 1, LOWEST =250
+    
     //dateId - 252 ( 1 year )
     //mor = 1.0f * (tom - yom - 2 * pom) / 25.0f;
     //float trk = 1.0f * (tSum - ySum - 2 * pSum) / (1.0f * dSUM);
@@ -117,10 +120,30 @@ public class DB {
 	private static PreparedStatement updateMaxUpDown = null;
 	private static PreparedStatement upcStmnt = null;
 	private static PreparedStatement resetUpDownToZero = null;
+	private static PreparedStatement currentUPC = null;
+	private static PreparedStatement dmRank = null;
+	private static PreparedStatement avgDM = null;
+	private static PreparedStatement updateDMRankAvg = null;
 	
 	
 	public static void closeConnection() {
 		try {
+			if( updateDMRankAvg != null) {
+				updateDMRankAvg.close();
+				updateDMRankAvg = null;
+			}
+			if( avgDM != null) {
+				avgDM.close();
+				avgDM = null;
+			}
+			if( dmRank != null ) {
+				dmRank.close();
+				dmRank = null;
+			}
+			if(currentUPC != null) {
+				currentUPC.close();
+				currentUPC = null;
+			}
 			if( resetUpDownToZero != null) {
 				resetUpDownToZero.close();
 				resetUpDownToZero = null;
@@ -451,10 +474,25 @@ public class DB {
 		return maxClose ;
 	}
 	
+	public static PreparedStatement getCurrentUPC() {
+		if (currentUPC == null) {
+			try {
+				String query = "select UPC, DATEID FROM BBROCK WHERE STOCKID = ? AND DATEID=? ";
+				currentUPC  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return currentUPC ;
+	}
+	
+	
 	public static PreparedStatement getMinDPC() {
 		if (minClose == null) {
 			try {
-				String query = "select MIN(DPC) FROM BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=?";
+				String query = "select DPC, DATEID FROM BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=? ORDER BY DPC ASC LIMIT 1";
 				minClose  = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
@@ -1260,6 +1298,41 @@ public class DB {
 		return colorRankSumStmnt;
 	}
 	
+	public static PreparedStatement getAvgDMStmnt() {
+		getConnection();
+
+		if (avgDM == null) {
+			try {
+
+				
+				String query = "SELECT AVG(DM) FROM BBROCK  WHERE STOCKID =  ? AND DATEID>=? AND DATEID <=?";
+				avgDM  = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return avgDM ;
+	}
+	
+	public static PreparedStatement getDMRankStmnt() {
+		getConnection();
+
+		if (dmRank == null) {
+			try {
+
+				
+				String query = "SELECT DATEID, DM FROM BBROCK  WHERE STOCKID =  ? AND DATEID>=? AND DATEID <=? ORDER BY DM DESC";
+				dmRank  = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return dmRank ;
+	}
+	
+	
 	public static PreparedStatement getDateIDStmnt() {
 		getConnection();
 
@@ -1294,6 +1367,26 @@ public class DB {
 		}
 
 		return colorOMUpdateStmnt;
+	}
+	
+	
+	public static PreparedStatement getUpdateDMRankAVGStmnt() {
+		getConnection();
+
+		if (updateDMRankAvg== null) {
+			try {
+
+				// select SUM(TEAL), SUM(YELLOW), SUM(PINK) FROM BBROCK a, SYMBOLS b WHERE
+				// a.STOCKID = b.STOCKID and b.SYMBOL = ? AND DATEID>=? AND DATEID<=?;
+
+				String query = "UPDATE BBROCK SET ADM = ?, RK = ? WHERE STOCKID =  ? AND DATEID =?";
+				updateDMRankAvg = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return updateDMRankAvg;
 	}
 	
 	// updateBPYStmnt = null;
