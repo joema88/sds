@@ -759,6 +759,8 @@ public class UpDownMeasure {
 			}
 			
 			updateDMRankAvg.setFloat(1, dmAVG);
+			if(rank>250)
+				rank = 250;
 			updateDMRankAvg.setInt(2, rank);
 			updateDMRankAvg.setInt(3, stockID);
 			updateDMRankAvg.setInt(4, dateId);
