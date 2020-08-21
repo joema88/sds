@@ -10,7 +10,9 @@ public class BuyLow {
 	// private static int startDateID = 8455;
 
 	// 2019/7/19, start here so we have one year ranking also, 252 days 1 year
-	private static int startDateID = 8707;
+	//private static int startDateID = 8707;
+	// DATEID = 6695, count = 1311, 2011/7/22 starting point
+		private static int startDateID = 6695;
 	private static PreparedStatement qualifiedLowStmnt = null;
 
 	private static int eDays = 40;
@@ -77,6 +79,18 @@ public class BuyLow {
 			excludeStocks.put("5376", "5376");
 			excludeStocks.put("5488", "5488");
 			// add WIMI, 3775 all zero case to bull, to new to caluculate
+			
+			excludeStocks.put("5372", "5372");
+			excludeStocks.put("702", "702");
+			excludeStocks.put("3966", "3966");
+			excludeStocks.put("4668", "4668");
+			excludeStocks.put("4882", "4882");
+			excludeStocks.put("4958", "4958");
+			excludeStocks.put("5030", "5030");
+			excludeStocks.put("5047", "5047");
+			excludeStocks.put("5393", "5393");
+			excludeStocks.put("5851", "5851");
+			excludeStocks.put("5856", "5856");
 
 			long t1 = System.currentTimeMillis();
 			PreparedStatement dailyPrice = DB.getDailyPrice();
@@ -92,7 +106,7 @@ public class BuyLow {
 				sc++;
 				int stockID = rs.getInt(1);
 				if (!excludeStocks.containsKey("" + stockID))
-					for (int k = startDateID; k <= 8968; k++) {
+					for (int k = startDateID; k <= 8979; k++) {
 						// String query = "select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, CLOSE,
 						//UPC, UDS, DPC, DDS FROM BBROCK a, SYMBOLS b,DATES c  
 						//WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and a.STOCKID=?  and  a.DATEID = ? ";
@@ -118,8 +132,10 @@ public class BuyLow {
 						
 
 							//(TOM-YOM-2*POM)/25>0.01??
-							if (upc<0.0001&&upc>-0.0001&&dpc<-25.0f && dds>=20 && cPrice>0.05 ) { //lowest close point of last 30 days with -20% drop
-								if ((k + 39) < 8968) {
+							//if (upc<0.0001&&upc>-0.0001&&dpc<-25.0f && dds>=20 && cPrice>0.05 ) { //lowest close point of last 30 days with -20% drop
+							if (dpc<-75.0f && dds<=30 && cPrice>0.05 ) { 
+						//	if (dpc<-60.0f && cPrice>0.05 ) { 
+							if ((k + 39) < 8980) {
 									if (debug)
 										System.out.println("Found candidate " + stockID + " at dateID " + k);
 									checkYield(dailyPrice, k, daysForHold, stockID);
