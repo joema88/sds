@@ -133,7 +133,7 @@ public class BuyLow {
 
 							//(TOM-YOM-2*POM)/25>0.01??
 							//if (upc<0.0001&&upc>-0.0001&&dpc<-25.0f && dds>=20 && cPrice>0.05 ) { //lowest close point of last 30 days with -20% drop
-							if (dpc<-75.0f && dds<=30 && cPrice>0.05 ) { 
+							if (dpc<-70.0f && dds<=30 && cPrice>0.05 ) { 
 						//	if (dpc<-60.0f && cPrice>0.05 ) { 
 							if ((k + 39) < 8980) {
 									if (debug)

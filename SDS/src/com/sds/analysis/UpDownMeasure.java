@@ -10,7 +10,8 @@ public class UpDownMeasure {
 	// private static int startDateID = 8455;
 
 	// 2019/7/19, start here so we have one year ranking also, 252 days 1 year
-	private static int startDateID = 8707;
+	//private static int startDateID = 8707;
+	private static int startDateID = 8980; //RECALCULATE FROM 8980
 	private static PreparedStatement colorRankPriceCheckStmnt = null;
 
 	private static int eDays = 40;
@@ -33,15 +34,16 @@ public class UpDownMeasure {
 	private static float yieldQaulified2 = -0.5f;
 	private static boolean debug = true;
 	private static Hashtable excludeStocks = null;
-	private static int currentDateID = 8978;
+	private static int currentDateID = 8984;
 	private static int upDays = 30; // this is used to measure 40% up days
 	private static int downDays = 250; // this is used to measure 60% down days
 
 	public static void main(String[] args) {
 
 		// processUpDownHistory();
-		//processDMAHistory();
-		processDMRankAvgDMHistory();
+		//
+		//processDMRankAvgDMHistory();
+		processDMAHistory();
 	}
 
 	public static void processUpDownHistory() {
@@ -129,6 +131,7 @@ public class UpDownMeasure {
 				// if (!ignore||!excludeStocks.containsKey("" + stockID))
 				if (!ignore)
 					for (int k = currentDateID; k >= strtDateId; k--) {
+					
 						// for (int k = currentDateID; k >= currentDateID; k--) {
 						boolean exist = false;
 						int adjustment = 0;
@@ -628,6 +631,8 @@ public class UpDownMeasure {
 			int MA = dateId - mDateID;
 
 			updateMaxUpDown.setFloat(1, MD);
+			if(MA>250)
+				MA = 250;
 			updateMaxUpDown.setInt(2, MA);
 			updateMaxUpDown.setInt(3, stockID);
 			updateMaxUpDown.setInt(4, dateId);
@@ -669,6 +674,7 @@ public class UpDownMeasure {
 				int endDateId = dateRS.getInt(2);
 
 				for (int k = endDateId; k >= strtDateId; k--) {
+				//	for (int k = currentDateID; k >= 8979; k--) {
 					// for (int k = currentDateID; k >= currentDateID; k--) {
 					boolean exist = false;
 					int adjustment = 0;
@@ -694,7 +700,7 @@ public class UpDownMeasure {
 					processTodayDMRankAvgDM(stockID, k);
 				}
 
-				System.out.println("process done for " + stockID);
+				System.out.println("process TodayDMRankAvgDM done for " + stockID);
 				Thread.sleep(2000);
 			}
 
@@ -799,10 +805,13 @@ public class UpDownMeasure {
 				int strtDateId = dateRS.getInt(1);
 				int endDateId = dateRS.getInt(2);
 
-				for (int k = endDateId; k >= strtDateId; k--) {
+				//for (int k = endDateId; k >= strtDateId; k--) {
+					for (int k = currentDateID; k >= 8980; k--) {
 					// for (int k = currentDateID; k >= currentDateID; k--) {
 					boolean exist = false;
 					int adjustment = 0;
+					int lcMax = 10;
+					int lc = 0;
 					do {
 						dateIDExistStmnt.setInt(1, stockID);
 						dateIDExistStmnt.setInt(2, k);
@@ -819,9 +828,11 @@ public class UpDownMeasure {
 							k--;
 							adjustment++;
 						}
+						lc++;
 
-					} while (!exist);
-
+					} while (!exist&&lc<lcMax);
+                   
+					if(exist)
 					processTodayDMA(stockID, k);
 				}
 

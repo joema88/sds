@@ -1087,7 +1087,7 @@ public class DB {
 		if (upcStmnt == null) {
 			try {
 
-				String query = "SELECT UPC,DPC, CLOSE FROM BBROCK  WHERE STOCKID = ? AND DATEID =? ";
+				String query = "SELECT UPC,DPC, CLOSE, DM, DA, ADM, RK FROM BBROCK  WHERE STOCKID = ? AND DATEID =? ";
 
 				upcStmnt  = dbcon.prepareStatement(query);
 			} catch (SQLException e) {

@@ -7,7 +7,8 @@ import com.sds.db.DB;
 
 public class Forty30Days {
 	// DATEID = 8455, count = 5203, 2018/7/18 starting point
-	private static int startDateID = 8455;
+	// DATEID = 6695, count = 1311, 2011/7/22 starting point
+	private static int startDateID = 6695;
 
 	// 2019/7/19, start here so we have one year ranking also, 252 days 1 year
 	// private static int startDateID = 8707;
@@ -78,6 +79,7 @@ public class Forty30Days {
 			excludeStocks.put("5488", "5488");
 			// add WIMI, 3775 all zero case to bull, to new to caluculate
 			excludeStocks.put("94", "94");
+			excludeStocks.put("2626", "2626"); //nvax
 			long t1 = System.currentTimeMillis();
 			PreparedStatement dailyPrice = DB.getDailyPrice();
 
@@ -97,7 +99,7 @@ public class Forty30Days {
 					startId = minStart;
 
 				if (!excludeStocks.containsKey("" + stockID))
-					for (int k = startId; k <= 8976; k++) {
+					for (int k = startId; k <= 8979; k++) {
 
 						upcStmnt.setInt(1, stockID);
 						upcStmnt.setInt(2, k);
@@ -105,9 +107,21 @@ public class Forty30Days {
 						ResultSet rs1 = upcStmnt.executeQuery();
 
 						if (rs1.next()) {
+							//String query = "SELECT UPC,DPC, CLOSE, DM, DA, ADM, RK 
+							//FROM BBROCK  WHERE STOCKID = ? AND DATEID =? ";
+
 							float upc = rs1.getFloat(1);
 							float dpc = rs1.getFloat(2);
-							if (k < 8903 && dpc < -60.0f) {
+							float dm =  rs1.getFloat(4);
+							int da = rs1.getInt(5);
+							float adm =  rs1.getFloat(6);
+							int rank = rs1.getInt(7);
+							
+							//basically within 1 year 60% drop, within 10 days, 40% increase
+							//and moment near yearly high
+							//if (k < 8903 && (upc >40.0f && dm>100.0f &&da<10 && rank<10)) {
+								//see HD,WST,MSFT,PAYC,TWLO example
+							if (k < 8903 && (dm>2.0f*upc &&upc>30.0f&& dm>60.0f &&da<30 && rank<30)) {
 								// if (debug)
 								System.out.println("Found candidate " + stockID + " at DateId " + k);
 								checkYield(dailyPrice, k, daysForHold, stockID);
