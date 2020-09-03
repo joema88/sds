@@ -569,6 +569,7 @@ public class UpDownMeasure {
 		} catch (Exception ex) {
 
 		}
+		
 	}
 
 	public static void processTodayFUC(int stockID, int dateId) {
