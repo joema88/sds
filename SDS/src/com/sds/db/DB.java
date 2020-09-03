@@ -52,7 +52,9 @@ public class DB {
     ALTER TABLE BBROCK ADD COLUMN DA TINYINT UNSIGNED DEFAULT 0; //DM DAY DIFFERENCE
     ALTER TABLE BBROCK ADD COLUMN ADM FLOAT DEFAULT 0.0; //AVG DM OF THE PAST 250 DAYS
     ALTER TABLE BBROCK ADD COLUMN RK TINYINT UNSIGNED DEFAULT 0; //RANK OF CURRENT DM COMPARED TO LAST 250 DAYS, HIGHEST RK = 1, LOWEST =250
-    
+    ALTER TABLE BBROCK ADD COLUMN FUC TINYINT UNSIGNED DEFAULT 0; //UPC 1st 40 occurance within 30(or 40?) days, if accompanied by DM>100, then 8
+     //else then 4, check sequential of 4s to see if the second 4 price>1st 4 price like DOCU,ZM etc. for 8, then one 8 is enough. The rest of UPC>40
+      //is denoted by 1, so it is convenient to calculate if another UPC>40 is within the reach of 30 days 
     //dateId - 252 ( 1 year )
     //mor = 1.0f * (tom - yom - 2 * pom) / 25.0f;
     //float trk = 1.0f * (tSum - ySum - 2 * pSum) / (1.0f * dSUM);
@@ -124,10 +126,25 @@ public class DB {
 	private static PreparedStatement dmRank = null;
 	private static PreparedStatement avgDM = null;
 	private static PreparedStatement updateDMRankAvg = null;
-	
+	private static PreparedStatement fucf = null;
+	private static PreparedStatement fud = null;
+	private static PreparedStatement updateFUC = null;
+	//fucf, fud, updateFUC
 	
 	public static void closeConnection() {
 		try {
+			if( fucf != null) {
+				fucf.close();
+				fucf = null;
+			}
+			if( fud != null) {
+				fud.close();
+				fud = null;
+			}
+			if( updateFUC != null) {
+				updateFUC.close();
+				updateFUC = null;
+			}
 			if( updateDMRankAvg != null) {
 				updateDMRankAvg.close();
 				updateDMRankAvg = null;
@@ -503,6 +520,49 @@ public class DB {
 		return minClose ;
 	}
 	
+	public static PreparedStatement getFUD() {
+		if (fud == null) {
+			try {
+				String query = "select UPC,DM,FUC, DATEID FROM BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=? ORDER BY DATEID DESC";
+				fud  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return fud ;
+	}
+	
+	public static PreparedStatement getFUCF() {
+		if (fucf == null) {
+			try {
+				String query = "select FUC,CLOSE, DATEID FROM BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=? ORDER BY DATEID DESC";
+				fucf  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return fucf ;
+	}
+	
+
+	public static PreparedStatement updateFUC() {
+		if (updateFUC == null) {
+			try {
+				String query = "UPDATE BBROCK SET FUC = ?  WHERE  STOCKID = ? AND DATEID=?";
+				updateFUC  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return updateFUC ;
+	}
+	
 	public static PreparedStatement getMinClose() {
 		if (minClose == null) {
 			try {
@@ -723,7 +783,7 @@ public class DB {
 	public static PreparedStatement getUpdateUpDownDistance() {
 		if (distanceChangeUpdate == null) {
 			try {
-				String query = "UPDATE BBROCK SET UPC = ?, UDS = ?, DPC = ?, DDS= ?, DM=?, DA=?  WHERE STOCKID = ? AND DATEID = ?";
+				String query = "UPDATE BBROCK SET UPC = ?, UDS = ?, DPC = ?, DDS= ?  WHERE STOCKID = ? AND DATEID = ?";
 				distanceChangeUpdate = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
@@ -1031,7 +1091,7 @@ public class DB {
 		if (qualifiedLowStmnt == null) {
 			try {
 
-				String query = "select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, CLOSE, UPC, UDS, DPC, DDS FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and a.STOCKID=?  and  a.DATEID = ? ";
+				String query = "select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, CLOSE, UPC, UDS, DPC, DDS, DM FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and a.STOCKID=?  and  a.DATEID = ? ";
 
 				qualifiedLowStmnt = dbcon.prepareStatement(query);
 			} catch (SQLException e) {

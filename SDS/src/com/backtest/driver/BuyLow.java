@@ -4,15 +4,16 @@ import java.sql.*;
 import java.util.*;
 
 import com.sds.db.DB;
+import java.io.*;
 
 public class BuyLow {
 	// DATEID = 8455, count = 5203, 2018/7/18 starting point
-	// private static int startDateID = 8455;
+	private static int startDateID = 8455;
 
 	// 2019/7/19, start here so we have one year ranking also, 252 days 1 year
-	//private static int startDateID = 8707;
+	// private static int startDateID = 8707;
 	// DATEID = 6695, count = 1311, 2011/7/22 starting point
-		private static int startDateID = 6695;
+	// private static int startDateID = 6695;
 	private static PreparedStatement qualifiedLowStmnt = null;
 
 	private static int eDays = 40;
@@ -26,6 +27,7 @@ public class BuyLow {
 	private static int totalCountRandom = 0;
 	private static int totalRandomHC = 0;
 	private static int totalRandomLC = 0;
+	private static int incidentCount = 0;
 
 	private static float peakYield = 0.0f;
 	private static float troughYield = 0.0f;
@@ -33,8 +35,9 @@ public class BuyLow {
 	private static float troughYieldRandom = 0.0f;
 	private static float yieldQaulified1 = 0.5f;
 	private static float yieldQaulified2 = -0.5f;
-	private static boolean debug = true;
+	private static boolean debug = false;
 	private static Hashtable excludeStocks = null;
+	private static FileWriter fileWriter = null;
 
 	public static void main(String[] args) {
 		try {
@@ -79,7 +82,7 @@ public class BuyLow {
 			excludeStocks.put("5376", "5376");
 			excludeStocks.put("5488", "5488");
 			// add WIMI, 3775 all zero case to bull, to new to caluculate
-			
+
 			excludeStocks.put("5372", "5372");
 			excludeStocks.put("702", "702");
 			excludeStocks.put("3966", "3966");
@@ -95,6 +98,10 @@ public class BuyLow {
 			long t1 = System.currentTimeMillis();
 			PreparedStatement dailyPrice = DB.getDailyPrice();
 
+			File file = new File("/home/joma/share/test/Test.txt");
+			fileWriter = new FileWriter(file);
+			
+
 			qualifiedLowStmnt = DB.getQualifiedLowStmnt();
 			PreparedStatement allStocks = DB.getAllStockIDs();
 			allStocks.setInt(1, 1);
@@ -106,22 +113,24 @@ public class BuyLow {
 				sc++;
 				int stockID = rs.getInt(1);
 				if (!excludeStocks.containsKey("" + stockID))
-					for (int k = startDateID; k <= 8979; k++) {
+					for (int k = startDateID; k <= 8985; k++) {
 						// String query = "select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, CLOSE,
-						//UPC, UDS, DPC, DDS FROM BBROCK a, SYMBOLS b,DATES c  
-						//WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and a.STOCKID=?  and  a.DATEID = ? ";
+						// UPC, UDS, DPC, DDS, DM FROM BBROCK a, SYMBOLS b,DATES c
+						// WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and a.STOCKID=? and
+						// a.DATEID = ? ";
 
-					    float upc = 0.0f;
-					    float dpc = 0.0f;
-					    int uds = 0;
-					    int dds = 0;
-					    float cPrice = 0.0f;
-					    
+						float upc = 0.0f;
+						float dpc = 0.0f;
+						int uds = 0;
+						int dds = 0;
+						float cPrice = 0.0f;
+						float dm = 0.0f;
+
 						qualifiedLowStmnt.setInt(1, stockID);
 						qualifiedLowStmnt.setInt(2, k);
 
 						ResultSet rs1 = qualifiedLowStmnt.executeQuery();
-					
+
 						int toleranceCount = 0;
 						while (rs1.next()) {
 							cPrice = rs1.getFloat(5);
@@ -129,17 +138,19 @@ public class BuyLow {
 							uds = rs1.getInt(7);
 							dpc = rs1.getFloat(8);
 							dds = rs1.getInt(9);
-						
+							dm = rs1.getInt(10);
 
-							//(TOM-YOM-2*POM)/25>0.01??
-							//if (upc<0.0001&&upc>-0.0001&&dpc<-25.0f && dds>=20 && cPrice>0.05 ) { //lowest close point of last 30 days with -20% drop
-							if (dpc<-70.0f && dds<=30 && cPrice>0.05 ) { 
-						//	if (dpc<-60.0f && cPrice>0.05 ) { 
-							if ((k + 39) < 8980) {
+							// (TOM-YOM-2*POM)/25>0.01??
+							// if (upc<0.0001&&upc>-0.0001&&dpc<-25.0f && dds>=20 && cPrice>0.05 ) {
+							// //lowest close point of last 30 days with -20% drop
+							// if (dpc<-70.0f && dds<=30 && cPrice>0.05 ) {
+							// if (dpc<-60.0f && cPrice>0.05 ) {
+							if (upc > 40.0f && dm > 100.0f && cPrice > 0.05) {
+								if ((k + 39) < 8985) {
 									if (debug)
 										System.out.println("Found candidate " + stockID + " at dateID " + k);
 									checkYield(dailyPrice, k, daysForHold, stockID);
-									//naturally increase as we could not predict the lowest point at this time
+									// naturally increase as we could not predict the lowest point at this time
 									k = k + 5;
 								}
 								break;
@@ -148,7 +159,7 @@ public class BuyLow {
 
 					}
 				long t2 = System.currentTimeMillis();
-				if (sc % 100 == 0)
+				if (sc % 100 == 0 && debug)
 					System.out.println(sc + " total stocks processed, time cost " + (t2 - t1) / (1000 * 60));
 				Thread.sleep(1000);
 			}
@@ -165,6 +176,7 @@ public class BuyLow {
 
 			System.out.println("Success random rate " + totalSCRandom + "/" + totalCountRandom);
 			Thread.sleep(100);
+			fileWriter.close();
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}
@@ -172,6 +184,7 @@ public class BuyLow {
 
 	public static void checkYield(PreparedStatement dailyPrice, int dateID, int holdDays, int stockId) {
 		try {
+			incidentCount++;
 			dailyPrice.setInt(1, stockId);
 			dailyPrice.setInt(2, dateID);
 			dailyPrice.setInt(3, dateID + holdDays);
@@ -216,7 +229,7 @@ public class BuyLow {
 				if (pYield > yieldQaulified1) {
 					totalHC++;
 					totalSC++;
-					if (pYield > 3.0f)
+					if (pYield > 3.0f && debug)
 						System.out.println("Find suspected high yield " + pYield + " for stock " + stockId);
 					if (debug)
 						System.out.println("Find up qualified yield " + pYield + " for stock " + stockId);
@@ -225,7 +238,7 @@ public class BuyLow {
 				if (pYield < yieldQaulified2) {
 					totalSC++;
 					totalLC++;
-					if (pYield < -0.8f)
+					if (pYield < -0.8f && debug)
 						System.out.println("Find suspected low yield " + pYield + " for stock " + stockId);
 
 					if (debug)
@@ -241,6 +254,10 @@ public class BuyLow {
 							"TotalCount " + totalCount + " peakYield " + peakYield + " troughYield " + troughYield);
 					System.out.println("Average trough yield " + 100.0f * troughYield / totalCount);
 					System.out.println("Success rate " + totalSC + "/" + totalCount);
+				} else {
+					if (debug)
+						System.out.println("0, " + incidentCount + ", " + totalSC + ", "
+								+ 100.0f * peakYield / totalCount + ", " + 100.0f * troughYield / totalCount);
 				}
 
 				int compareStockID = 0;
@@ -303,7 +320,7 @@ public class BuyLow {
 				if (pYield > yieldQaulified1) {
 					totalSCRandom++;
 					totalRandomHC++;
-					if (pYield > 3.0f)
+					if (pYield > 3.0f && debug)
 						System.out.println("Find suspected random high yield " + pYield + " for stock " + stockId);
 
 				}
@@ -311,7 +328,7 @@ public class BuyLow {
 				if (pYield < yieldQaulified2) {
 					totalSCRandom++;
 					totalRandomLC++;
-					if (pYield < -0.8f)
+					if (pYield < -0.8f && debug)
 						System.out.println("Find suspected random low yield " + pYield + " for stock " + stockId);
 
 				}
@@ -324,6 +341,18 @@ public class BuyLow {
 					System.out.println("Average trough random yield " + 100.0f * troughYieldRandom / totalCountRandom);
 
 					System.out.println("Success random rate " + totalSCRandom + "/" + totalCountRandom);
+				} else {
+					System.out.print(incidentCount + ", " + totalSC + ", " + 100.0f * peakYield / totalCount + ", "
+							+ 100.0f * troughYield / totalCount);
+					System.out.println(", " + totalSCRandom + ", " + 100.0f * peakYieldRandom / totalCountRandom + ", "
+							+ 100.0f * troughYieldRandom / totalCountRandom);
+					
+					fileWriter.write(incidentCount + ", " + totalSC + ", " + 100.0f * peakYield / totalCount + ", "
+							+ 100.0f * troughYield / totalCount + ", " + totalSCRandom + ", "
+							+ 100.0f * peakYieldRandom / totalCountRandom + ", "
+							+ 100.0f * troughYieldRandom / totalCountRandom+"\n");
+					fileWriter.flush();
+
 				}
 			}
 		} catch (Exception ex) {

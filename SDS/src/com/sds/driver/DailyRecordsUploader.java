@@ -11,6 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 import com.sds.analysis.*;
+
 //WATCH ETSY  FOR BDW MERGE BEHAVIOR
 public class DailyRecordsUploader {
 
@@ -41,7 +42,7 @@ public class DailyRecordsUploader {
 					stmnt2.setInt(3, dateID);
 					stmnt2.executeUpdate();
 				}
-				
+
 				PreparedStatement yp10SumCalStmnt = DB.getYP10SumCalStmnt();
 				yp10SumCalStmnt.setInt(1, stockID);
 				yp10SumCalStmnt.setInt(2, dateID - 9);
@@ -50,54 +51,57 @@ public class DailyRecordsUploader {
 				if (rs3.next()) {
 					int yellowSum = rs3.getInt(1);
 					int pinkSum = rs3.getInt(2);
-					int YP10 = yellowSum + pinkSum ;
-					
+					int YP10 = yellowSum + pinkSum;
+
 					PreparedStatement yp10SumUpdateStmnt = DB.getYP10SumUpdateStmnt();
-					
+
 					yp10SumUpdateStmnt.setInt(1, YP10);
 					yp10SumUpdateStmnt.setInt(2, stockID);
 					yp10SumUpdateStmnt.setInt(3, dateID);
 					yp10SumUpdateStmnt.executeUpdate();
 
 				}
-				
-				//need to optimize the following calls not to do entire history
-				//DONE 6/5/2020
-				Summary.processLastDayCCX("", stockID);
-				
-				//need to optimize the following calls not to do entire history
-               //process BT9 Bull pattern one
-				//DONE 6/5/2020
-				OneBullPattern.processStock("", stockID, dateID,true);
-				
-				//need to optimize the following calls not to do entire history
-				//find passing points
-				//already optimized 6/5/2020
-				OneBullPattern.findPassPoints("", stockID, true);
-				
-				//need to optimize the following calls not to do entire history
-				//DONE 6/5/2020
-				TwoBullPattern.mergeBDCXHistory("", stockID,true);
-				
-				//need to optimize the following calls not to do entire history
+
+				// need to optimize the following calls not to do entire history
 				// DONE 6/5/2020
-				TwoBullPattern.updatePTCP2History("", stockID,true);
-				
-				//color summary and ranking
+				Summary.processLastDayCCX("", stockID);
+
+				// need to optimize the following calls not to do entire history
+				// process BT9 Bull pattern one
+				// DONE 6/5/2020
+				OneBullPattern.processStock("", stockID, dateID, true);
+
+				// need to optimize the following calls not to do entire history
+				// find passing points
+				// already optimized 6/5/2020
+				OneBullPattern.findPassPoints("", stockID, true);
+
+				// need to optimize the following calls not to do entire history
+				// DONE 6/5/2020
+				TwoBullPattern.mergeBDCXHistory("", stockID, true);
+
+				// need to optimize the following calls not to do entire history
+				// DONE 6/5/2020
+				TwoBullPattern.updatePTCP2History("", stockID, true);
+
+				// color summary and ranking
 				ColorSummary.updateColorSummary(stockID, dateID);
 				ColorSummary.updateOMColorSummary(stockID, dateID);
 				ColorSummary.updateColorRanking(stockID, dateID);
-				
-				//process up and down
+
+				// process up and down
 				UpDownMeasure.processTodayUpDown(stockID, dateID);
-				//process today AVGDM and DM Rank
-				UpDownMeasure.processTodayDMRankAvgDM(stockID, dateID);
-				//process TODAY'S max delta and distance in days
-				UpDownMeasure.processTodayDMA(stockID, dateID);
-				
+
+				// process today AVGDM and DM Rank, THIS ONE MAYBE USELESS
+				// UpDownMeasure.processTodayDMRankAvgDM(stockID, dateID);
+
+				// process TODAY'S max delta and distance in days
+				// UpDownMeasure.processTodayDMA(stockID, dateID);
+
 			}
+
 			
-			//calculate all the sum of teal, yellow and pink of that day
+			// calculate all the sum of teal, yellow and pink of that day
 			Summary.processAllYTPSum(dateID);
 		} catch (Exception ex) {
 			System.out.println("Error at processDailySummaryScore...");
@@ -106,20 +110,21 @@ public class DailyRecordsUploader {
 
 	}
 
-	//TOD DO (6/4/2020): CCX, BDCX, BDW ARE NOT UPDATED OR CALCULATED IN DAILY ROUTINE
-	//done 6/5/2020
-	
+	// TOD DO (6/4/2020): CCX, BDCX, BDW ARE NOT UPDATED OR CALCULATED IN DAILY
+	// ROUTINE
+	// done 6/5/2020
+
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		String path = "/home/joma/share/test/";
 		boolean currentDateProcessOnly = true;
-		String cDate = "2020-08-24";
+		String cDate = "2020-09-01";
 		int dateCountToBeProcessed = 1;
 		int loopCount = 0;
 		long t1 = System.currentTimeMillis();
 
 		do {
-		    readLoadRecords(path, cDate);
+			readLoadRecords(path, cDate);
 			System.out.println("Process daily summary and PT9...");
 			processDailySummaryScore(cDate);
 			try {
@@ -132,7 +137,7 @@ public class DailyRecordsUploader {
 		} while (!currentDateProcessOnly && loopCount <= dateCountToBeProcessed);
 
 		DB.closeConnection();
-		
+
 		// DailyAnalysis.analyzeStockTrend("2020-05-22");
 		long t2 = System.currentTimeMillis();
 
