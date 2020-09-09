@@ -63,6 +63,7 @@ public class DB {
     ALTER TABLE BBROCK ADD COLUMN UDS TINYINT UNSIGNED DEFAULT 0;  //days between current and lowest after (after highest) within last 30 days
     ALTER TABLE BBROCK ADD COLUMN DPC FLOAT DEFAULT 0.0;  //down percentage from the highest within last 30 days
     ALTER TABLE BBROCK ADD COLUMN DDS TINYINT UNSIGNED DEFAULT 0;  //days between current and highest within last 30 days
+    ALTER TABLE BBROCK ADD COLUMN FUC TINYINT UNSIGNED DEFAULT 0;  //UPC>40 and DM>100 first occurence past 30 days 8, only UPC>40, then 4, otherwise, if not first occurence, then assign value 1
 */
 	private static Connection dbcon = null;
 	private static PreparedStatement symbolStmnt = null;
