@@ -116,16 +116,18 @@ public class Forty30Days {
 							int da = rs1.getInt(5);
 							float adm =  rs1.getFloat(6);
 							int rank = rs1.getInt(7);
+							int fuc = rs1.getInt(8);
 							
 							//basically within 1 year 60% drop, within 10 days, 40% increase
 							//and moment near yearly high
 							//if (k < 8903 && (upc >40.0f && dm>100.0f &&da<10 && rank<10)) {
 								//see HD,WST,MSFT,PAYC,TWLO example
-							if (k < 8903 && (dm>2.0f*upc &&upc>30.0f&& dm>60.0f &&da<30 && rank<30)) {
+						//	if (k < 8903 && (dm>2.0f*upc &&upc>30.0f&& dm>60.0f &&da<30 && rank<30)) {
 								// if (debug)
+							if(k < 8903 &&fuc==8) {
 								System.out.println("Found candidate " + stockID + " at DateId " + k);
 								checkYield(dailyPrice, k, daysForHold, stockID);
-								k = k + 30;
+								k = k + 28;
 							}
 						}
 					}

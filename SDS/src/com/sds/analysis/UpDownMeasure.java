@@ -34,7 +34,7 @@ public class UpDownMeasure {
 	private static float yieldQaulified2 = -0.5f;
 	private static boolean debug = true;
 	private static Hashtable excludeStocks = null;
-	private static int currentDateID = 8990;
+	private static int currentDateID = 8994;
 	private static int upDays = 30; // this is used to measure 40% up days
 	private static int downDays = 250; // this is used to measure 60% down days
 
@@ -860,6 +860,10 @@ public class UpDownMeasure {
 			while (rs.next()) {
 				sc++;
 				int stockID = rs.getInt(1);
+				
+				if(stockID==48) {
+					System.out.println("AMZN");
+				}
 
 				dateIdRange.setInt(1, stockID);
 
@@ -871,7 +875,7 @@ public class UpDownMeasure {
 				int endDateId = dateRS.getInt(2);
 
 				// for (int k = endDateId; k >= strtDateId; k--) {
-				for (int k = currentDateID; k >= 8990; k--) {
+				for (int k = currentDateID; k >= 8994; k--) {
 					// for (int k = currentDateID; k >= currentDateID; k--) {
 					boolean exist = false;
 					int adjustment = 0;
@@ -936,7 +940,8 @@ public class UpDownMeasure {
 				int strtDateId = dateRS.getInt(1);
 				int endDateId = dateRS.getInt(2);
 
-				for (int k = strtDateId + upDays; k <= endDateId; k++) {
+				//for (int k = strtDateId + upDays; k <= endDateId; k++) {
+				for (int k = endDateId; k >= 8994; k--) {
 					boolean exist = false;
 					int adjustment = 0;
 					int lcMax = 10;
@@ -966,7 +971,7 @@ public class UpDownMeasure {
 				}
 
 				try {
-					Thread.sleep(2000);
+					Thread.sleep(10);
 				}catch(Exception ex) {
 					
 				}
