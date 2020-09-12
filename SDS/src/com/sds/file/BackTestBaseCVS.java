@@ -70,7 +70,10 @@ public class BackTestBaseCVS  {
 	public static void processStock(String path,String symbol) {
 		init();
 		checkSymbol(symbol);
-		String csvFile = path+"StrategyReports_"+symbol+"_Base.csv";
+		//String csvFile = path+"StrategyReports_"+symbol+"_Base.csv";
+		String csvFile ="/media/sf_dockerDevOps/test/simple/StrategyReports_AAPL_Base.csv";
+		//                "/media/sf_dockerDevOps/test/simple/StrategyReports_﻿AAPL_Base.csv"
+
 		BufferedReader br = null;
 		String line = "";
 		String cvsSplitBy = ";";

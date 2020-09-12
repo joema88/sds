@@ -130,6 +130,7 @@ public class DB {
 	private static PreparedStatement fucf = null;
 	private static PreparedStatement fud = null;
 	private static PreparedStatement updateFUC = null;
+	private static PreparedStatement markCapStmnt = null;
 	//fucf, fud, updateFUC
 	
 	public static void closeConnection() {
@@ -733,6 +734,21 @@ public class DB {
 		}
 
 		return SYPTStmnt;
+	}
+	
+	
+	public static PreparedStatement getMarkcapStmnt() {
+		if (markCapStmnt == null) {
+			try {
+				String query = "SELECT DATEID,STOCKID,CLOSE,MARKCAP FROM  BBROCK  WHERE STOCKID=? AND DATEID <= ? ORDER BY DATEID DESC LIMIT 3";
+				markCapStmnt = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return markCapStmnt;
 	}
 
 	// select COUNT(*) FROM BBROCK WHERE DATEID=8900;

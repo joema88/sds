@@ -11,7 +11,7 @@ public class UpDownMeasure {
 
 	// 2019/7/19, start here so we have one year ranking also, 252 days 1 year
 	// private static int startDateID = 8707;
-	private static int startDateID = 8990; // RECALCULATE FROM 8980
+	private static int startDateID = 8994; // RECALCULATE FROM 8980
 	private static PreparedStatement colorRankPriceCheckStmnt = null;
 
 	private static int eDays = 40;
@@ -34,7 +34,7 @@ public class UpDownMeasure {
 	private static float yieldQaulified2 = -0.5f;
 	private static boolean debug = true;
 	private static Hashtable excludeStocks = null;
-	private static int currentDateID = 8994;
+	private static int currentDateID = 8996;
 	private static int upDays = 30; // this is used to measure 40% up days
 	private static int downDays = 250; // this is used to measure 60% down days
 
@@ -875,7 +875,7 @@ public class UpDownMeasure {
 				int endDateId = dateRS.getInt(2);
 
 				// for (int k = endDateId; k >= strtDateId; k--) {
-				for (int k = currentDateID; k >= 8994; k--) {
+				for (int k = currentDateID; k >= 8996; k--) {
 					// for (int k = currentDateID; k >= currentDateID; k--) {
 					boolean exist = false;
 					int adjustment = 0;
@@ -941,7 +941,7 @@ public class UpDownMeasure {
 				int endDateId = dateRS.getInt(2);
 
 				//for (int k = strtDateId + upDays; k <= endDateId; k++) {
-				for (int k = endDateId; k >= 8994; k--) {
+				for (int k = endDateId; k >= 8996; k--) {
 					boolean exist = false;
 					int adjustment = 0;
 					int lcMax = 10;

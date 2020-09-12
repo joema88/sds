@@ -19,7 +19,8 @@ public class BackTestYellowCVS {
 
 	public static void processStock(String path, String symbol) {
 		init();
-		String csvFile = path+"StrategyReports_"+symbol+"_Yellow.csv";
+		//String csvFile = path+"StrategyReports_"+symbol+"_Yellow.csv";
+		String csvFile ="/media/sf_dockerDevOps/test/simple/StrategyReports_AAPL_Yellow.csv";
 		BufferedReader br = null;
 		String line = "";
 		String cvsSplitBy = ";";

@@ -23,7 +23,8 @@ public class BackTestCX520CVS {
 
 	public static void processStock(String path, String symbol) {
 		init();
-		String csvFile = path + "StrategyReports_" + symbol + "_CX520.csv";
+		//String csvFile = path + "StrategyReports_" + symbol + "_CX520.csv";
+		String csvFile ="/media/sf_dockerDevOps/test/simple/StrategyReports_AAPL_CX520.csv";
 		BufferedReader br = null;
 		String line = "";
 		String cvsSplitBy = ";";
