@@ -25,7 +25,7 @@ public class BackTestTealCVS {
 	public static void processStock(String path, String symbol) {
 		init();
 		//String csvFile = path+"StrategyReports_"+symbol+"_Teal.csv";
-		String csvFile ="/media/sf_dockerDevOps/test/simple/StrategyReports_AAPL_Teal.csv";
+		String csvFile ="/media/sf_dockerDevOps/test/simple/StrategyReports_CZR_Teal.csv";
 		BufferedReader br = null;
 		String line = "";
 		String cvsSplitBy = ";";

@@ -20,7 +20,7 @@ public class BackTestPinkCVS {
 	public static void processStock(String path, String symbol) {
 		init();
 		//String csvFile = path+"StrategyReports_"+symbol+"_Pink.csv";
-		String csvFile ="/media/sf_dockerDevOps/test/simple/StrategyReports_AAPL_Pink.csv";
+		String csvFile ="/media/sf_dockerDevOps/test/simple/StrategyReports_CZR_Pink.csv";
 		BufferedReader br = null;
 		String line = "";
 		String cvsSplitBy = ";";

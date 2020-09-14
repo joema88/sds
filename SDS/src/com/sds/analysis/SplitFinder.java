@@ -91,9 +91,7 @@ public class SplitFinder {
 
 	public static void processSlpitStocks(int dateId, int stockId) {
 		init();
-		if(dateId==8989&&stockId==5) {
-			System.out.println("APPL Split");
-		}
+		
 		try {
 			markCapStmnt.setInt(1, stockId);
 			markCapStmnt.setInt(2, dateId);
@@ -116,8 +114,9 @@ public class SplitFinder {
 						float marketCapRatio = pMarketCap / marketCap;
 						float priceRatio = pClose / close;
 
-						if ((priceRatio > 1.1f * marketCapRatio) || (priceRatio < 0.9f * marketCapRatio)) {
+						if ((priceRatio > 1.2f * marketCapRatio) || (priceRatio < 0.8f * marketCapRatio)) {
 							System.out.println("Split stock found at " + dateId + " StockID " + stockId);
+							break;
 
 						}else {
 							pClose = close;

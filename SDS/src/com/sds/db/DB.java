@@ -1830,7 +1830,7 @@ public class DB {
 				preparedStmt.setInt(4, 3);
 
 				// execute the preparedstatement
-				preparedStmt.execute();
+				//preparedStmt.execute();
 
 				conn.close();
 			} else {

@@ -40,13 +40,212 @@ public class UpDownMeasure {
 
 	public static void main(String[] args) {
 
-		// processUpDownHistory();
-		//
+		// DAILY ROUTINE
+		// currentDateID = 8997;
+		// processUpDownHistory();//no longer do DM update
+		// processDMAHistory(); //DM update here
 		// processDMRankAvgDMHistory();
-		//processDMAHistory();
-		processFUCHistory();
+
+		// processFUCHistory();
+
+		// ROUTINE AFTER STOCK SPLIT PROCESSING...
+		// After stock split, we need to download history, recalculate this
+		// update recalculate stock DM, DA
+		int stockId = 217;
+		// processStockUpDownHistory(stockId);
+		// processStockDMAHistory(stockId);
+		// update DMRankAvg SET ADM = ?, RK = ?
+		// processStockDMRankAvgDMHistory(stockId);
+		// update FUC history
+		//processStockFUCHistory(stockId);
+		// transfer missing data
 	}
-	
+
+	public static void processStockUpDownHistory(int stockID) {
+		try {
+
+			excludeStocks = new Hashtable();
+
+			long t1 = System.currentTimeMillis();
+			PreparedStatement dailyPrice = DB.getDailyPrice();
+			PreparedStatement maxClose = DB.getMaxClose();
+			PreparedStatement minClose = DB.getMinClose();
+			PreparedStatement getDateIDByPrice = DB.getDateIDbyPrice();
+			PreparedStatement distanceChangeUpdate = DB.getUpdateUpDownDistance();
+			PreparedStatement dateIDStmnt = DB.getDateIDStmnt();
+			PreparedStatement resetUpDownToZero = DB.resetUpDownToZero();
+
+			colorRankPriceCheckStmnt = DB.checkRankPriceStmnt();
+			PreparedStatement dateIdRange = DB.getStockDateIDRange();
+			PreparedStatement priceByDateID = DB.getPriceByDateID();
+			PreparedStatement dateIDExistStmnt = DB.checkDateIDExistsStmnt();
+
+			dateIdRange.setInt(1, stockID);
+
+			ResultSet dateRS = dateIdRange.executeQuery();
+
+			dateRS.next();
+
+			int strtDateId = dateRS.getInt(1);
+			int endDateId = dateRS.getInt(2);
+
+			for (int k = endDateId; k >= strtDateId; k--) {
+
+				// for (int k = currentDateID; k >= currentDateID; k--) {
+				boolean exist = false;
+				int adjustment = 0;
+				do {
+					dateIDExistStmnt.setInt(1, stockID);
+					dateIDExistStmnt.setInt(2, k);
+
+					ResultSet dateIDExist = dateIDExistStmnt.executeQuery();
+
+					dateIDExist.next();
+
+					int count = dateIDExist.getInt(1);
+
+					if (count > 0) {
+						exist = true;
+					} else {
+						k--;
+						adjustment++;
+					}
+
+				} while (!exist);
+
+				try {
+					priceByDateID.setInt(1, stockID);
+					priceByDateID.setInt(2, k);
+
+					System.out.println(stockID + " " + k);
+					ResultSet cPriceStmnt = priceByDateID.executeQuery();
+
+					cPriceStmnt.next();
+					float cPrice = cPriceStmnt.getFloat(1);
+
+					dateIDStmnt.setInt(1, stockID);
+					dateIDStmnt.setInt(2, k - downDays - 20);
+					dateIDStmnt.setInt(3, k);
+
+					ResultSet dateIDCount = dateIDStmnt.executeQuery();
+
+					int dateIdStartUp = 0;
+					int dateIdStartDown = 0;
+					int dateIdStart = 0;
+					int count = 0;
+					while (dateIDCount.next()) {
+						dateIdStart = dateIDCount.getInt(1);
+						count++;
+						if (count == upDays) {// 30days
+							dateIdStartUp = dateIdStart;
+						}
+						if (count == downDays) { // 250days
+							dateIdStartDown = dateIdStart;
+							break;
+						}
+					}
+
+					maxClose.setInt(1, stockID);
+					maxClose.setInt(2, dateIdStartDown);
+					maxClose.setInt(3, k);
+					System.out.println("dateIdStartDown " + dateIdStartDown + " k " + k);
+					ResultSet xpRS = maxClose.executeQuery();
+
+					int xDateID = 0;
+					float maxDrop = 0.0f;
+					int tempDateId = 0;
+					float tempDrop = 0.0f;
+					float temMaxPrice = 0.0f;
+					float maxPrice = 0.0f;
+					while (xpRS.next()) {
+						tempDateId = xpRS.getInt(1);
+						temMaxPrice = xpRS.getFloat(2);
+						tempDrop = -100.0f * ((temMaxPrice - cPrice) / temMaxPrice);
+						if (xDateID == 0) { // get the last year biggest price drop regardless
+							xDateID = tempDateId;
+							maxDrop = tempDrop;
+							maxPrice = temMaxPrice;
+						} else if (tempDrop < -60.0f && tempDateId > xDateID) {
+							// essentially we want to find the closest point to current
+							// which has a 60% price drop
+							xDateID = tempDateId;
+							maxDrop = tempDrop;
+							maxPrice = temMaxPrice;
+						}
+					}
+
+					minClose.setInt(1, stockID);
+					minClose.setInt(2, dateIdStartUp);
+					minClose.setInt(3, k);
+
+					ResultSet mpRS = minClose.executeQuery();
+
+					mpRS.next();
+
+					float minPrice = mpRS.getFloat(1);
+					int mDateID = mpRS.getInt(2);
+					mpRS.close();
+					mpRS = null;
+
+					float upFromMin = 100.0f * (cPrice - minPrice) / minPrice;
+					int maxDistance = k - xDateID;
+					if (maxDistance > downDays)
+						maxDistance = downDays;
+					int minDistsance = k - mDateID;
+					if (minDistsance > upDays)
+						minDistsance = upDays;
+
+					// this measure what it feels like if you invest fixed amount of money
+					// at the top and the bottom average loss
+					// let us assume invest $1000 at each point at maxPrice and minPrice
+					float shares = 1000.0f / maxPrice + 1000.0f / minPrice;
+					float totalWorth = shares * cPrice;
+					float changePercentage = 100.0f * (totalWorth - 2000.0f) / 2000.0f;
+					int changeDays = maxDistance - minDistsance;
+					if (changeDays < 0)
+						changeDays = minDistsance - maxDistance;
+
+					// "UPDATE BBROCK SET UPC = ?, UDS = ?, DPC = ?, DDS= ?, DM=?,
+					// DA=? WHERE STOCKID = ? AND DATEID = ?";
+
+					// String query = "UPDATE BBROCK SET UPC = ?, UDS = ?,
+					// DPC = ?, DDS= ? WHERE STOCKID = ? AND DATEID = ?";
+
+					distanceChangeUpdate.setFloat(1, upFromMin);
+					if (minDistsance > 255) {
+						distanceChangeUpdate.setInt(2, 255);
+					} else {
+						distanceChangeUpdate.setInt(2, minDistsance);
+					}
+					distanceChangeUpdate.setFloat(3, maxDrop);
+					if (maxDistance > 255) {
+						distanceChangeUpdate.setInt(4, 255);
+					} else {
+						distanceChangeUpdate.setInt(4, maxDistance);
+					}
+					distanceChangeUpdate.setInt(5, stockID);
+					distanceChangeUpdate.setInt(6, k);
+					System.out.println("k " + k + " changeDays " + changeDays + " changePercentage " + changePercentage
+							+ " upFromMin " + upFromMin + " minDistsance " + minDistsance + " maxDrop " + maxDrop);
+					System.out.println("changeDays " + changeDays + " minDistsance" + minDistsance + ", maxDistance  "
+							+ maxDistance);
+
+					distanceChangeUpdate.executeUpdate();
+				} catch (Exception ex) {
+					ex.printStackTrace(System.out);
+				}
+
+			}
+			System.out.println(stockID + " processed done");
+			Thread.sleep(2000);
+			long t2 = System.currentTimeMillis();
+
+			long t3 = System.currentTimeMillis();
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
 
 	public static void processUpDownHistory() {
 		try {
@@ -262,10 +461,8 @@ public class UpDownMeasure {
 							} else {
 								distanceChangeUpdate.setInt(4, maxDistance);
 							}
-							distanceChangeUpdate.setFloat(5, changePercentage);
-							distanceChangeUpdate.setInt(6, changeDays);
-							distanceChangeUpdate.setInt(7, stockID);
-							distanceChangeUpdate.setInt(8, k);
+							distanceChangeUpdate.setInt(5, stockID);
+							distanceChangeUpdate.setInt(6, k);
 							System.out.println("k " + k + " changeDays " + changeDays + " changePercentage "
 									+ changePercentage + " upFromMin " + upFromMin + " minDistsance " + minDistsance
 									+ " maxDrop " + maxDrop);
@@ -569,12 +766,12 @@ public class UpDownMeasure {
 		} catch (Exception ex) {
 
 		}
-		
+
 	}
 
 	public static void processTodayFUC(int stockID, int dateId) {
 		try {
-			if(stockID==2 && dateId ==8595) {
+			if (stockID == 2 && dateId == 8595) {
 				System.out.println("Testing...");
 			}
 			PreparedStatement fud = DB.getFUD();
@@ -608,9 +805,9 @@ public class UpDownMeasure {
 
 			boolean firstFty = false;
 			boolean dmg100 = false;
-			//String query = "select UPC,DM,FUC, DATEID FROM BBROCK WHERE STOCKID = ? 
+			// String query = "select UPC,DM,FUC, DATEID FROM BBROCK WHERE STOCKID = ?
 			// AND DATEID>=? AND DATEID<=? ORDER BY DATEID DESC";
-			
+
 			int tc = 0;
 			int fucValue = 0;
 			while (fuds.next()) {
@@ -619,24 +816,24 @@ public class UpDownMeasure {
 				int fuc = fuds.getInt(3);
 				int date = fuds.getInt(4);
 				tc++;
-				if(tc==1&&dm>100.0f&&upc>40.0f) {
+				if (tc == 1 && dm > 100.0f && upc > 40.0f) {
 					fucValue = 8;
-				}else if(tc==1&&upc>40.0f&&dm<100.0f){
+				} else if (tc == 1 && upc > 40.0f && dm < 100.0f) {
 					fucValue = 4;
 				}
-				
-				if(((tc>1&&fuc>=1)||(tc>1&&upc>=40.0f))&&fucValue>1) {
-					if(fuc==8&&fucValue==8) {
-					fucValue = 1;
-					}else if(fuc<8&&fucValue==8) {
+
+				if (((tc > 1 && fuc >= 1) || (tc > 1 && upc >= 40.0f)) && fucValue > 1) {
+					if (fuc == 8 && fucValue == 8) {
+						fucValue = 1;
+					} else if (fuc < 8 && fucValue == 8) {
 						fucValue = 8;
-					}else if(fuc<8&&fucValue<8) {
+					} else if (fuc < 8 && fucValue < 8) {
 						fucValue = 1;
 					}
 				}
 			}
 
-			//if else
+			// if else
 			updateFUC.setInt(1, fucValue);
 			updateFUC.setInt(2, stockID);
 			updateFUC.setInt(3, dateId);
@@ -650,6 +847,9 @@ public class UpDownMeasure {
 
 	public static void processTodayDMA(int stockID, int dateId) {
 		try {
+			// String query = "select DPC, DATEID FROM BBROCK WHERE STOCKID = ?
+			// AND DATEID>=? AND DATEID<=? ORDER BY DPC ASC LIMIT 1";
+
 			PreparedStatement minDPC = DB.getMinDPC();
 			PreparedStatement dateIDStmnt = DB.getDateIDStmnt();
 			PreparedStatement currentUPC = DB.getCurrentUPC();
@@ -714,6 +914,61 @@ public class UpDownMeasure {
 	// private static PreparedStatement dmRank = null;
 	// private static PreparedStatement avgDM = null;
 
+	public static void processStockDMRankAvgDMHistory(int stockID) {
+		try {
+
+			long t1 = System.currentTimeMillis();
+			PreparedStatement dateIDStmnt = DB.getDateIDStmnt();
+
+			PreparedStatement dateIdRange = DB.getStockDateIDRange();
+			PreparedStatement dateIDExistStmnt = DB.checkDateIDExistsStmnt();
+
+			System.out.println("-----------Begin---------");
+
+			dateIdRange.setInt(1, stockID);
+
+			ResultSet dateRS = dateIdRange.executeQuery();
+
+			dateRS.next();
+
+			int strtDateId = dateRS.getInt(1);
+			int endDateId = dateRS.getInt(2);
+
+			for (int k = endDateId; k >= strtDateId + downDays + 20; k--) {
+				// for (int k = currentDateID; k >= 8979; k--) {
+				// for (int k = currentDateID; k >= currentDateID; k--) {
+				boolean exist = false;
+				int adjustment = 0;
+				do {
+					dateIDExistStmnt.setInt(1, stockID);
+					dateIDExistStmnt.setInt(2, k);
+
+					ResultSet dateIDExist = dateIDExistStmnt.executeQuery();
+
+					dateIDExist.next();
+
+					int count = dateIDExist.getInt(1);
+
+					if (count > 0) {
+						exist = true;
+					} else {
+						k--;
+						adjustment++;
+					}
+
+				} while (!exist);
+
+				processTodayDMRankAvgDM(stockID, k);
+			}
+
+			System.out.println("process TodayDMRankAvgDM done for " + stockID);
+			Thread.sleep(2000);
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
+
 	public static void processDMRankAvgDMHistory() {
 		try {
 
@@ -741,9 +996,9 @@ public class UpDownMeasure {
 				int strtDateId = dateRS.getInt(1);
 				int endDateId = dateRS.getInt(2);
 
-				for (int k = endDateId; k >= strtDateId; k--) {
-					// for (int k = currentDateID; k >= 8979; k--) {
-					// for (int k = currentDateID; k >= currentDateID; k--) {
+				// for (int k = endDateId; k >= strtDateId; k--) {
+				// for (int k = currentDateID; k >= 8979; k--) {
+				for (int k = currentDateID; k >= currentDateID; k--) {
 					boolean exist = false;
 					int adjustment = 0;
 					do {
@@ -769,7 +1024,7 @@ public class UpDownMeasure {
 				}
 
 				System.out.println("process TodayDMRankAvgDM done for " + stockID);
-				Thread.sleep(2000);
+				// Thread.sleep(2000);
 			}
 
 		} catch (Exception ex) {
@@ -843,6 +1098,62 @@ public class UpDownMeasure {
 
 	}
 
+	public static void processStockDMAHistory(int stockID) {
+		try {
+
+			long t1 = System.currentTimeMillis();
+			PreparedStatement dateIDStmnt = DB.getDateIDStmnt();
+
+			PreparedStatement dateIdRange = DB.getStockDateIDRange();
+			PreparedStatement dateIDExistStmnt = DB.checkDateIDExistsStmnt();
+
+			dateIdRange.setInt(1, stockID);
+
+			ResultSet dateRS = dateIdRange.executeQuery();
+
+			dateRS.next();
+
+			int strtDateId = dateRS.getInt(1);
+			int endDateId = dateRS.getInt(2);
+
+			// for (int k = endDateId; k >= strtDateId; k--) {
+			for (int k = endDateId; k >= strtDateId + downDays + 20; k--) {
+				// for (int k = currentDateID; k >= currentDateID; k--) {
+				boolean exist = false;
+				int adjustment = 0;
+				int lcMax = 10;
+				int lc = 0;
+				do {
+					dateIDExistStmnt.setInt(1, stockID);
+					dateIDExistStmnt.setInt(2, k);
+
+					ResultSet dateIDExist = dateIDExistStmnt.executeQuery();
+
+					dateIDExist.next();
+
+					int count = dateIDExist.getInt(1);
+
+					if (count > 0) {
+						exist = true;
+					} else {
+						k--;
+						adjustment++;
+					}
+					lc++;
+
+				} while (!exist && lc < lcMax);
+
+				if (exist)
+					processTodayDMA(stockID, k);
+			}
+
+			System.out.println("process done for " + stockID);
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
+
 	public static void processDMAHistory() {
 		try {
 
@@ -860,8 +1171,8 @@ public class UpDownMeasure {
 			while (rs.next()) {
 				sc++;
 				int stockID = rs.getInt(1);
-				
-				if(stockID==48) {
+
+				if (stockID == 48) {
 					System.out.println("AMZN");
 				}
 
@@ -875,7 +1186,7 @@ public class UpDownMeasure {
 				int endDateId = dateRS.getInt(2);
 
 				// for (int k = endDateId; k >= strtDateId; k--) {
-				for (int k = currentDateID; k >= 8996; k--) {
+				for (int k = currentDateID; k >= currentDateID; k--) {
 					// for (int k = currentDateID; k >= currentDateID; k--) {
 					boolean exist = false;
 					int adjustment = 0;
@@ -913,6 +1224,61 @@ public class UpDownMeasure {
 		}
 	}
 
+	public static void processStockFUCHistory(int stockID) {
+		try {
+
+			long t1 = System.currentTimeMillis();
+			PreparedStatement dateIDStmnt = DB.getDateIDStmnt();
+
+			PreparedStatement dateIdRange = DB.getStockDateIDRange();
+			PreparedStatement dateIDExistStmnt = DB.checkDateIDExistsStmnt();
+
+			dateIdRange.setInt(1, stockID);
+
+			ResultSet dateRS = dateIdRange.executeQuery();
+
+			dateRS.next();
+
+			int strtDateId = dateRS.getInt(1);
+			int endDateId = dateRS.getInt(2);
+
+			// for (int k = strtDateId + upDays; k <= endDateId; k++) {
+			for (int k = strtDateId + downDays + 20; k <= endDateId; k++) {
+				boolean exist = false;
+				int adjustment = 0;
+				int lcMax = 10;
+				int lc = 0;
+				do {
+					dateIDExistStmnt.setInt(1, stockID);
+					dateIDExistStmnt.setInt(2, k);
+
+					ResultSet dateIDExist = dateIDExistStmnt.executeQuery();
+
+					dateIDExist.next();
+
+					int count = dateIDExist.getInt(1);
+
+					if (count > 0) {
+						exist = true;
+					} else {
+						k++;
+						adjustment++;
+					}
+					lc++;
+
+				} while (!exist && lc < lcMax);
+
+				if (exist)
+					processTodayFUC(stockID, k);
+			}
+
+			System.out.println("process done for " + stockID);
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
+
 	public static void processFUCHistory() {
 		try {
 
@@ -940,8 +1306,8 @@ public class UpDownMeasure {
 				int strtDateId = dateRS.getInt(1);
 				int endDateId = dateRS.getInt(2);
 
-				//for (int k = strtDateId + upDays; k <= endDateId; k++) {
-				for (int k = endDateId; k >= 8996; k--) {
+				// for (int k = strtDateId + upDays; k <= endDateId; k++) {
+				for (int k = endDateId; k >= currentDateID; k--) {
 					boolean exist = false;
 					int adjustment = 0;
 					int lcMax = 10;
@@ -972,8 +1338,8 @@ public class UpDownMeasure {
 
 				try {
 					Thread.sleep(10);
-				}catch(Exception ex) {
-					
+				} catch (Exception ex) {
+
 				}
 				System.out.println("process done for " + stockID);
 			}
