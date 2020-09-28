@@ -37,9 +37,7 @@ public class SplitFinder {
 				sc++;
 				int stockID = rs.getInt(1);
 				
-				if(stockID==48) {
-					System.out.println("AMZN");
-				}
+			
 
 				dateIdRange.setInt(1, stockID);
 

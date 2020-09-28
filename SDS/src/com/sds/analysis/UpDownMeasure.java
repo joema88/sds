@@ -41,23 +41,23 @@ public class UpDownMeasure {
 	public static void main(String[] args) {
 
 		// DAILY ROUTINE
-		// currentDateID = 8997;
+		 currentDateID = 9008;
 		// processUpDownHistory();//no longer do DM update
 		// processDMAHistory(); //DM update here
-		// processDMRankAvgDMHistory();
+		//processDMRankAvgDMHistory();
 
-		// processFUCHistory();
+		processFUCHistory();
 
 		// ROUTINE AFTER STOCK SPLIT PROCESSING...
 		// After stock split, we need to download history, recalculate this
 		// update recalculate stock DM, DA
-		int stockId = 217;
-		// processStockUpDownHistory(stockId);
-		// processStockDMAHistory(stockId);
+	//	int stockId = 1621;
+  // processStockUpDownHistory(stockId);
+	//processStockDMAHistory(stockId);
 		// update DMRankAvg SET ADM = ?, RK = ?
-		// processStockDMRankAvgDMHistory(stockId);
+//processStockDMRankAvgDMHistory(stockId);
 		// update FUC history
-		//processStockFUCHistory(stockId);
+//	processStockFUCHistory(stockId);
 		// transfer missing data
 	}
 

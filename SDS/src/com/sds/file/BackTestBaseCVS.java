@@ -71,7 +71,7 @@ public class BackTestBaseCVS  {
 		init();
 		checkSymbol(symbol);
 		//String csvFile = path+"StrategyReports_"+symbol+"_Base.csv";
-		String csvFile ="/media/sf_dockerDevOps/test/simple/StrategyReports_CZR_Base.csv";
+		String csvFile ="/media/sf_dockerDevOps/test/simple/StrategyReports_MRTN_Base.csv";
 		//                "/media/sf_dockerDevOps/test/simple/StrategyReports_﻿AAPL_Base.csv"
 
 		BufferedReader br = null;
