@@ -21,6 +21,15 @@ public class DB {
 	// 1. CREATE TABLE SYMBOLS(STOCKID SMALLINT, SYMBOL VARCHAR(10), PRIMARY
 	// KEY(STOCKID));
 	// 2. CREATE TABLE DATES(DATEID SMALLINT, CDATE DATE, PRIMARY KEY(DATEID));
+	// ALTER TABLE DATES ADD COLUMN OS FLOAT DEFAULT 0.0; 
+	// ALTER TABLE DATES ADD COLUMN OB FLOAT DEFAULT 0.0; 
+	// ALTER TABLE DATES ADD COLUMN OY FLOAT DEFAULT 0.0; 
+	// ALTER TABLE DATES ADD COLUMN AY FLOAT DEFAULT 0.0; 
+	// ALTER TABLE DATES ADD COLUMN BAT FLOAT DEFAULT 0.0; 
+	// ALTER TABLE DATES ADD COLUMN BOSY TINYINT DEFAULT 0; 
+	// ALTER TABLE DATES ADD COLUMN BI FLOAT DEFAULT 0.0; 
+	// ALTER TABLE DATES ADD COLUMN CBI FLOAT DEFAULT 0.0; 
+	// ALTER TABLE DATES ADD COLUMN TOT SMALLINT DEFAULT 0.0; 
 	// 3. CREATE TABLE BBROCK(STOCKID SMALLINT, DATEID SMALLINT, PERCENT FLOAT
 	// DEFAULT 0.0, CLOSE FLOAT DEFAULT 0.0,NETCHANGE FLOAT DEFAULT 0.0, ATR FLOAT
 	// DEFAULT 0.0, OPEN FLOAT DEFAULT 0.0,HIGH FLOAT DEFAULT 0.0, LOW FLOAT DEFAULT
@@ -131,10 +140,25 @@ public class DB {
 	private static PreparedStatement fud = null;
 	private static PreparedStatement updateFUC = null;
 	private static PreparedStatement markCapStmnt = null;
+	private static PreparedStatement BosyUpdate = null;
+	private static PreparedStatement BOYSStmnt = null;
+	private static PreparedStatement CBIUpdate = null;
 	//fucf, fud, updateFUC
 	
 	public static void closeConnection() {
 		try {
+			if(CBIUpdate != null) {
+				CBIUpdate.close();
+				CBIUpdate = null;
+			}
+			if(BosyUpdate != null) {
+				BosyUpdate.close();
+				BosyUpdate = null;
+			}
+			if(BOYSStmnt != null) {
+				BOYSStmnt.close();
+				BOYSStmnt = null;
+			}
 			if( fucf != null) {
 				fucf.close();
 				fucf = null;
@@ -721,11 +745,55 @@ public class DB {
 		return dBullStmnt;
 	}
 
+	public static PreparedStatement getBosyUpdateStmnt() {
+		if (BosyUpdate == null) {
+			try {
+				String query = "UPDATE  DATES  SET BOSY= ?,AY=?, BAT=?, BI=? WHERE DATEID = ?";
+				BosyUpdate = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return BosyUpdate;
+	}
+	
+	public static PreparedStatement getCBIUpdateStmnt() {
+		if (CBIUpdate == null) {
+			try {
+				String query = "UPDATE  DATES  SET CBI=? WHERE DATEID = ?";
+				CBIUpdate = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return CBIUpdate;
+	}
+	
+
+	public static PreparedStatement getBOYSStmnt() {
+		if (BOYSStmnt == null) {
+			try {
+				String query = "SELECT OS,OB,OY,BI FROM  DATES  WHERE DATEID > ? AND DATEID<= ? ORDER BY DATEID DESC";
+				BOYSStmnt = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return BOYSStmnt;
+	}
+	
+	
 	// SYPTStmnt
 	public static PreparedStatement getSYPTStmnt() {
 		if (SYPTStmnt == null) {
 			try {
-				String query = "SELECT SUM(TEAL),SUM(YELLOW),SUM(PINK) FROM  BBROCK  WHERE DATEID = ?";
+				String query = "SELECT SUM(TEAL),SUM(YELLOW),SUM(PINK), COUNT(*) FROM  BBROCK  WHERE DATEID = ?";
 				SYPTStmnt = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
@@ -771,7 +839,7 @@ public class DB {
 	public static PreparedStatement getSYPTUpdate() {
 		if (SYPTUpdate == null) {
 			try {
-				String query = "UPDATE BBROCK SET SYPT = ? WHERE STOCKID = 1 AND DATEID = ?";
+				String query = "UPDATE DATES SET OS = ?, OB=?, OY=?, TOT= ?  WHERE DATEID = ?";
 				SYPTUpdate = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);

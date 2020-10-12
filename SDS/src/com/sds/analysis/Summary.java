@@ -19,8 +19,14 @@ public class Summary {
 	private static PreparedStatement queryLastDayCX520 = null;
 	private static PreparedStatement SYPTStmnt = null;
 	private static PreparedStatement SYPTUpdate = null;
-	
+	private static PreparedStatement BOYSStmnt = null;
+	private static PreparedStatement BOSYUpdate = null;
+	private static PreparedStatement CBIUpdate = null;
+
 	public static void init() {
+		CBIUpdate = DB.getCBIUpdateStmnt();
+		BOYSStmnt = DB.getBOYSStmnt();
+		BOSYUpdate = DB.getBosyUpdateStmnt();
 		queryStmnt = DB.getSymbolDateIDQueryStmnt();
 		typSumQueryStmnt = DB.getTYPDSumQueryStmnt();
 		scUpdateStmnt = DB.getSCUpdateStmnt();
@@ -33,7 +39,118 @@ public class Summary {
 		updateBDCXZero = TwoBullDB.getBDCXUpdateZero();
 		SYPTStmnt = DB.getSYPTStmnt();
 		SYPTUpdate = DB.getSYPTUpdate();
+
+	}
+
+	public static void processBOSY(int dateID) {
+		try {
+			BOYSStmnt.setInt(1, dateID-5);
+			BOYSStmnt.setInt(2, dateID);
+			ResultSet rs1 = BOYSStmnt.executeQuery();
+			//String query = "SELECT OS,OB,OY,BI FROM  DATES  WHERE DATEID > ? 
+			// AND DATEID<= ? ORDER BY DATEID DESC";
+			float[] OS = new float[3];
+			float[] OB = new float[3];
+			float[] OY = new float[3];
+			float AY = 0.0f;
+			float BAT = 0.0f;
+			int k = 0;
+			while (rs1.next()) {
+				OS[k]	= rs1.getFloat(1);	
+				OB[k]	= rs1.getFloat(2);	
+				OY[k]	= rs1.getFloat(3);
+				k++;
+				if(k>=3)
+					break;
+				
+			}
+			
+			int qualified = 0;
+			//OS >35.0, OB >50, OS+OB>100.0, OB Condition after OS, 3 days AVG OY <70.0
+			//Then Bull turn up point
+			if(OS[2]>35.0f) {
+				if((OS[2]+OB[0])>100.0f&&OB[0]>50.0f) {
+					qualified=100;
+					
+				}
+			}else if(OS[1]>35.0f) {
+				if((OS[1]+OB[0])>100.0f&&OB[0]>50.0f) {
+					qualified=100;
+					
+				}
+			}
+			
+			BAT = OS[2]+OB[0];
+
+			if((OS[1]+OB[0])>BAT) {
+				BAT = OS[1]+OB[0];
+			}
+			
+			AY = (OY[0]+OY[1]+OY[2])/3.0f;
+			if(AY<70.0f) {
+				qualified = qualified + 8;
+			}
+			//bear max decrease of all indicator of the two days
+			float BI1 = (OB[0]-OB[1])-(OS[0]-OS[1])-(OY[0]-OY[1]);
+			float BI2 = (OB[0]-OB[2])-(OS[0]-OS[2])-(OY[0]-OY[2]);
+			float BI = BI2;
+			if(BI1<BI2) {
+				BI = BI1;
+			}
+			
+			//String query = "UPDATE  DATES  SET BOSY= ?,AY=?, BAT=?, BI=? WHERE DATEID = ?";
+			BOSYUpdate.setInt(1, qualified);
+			BOSYUpdate.setFloat(2, AY);
+			BOSYUpdate.setFloat(3, BAT);
+			BOSYUpdate.setFloat(4, BI);
+			BOSYUpdate.setInt(5, dateID);
+			BOSYUpdate.executeUpdate();
+
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+
+	}
+
 	
+	public static void processCBI(int dateID) {
+		try {
+			BOYSStmnt.setInt(1, dateID-5);
+			BOYSStmnt.setInt(2, dateID);
+			ResultSet rs1 = BOYSStmnt.executeQuery();
+			//String query = "SELECT OS,OB,OY,BI FROM  DATES  WHERE DATEID > ? 
+			// AND DATEID<= ? ORDER BY DATEID DESC";
+			float[] OS = new float[3];
+			float[] OB = new float[3];
+			float[] OY = new float[3];
+			float[] BI = new float[3];
+			float AY = 0.0f;
+			float BAT = 0.0f;
+			int k = 0;
+			while (rs1.next()) {
+				OS[k]	= rs1.getFloat(1);	
+				OB[k]	= rs1.getFloat(2);	
+				OY[k]	= rs1.getFloat(3);
+				BI[k]   = rs1.getFloat(4);
+				k++;
+				if(k>=3)
+					break;
+				
+			}
+			
+			float CBI = BI[0]-2.0f*BI[1]+BI[2];
+			
+			//String query = "UPDATE  DATES  SET CBI=? WHERE DATEID = ?";
+			CBIUpdate.setFloat(1, CBI);
+			CBIUpdate.setInt(2, dateID);
+			CBIUpdate.executeUpdate();
+
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+
 	}
 
 	public static void processDailyStocks(String date) {
@@ -315,11 +432,24 @@ public class Summary {
 				int tealSum = rs1.getInt(1);
 				int yellowSum = rs1.getInt(2);
 				int pinkSum = rs1.getInt(3);
+				int total = rs1.getInt(4);
 
-				int score = tealSum - yellowSum - 2 * pinkSum;
+				// int score = tealSum - yellowSum - 2 * pinkSum;
 
-				SYPTUpdate.setInt(1, score);
-				SYPTUpdate.setInt(2, dateID);
+				// oversold factor to prepare long
+				//float os = 100.0f * ((float) pinkSum / (float) total + (float) yellowSum / (3 * (float) total));
+				float os = 100.0f * ((float) pinkSum / (float) total);
+				float ob = ((float) tealSum / (float) total ) * 100.0f;
+				float oy = ((float) yellowSum / (float) total ) * 100.0f;
+				// System.out.println("pinkSum "+pinkSum+" yellowSum "+yellowSum+" total
+				// "+total);
+				// System.out.println("OS "+os+ " os2 "+os2);
+				System.out.println(dateID + " ++ " + os + "   -- " + ob+"  -- "+oy+ "   sample count "+total);
+				SYPTUpdate.setFloat(1, os);
+				SYPTUpdate.setFloat(2, ob);
+				SYPTUpdate.setFloat(3, oy);
+				SYPTUpdate.setInt(4, total);
+				SYPTUpdate.setInt(5, dateID);
 				SYPTUpdate.executeUpdate();
 
 			}
@@ -334,9 +464,13 @@ public class Summary {
 		init();
 		// String symbol = "CIEN";
 		// processLastDayCCX(symbol, -1);
-		for (int dateId = 1; dateId < 8933; dateId++) {
-			processAllYTPSum(dateId);
-			System.out.println("Done "+dateId);
+		for (int dateId = 9017; dateId >1; dateId--) {
+			// processAllYTPSum(dateId);
+			//processAllYTPSum(dateId);
+			//System.out.println("Done " + dateId);
+			//processBOSY(dateId);
+			processCBI(dateId);
+			System.out.println("Done " + dateId);
 		}
 	}
 
