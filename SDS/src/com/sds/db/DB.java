@@ -29,6 +29,7 @@ public class DB {
 	// ALTER TABLE DATES ADD COLUMN BOSY TINYINT DEFAULT 0; 
 	// ALTER TABLE DATES ADD COLUMN BI FLOAT DEFAULT 0.0; 
 	// ALTER TABLE DATES ADD COLUMN CBI FLOAT DEFAULT 0.0; 
+	// ALTER TABLE DATES ADD COLUMN SALY TINYINT DEFAULT 0; 
 	// ALTER TABLE DATES ADD COLUMN TOT SMALLINT DEFAULT 0.0; 
 	// 3. CREATE TABLE BBROCK(STOCKID SMALLINT, DATEID SMALLINT, PERCENT FLOAT
 	// DEFAULT 0.0, CLOSE FLOAT DEFAULT 0.0,NETCHANGE FLOAT DEFAULT 0.0, ATR FLOAT
@@ -143,10 +144,15 @@ public class DB {
 	private static PreparedStatement BosyUpdate = null;
 	private static PreparedStatement BOYSStmnt = null;
 	private static PreparedStatement CBIUpdate = null;
+	private static PreparedStatement BuySellStmnt = null;
 	//fucf, fud, updateFUC
 	
 	public static void closeConnection() {
 		try {
+			if( BuySellStmnt != null) {
+				BuySellStmnt.close();
+				BuySellStmnt = null;
+			}
 			if(CBIUpdate != null) {
 				CBIUpdate.close();
 				CBIUpdate = null;
@@ -762,7 +768,7 @@ public class DB {
 	public static PreparedStatement getCBIUpdateStmnt() {
 		if (CBIUpdate == null) {
 			try {
-				String query = "UPDATE  DATES  SET CBI=? WHERE DATEID = ?";
+				String query = "UPDATE  DATES  SET CBI=?, SALY=? WHERE DATEID = ?";
 				CBIUpdate = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
@@ -1611,6 +1617,32 @@ public class DB {
 		return queryTealStmnt;
 	}
 
+	
+	//select a.DATEID, CDATE, b.SYMBOL, CLOSE,BI,CBI,SALY,BOSY,BAT,TOT,OS, OB, OY, AY  
+	//FROM BBROCK a, SYMBOLS b, DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and ( b.SYMBOL='SPY')  order by a.DATEID DeSC limit 550;
+	
+	public static PreparedStatement getBuySellStmnt() {
+		getConnection();
+
+		if (BuySellStmnt == null) {
+			try {
+
+				// select SUM(TEAL), SUM(YELLOW), SUM(PINK) FROM BBROCK a, SYMBOLS b WHERE
+				// a.STOCKID = b.STOCKID and b.SYMBOL = ? AND DATEID>=? AND DATEID<=?;
+
+				String query = "select a.DATEID, CDATE, b.SYMBOL, CLOSE,BI,CBI,SALY,BOSY,BAT,TOT,OS, OB, OY, AY "
+						+"FROM BBROCK a, SYMBOLS b, DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and ( b.SYMBOL=?)  AND a.DATEID>?  order by a.DATEID ASC";
+
+				BuySellStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return BuySellStmnt;
+	}
+	
+	
 	public static PreparedStatement getTYPDSumByStockIDStmnt() {
 		getConnection();
 
