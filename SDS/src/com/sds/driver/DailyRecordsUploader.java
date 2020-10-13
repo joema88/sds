@@ -103,6 +103,8 @@ public class DailyRecordsUploader {
 			
 			// calculate all the sum of teal, yellow and pink of that day
 			Summary.processAllYTPSum(dateID);
+			Summary.processBOSY(dateID);
+			Summary.processCBI(dateID);
 		} catch (Exception ex) {
 			System.out.println("Error at processDailySummaryScore...");
 			ex.printStackTrace(System.out);
@@ -118,7 +120,7 @@ public class DailyRecordsUploader {
 		// TODO Auto-generated method stub
 		String path = "/home/joma/share/test/";
 		boolean currentDateProcessOnly = true;
-		String cDate = "2020-10-09";
+		String cDate = "2020-10-12";
 		int dateCountToBeProcessed = 1;
 		int loopCount = 0;
 		long t1 = System.currentTimeMillis();

@@ -41,12 +41,12 @@ public class UpDownMeasure {
 	public static void main(String[] args) {
 
 		// DAILY ROUTINE
-		 currentDateID = 9017;
+		 currentDateID = 9018;
 		// processUpDownHistory();//no longer do DM update
 		//processDMAHistory(); //DM update here
-	    //processDMRankAvgDMHistory();
+	   // processDMRankAvgDMHistory();
 
-	    processFUCHistory();
+	   processFUCHistory();
 
 		// ROUTINE AFTER STOCK SPLIT PROCESSING...
 		// After stock split, we need to download history, recalculate this

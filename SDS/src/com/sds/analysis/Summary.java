@@ -46,6 +46,7 @@ public class Summary {
 
 	public static void processBOSY(int dateID) {
 		try {
+			init();
 			BOYSStmnt.setInt(1, dateID - 5);
 			BOYSStmnt.setInt(2, dateID);
 			ResultSet rs1 = BOYSStmnt.executeQuery();
@@ -116,6 +117,7 @@ public class Summary {
 
 	public static void processCBI(int dateID) {
 		try {
+			init();
 			BOYSStmnt.setInt(1, dateID - 5);
 			BOYSStmnt.setInt(2, dateID);
 			ResultSet rs1 = BOYSStmnt.executeQuery();
@@ -484,7 +486,7 @@ public class Summary {
 
 		try {
 			init();
-			BuySellStmnt.setString(1,"AAPL");
+			BuySellStmnt.setString(1, "BABA");
 			BuySellStmnt.setInt(2, 8466);
 			ResultSet rs = BuySellStmnt.executeQuery();
 
@@ -543,38 +545,79 @@ public class Summary {
 					nextActionSale = true;
 					System.out.println("Buy at " + dateId + " at price " + close);
 				} else {
-					if (nextDayAction&&nextActionSale) {
+					if (nextDayAction && nextActionSale) {
 
 						float yeild = 100.0f * (close - buyPrice) / buyPrice;
 						System.out.println("Sell at " + dateId + " at price " + close + " yield " + yeild);
-						totalYield = totalYield * (1.0f+yeild/100.0f);
-						System.out.println("totalYield "+totalYield);
-						nextDayAction= false;
+						totalYield = totalYield * (1.0f + yeild / 100.0f);
+						System.out.println("totalYield " + totalYield);
+						nextDayAction = false;
 						nextActionSale = false;
 						nextActionBuy = true;
 						buyPrice = 0.0f;
-					} else if (nextActionSale&&SALY == 4 && OS > 20.0f && OB < 60.0f) {
+					} else if (nextActionSale && SALY == 4 && OS > 20.0f && OB < 60.0f) {
+						// sale condition 1
 						nextDayAction = true;
+						// ------------------ SPY //totalYield
+						//totalYield 1.7909247
+						//Vs Buy and hold yield is 1.2427009
+						//------------------ TQQQ
+						//totalYield 6.514854
+						//Vs Buy and hold yield is 2.3612428
+						//------------------SOXL
+						//totalYield 7.3529596
+						//Vs Buy and hold yield is 1.9653704
+						//------------------LABU
+						//totalYield 1.586113
+						//Vs Buy and hold yield is 0.73329675
+						//------------------AAPL
+						//totalYield 4.0844
+						//Vs Buy and hold yield is 2.3923078
+						//------------------TSLA
+						//totalYield 8.1722765
+						//Vs Buy and hold yield is 6.352147
+						//------------------AMZN
+						//totalYield 1.7758487
+						//Vs Buy and hold yield is 1.8883061
+						//------------------BABA
+						//totalYield 1.8840373
+						//Vs Buy and hold yield is 1.6939837
+
 					}
-					
-					if(nextActionBuy&&(BOSY==108||bosy8Count==3)&&!nextActionSale) {
+					/*
+					 * else if (nextActionSale && OS > 30.0f && OB < 45.0f) { // sale condition 2,
+					 * almost the same nextDayAction = true; // ------------------ SPY // totalYield
+					 * totalYield 1.7792156 // Vs Buy and hold yield is 1.2230253 //
+					 * ------------------TQQQ // totalYield 7.207877 // Vs Buy and hold yield is
+					 * 2.3612428 // ------------------SOXL // totalYield 6.9959755 // Vs Buy and
+					 * hold yield is 1.9653704 //------------------LABU //totalYield 2.2860684 //Vs
+					 * Buy and hold yield is 0.73329675 //------------------AAPL //totalYield
+					 * 3.7820644 //Vs Buy and hold yield is 2.3923078
+					 * 
+					 * //------------------TSLA //totalYield 5.786033 //Vs Buy and hold yield is
+					 * 6.352147 //------------------AMZN //totalYield 2.332237 //Vs Buy and hold
+					 * yield is 1.8883061 //------------------SIG //totalYield 2.1210656 //Vs Buy
+					 * and hold yield is 0.35715503 //------------------BABA //totalYield 1.8520426
+					 * //Vs Buy and hold yield is 1.6939837 }
+					 */
+					if (nextActionBuy && (BOSY == 108 || bosy8Count == 3) && !nextActionSale) {
 						buyPrice = close;
 						nextActionSale = true;
 						nextDayAction = false;
 						bosy8Count = 0;
 						System.out.println("Buy at " + dateId + " at price " + close);
-					}else if(nextActionBuy&&BOSY==100&&!nextActionSale) {
+					} else if (nextActionBuy && BOSY == 100 && !nextActionSale) {
 						watchStart = true;
 						System.out.println("start watching at " + dateId + " at price " + close);
-					}else if(nextActionBuy&&watchStart&&!nextActionSale) {
-						if(BOSY==8) {
+					} else if (nextActionBuy && watchStart && !nextActionSale) {
+						if (BOSY == 8) {
 							bosy8Count++;
 						}
-						if(bosy8Count==3||BOSY==108) {
+						if (bosy8Count == 3 || BOSY == 108) {
 							watchStart = false;
 							nextDayAction = true;
 						}
-						
+
 					}
 
 				}
@@ -583,17 +626,17 @@ public class Summary {
 
 			}
 
-			if(nextActionSale) {
+			if (nextActionSale) {
 				float yeild = 100.0f * (close - buyPrice) / buyPrice;
 				System.out.println("Sell at " + dateId + " at price " + close + " yield " + yeild);
-				totalYield = totalYield * (1.0f+yeild/100.0f);
+				totalYield = totalYield * (1.0f + yeild / 100.0f);
 				System.out.println("");
 				System.out.println("------------------");
-				System.out.println("totalYield "+totalYield);
-				
+				System.out.println("totalYield " + totalYield);
+
 				float holdYeild = 1.0f + (close - startPrice) / startPrice;
-				System.out.println("Vs Buy and hold yield is "+holdYeild);
-			
+				System.out.println("Vs Buy and hold yield is " + holdYeild);
+
 			}
 		} catch (Exception ex) {
 
