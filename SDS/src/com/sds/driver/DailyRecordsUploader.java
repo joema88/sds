@@ -105,6 +105,7 @@ public class DailyRecordsUploader {
 			Summary.processAllYTPSum(dateID);
 			Summary.processBOSY(dateID);
 			Summary.processCBI(dateID);
+			Summary.processBuySellPoints(dateID);
 		} catch (Exception ex) {
 			System.out.println("Error at processDailySummaryScore...");
 			ex.printStackTrace(System.out);
@@ -120,7 +121,7 @@ public class DailyRecordsUploader {
 		// TODO Auto-generated method stub
 		String path = "/home/joma/share/test/";
 		boolean currentDateProcessOnly = true;
-		String cDate = "2020-10-12";
+		String cDate = "2020-10-13";
 		int dateCountToBeProcessed = 1;
 		int loopCount = 0;
 		long t1 = System.currentTimeMillis();

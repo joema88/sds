@@ -41,7 +41,7 @@ public class UpDownMeasure {
 	public static void main(String[] args) {
 
 		// DAILY ROUTINE
-		 currentDateID = 9018;
+		 currentDateID = 9019;
 		// processUpDownHistory();//no longer do DM update
 		//processDMAHistory(); //DM update here
 	   // processDMRankAvgDMHistory();

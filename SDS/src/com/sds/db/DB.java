@@ -31,6 +31,9 @@ public class DB {
 	// ALTER TABLE DATES ADD COLUMN CBI FLOAT DEFAULT 0.0; 
 	// ALTER TABLE DATES ADD COLUMN SALY TINYINT DEFAULT 0; 
 	// ALTER TABLE DATES ADD COLUMN TOT SMALLINT DEFAULT 0.0; 
+	//ALTER TABLE DATES ADD COLUMN BUY TINYINT DEFAULT 0;
+	//ALTER TABLE DATES ADD COLUMN SL1 TINYINT DEFAULT 0;
+	//ALTER TABLE DATES ADD COLUMN SL2 TINYINT DEFAULT 0;
 	// 3. CREATE TABLE BBROCK(STOCKID SMALLINT, DATEID SMALLINT, PERCENT FLOAT
 	// DEFAULT 0.0, CLOSE FLOAT DEFAULT 0.0,NETCHANGE FLOAT DEFAULT 0.0, ATR FLOAT
 	// DEFAULT 0.0, OPEN FLOAT DEFAULT 0.0,HIGH FLOAT DEFAULT 0.0, LOW FLOAT DEFAULT
@@ -145,10 +148,15 @@ public class DB {
 	private static PreparedStatement BOYSStmnt = null;
 	private static PreparedStatement CBIUpdate = null;
 	private static PreparedStatement BuySellStmnt = null;
+	private static PreparedStatement BuySellUpdate = null;
 	//fucf, fud, updateFUC
 	
 	public static void closeConnection() {
 		try {
+			if(BuySellUpdate != null) {
+				BuySellUpdate.close();
+				BuySellUpdate = null;
+			}
 			if( BuySellStmnt != null) {
 				BuySellStmnt.close();
 				BuySellStmnt = null;
@@ -780,10 +788,24 @@ public class DB {
 	}
 	
 
+	public static PreparedStatement getBuySellUpdate() {
+		if (BuySellUpdate == null) {
+			try {
+				String query = "UPDATE  DATES  SET Sl1=?,SL2=?, BUY = ? WHERE DATEID = ?";
+				BuySellUpdate  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return BuySellUpdate ;
+	}
+	
 	public static PreparedStatement getBOYSStmnt() {
 		if (BOYSStmnt == null) {
 			try {
-				String query = "SELECT OS,OB,OY,BI FROM  DATES  WHERE DATEID > ? AND DATEID<= ? ORDER BY DATEID DESC";
+				String query = "SELECT OS,OB,OY,BI,SALY,BOSY FROM  DATES  WHERE DATEID > ? AND DATEID<= ? ORDER BY DATEID DESC";
 				BOYSStmnt = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
@@ -1630,8 +1652,8 @@ public class DB {
 				// select SUM(TEAL), SUM(YELLOW), SUM(PINK) FROM BBROCK a, SYMBOLS b WHERE
 				// a.STOCKID = b.STOCKID and b.SYMBOL = ? AND DATEID>=? AND DATEID<=?;
 
-				String query = "select a.DATEID, CDATE, b.SYMBOL, CLOSE,BI,CBI,SALY,BOSY,BAT,TOT,OS, OB, OY, AY "
-						+"FROM BBROCK a, SYMBOLS b, DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and ( b.SYMBOL=?)  AND a.DATEID>?  order by a.DATEID ASC";
+				String query = "select a.DATEID, CDATE, b.SYMBOL, CLOSE,BI,CBI,SALY,BOSY,BAT,TOT,OS, OB, OY, AY, SL1, SL2, BUY "
+						+"FROM BBROCK a, SYMBOLS b, DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and ( b.SYMBOL=?)  AND a.DATEID>?   order by a.DATEID ASC";
 
 				BuySellStmnt = dbcon.prepareStatement(query);
 			} catch (SQLException e) {
