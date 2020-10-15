@@ -34,6 +34,8 @@ public class DB {
 	//ALTER TABLE DATES ADD COLUMN BUY TINYINT DEFAULT 0;
 	//ALTER TABLE DATES ADD COLUMN SL1 TINYINT DEFAULT 0;
 	//ALTER TABLE DATES ADD COLUMN SL2 TINYINT DEFAULT 0;
+	//ALTER TABLE DATES ADD COLUMN UC SMALLINT DEFAULT 0; 
+	//ALTER TABLE DATES ADD COLUMN AMC FLOAT DEFAULT 0.0; 
 	// 3. CREATE TABLE BBROCK(STOCKID SMALLINT, DATEID SMALLINT, PERCENT FLOAT
 	// DEFAULT 0.0, CLOSE FLOAT DEFAULT 0.0,NETCHANGE FLOAT DEFAULT 0.0, ATR FLOAT
 	// DEFAULT 0.0, OPEN FLOAT DEFAULT 0.0,HIGH FLOAT DEFAULT 0.0, LOW FLOAT DEFAULT
@@ -149,10 +151,20 @@ public class DB {
 	private static PreparedStatement CBIUpdate = null;
 	private static PreparedStatement BuySellStmnt = null;
 	private static PreparedStatement BuySellUpdate = null;
+	private static PreparedStatement currentUTurnStocks = null;
+	private static PreparedStatement UMACUpdate = null;
 	//fucf, fud, updateFUC
 	
 	public static void closeConnection() {
 		try {
+			if( UMACUpdate != null) {
+				UMACUpdate.close();
+				UMACUpdate = null;
+			}
+			if(currentUTurnStocks != null) {
+				currentUTurnStocks.close();
+				currentUTurnStocks = null;
+			}
 			if(BuySellUpdate != null) {
 				BuySellUpdate.close();
 				BuySellUpdate = null;
@@ -531,6 +543,26 @@ public class DB {
 		return maxClose ;
 	}
 	
+
+	
+	public static PreparedStatement getCurrentUTurnStocks() {
+		if (currentUTurnStocks == null) {
+			try {
+				String query = "select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, MARKCAP,CLOSE, MOR, "+
+			   " YOR, TRK, PASS, APAS,FLOOR(DPC), FLOOR(UPC), FLOOR(DM), FUC AS UTURN FROM BBROCK a, "+
+						" SYMBOLS b,DATES c WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID "+
+			   " and  a.DATEID=? AND a.FUC>0 ORDER BY MARKCAP DESC ";
+				currentUTurnStocks  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return currentUTurnStocks;
+	}
+	
+	
 	public static PreparedStatement getCurrentUPC() {
 		if (currentUPC == null) {
 			try {
@@ -878,6 +910,22 @@ public class DB {
 		return SYPTUpdate;
 	}
 
+	
+	public static PreparedStatement getUMACUpdate() {
+		if (UMACUpdate == null) {
+			try {
+				String query = "UPDATE DATES SET UC = ?,AMC = ?  WHERE DATEID = ?";
+				UMACUpdate = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return UMACUpdate;
+	}
+
+	
 	public static PreparedStatement updateMaxUpDown() {
 		if (updateMaxUpDown == null) {
 			try {

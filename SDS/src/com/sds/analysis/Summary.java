@@ -24,8 +24,12 @@ public class Summary {
 	private static PreparedStatement CBIUpdate = null;
 	private static PreparedStatement BuySellStmnt = null;
 	private static PreparedStatement BuySellUpdate = null;
+	private static PreparedStatement currentUTurnStocks = null;
+	private static PreparedStatement UMACUpdate = null;
 
 	public static void init() {
+		UMACUpdate = DB.getUMACUpdate();
+		currentUTurnStocks = DB.getCurrentUTurnStocks();
 		BuySellUpdate = DB.getBuySellUpdate();
 		CBIUpdate = DB.getCBIUpdateStmnt();
 		BOYSStmnt = DB.getBOYSStmnt();
@@ -558,24 +562,59 @@ public class Summary {
 		init();
 		// String symbol = "CIEN";
 		// processLastDayCCX(symbol, -1);
-		for (int dateId = 9018; dateId > 9019; dateId--) {
+		for (int dateId = 9020; dateId >8219; dateId--) {
 			// processAllYTPSum(dateId);
 			// processAllYTPSum(dateId);
 			// System.out.println("Done " + dateId);
 			// processBOSY(dateId);
 			// processCBI(dateId);
 			// processBuySellPoints(dateId);
-			System.out.println("Done " + dateId);
+			processDailyUTurnSummary(dateId);
+			//System.out.println("Done " + dateId);
 		}
 
-		evaluateYield();
+		//evaluateYield();
+	}
+
+	public static void processDailyUTurnSummary(int dateID) {
+		try {
+			init();
+			currentUTurnStocks.setInt(1, dateID);
+			ResultSet rs = currentUTurnStocks.executeQuery();
+
+			/*
+			 * String query =
+			 * "select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, MARKCAP,CLOSE, MOR, "+
+			 * " YOR, TRK, PASS, APAS,FLOOR(DPC), FLOOR(UPC), FLOOR(DM), FUC AS UTURN FROM BBROCK a, "
+			 * + " SYMBOLS b,DATES c WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID "+
+			 * " and  a.DATEID=? AND a.FUC>4 ORDER BY MARKCAP DESC ";
+			 * 
+			 */
+			String date = "";
+			int tot = 0;
+			float marketCapSum = 0.0f;
+			while (rs.next()) {
+				//dateID = rs.getInt(1);
+				date = rs.getString(3);
+				tot++;
+				marketCapSum = marketCapSum + rs.getFloat(5);
+			}
+
+			UMACUpdate.setInt(1, tot);
+			UMACUpdate.setFloat(2,marketCapSum / (1.0f * tot));
+			UMACUpdate.setInt(3,dateID);
+			UMACUpdate.executeUpdate();
+			System.out.println(date+"  Total " + tot + " avg market cap " + marketCapSum / (1.0f * tot));
+		} catch (Exception ex) {
+
+		}
 	}
 
 	public static void evaluateYield() {
 
 		try {
 			init();
-			String symbol = "TQQQ";
+			String symbol = "FB";
 			BuySellStmnt.setString(1, symbol);
 			BuySellStmnt.setInt(2, 8466);
 			ResultSet rs = BuySellStmnt.executeQuery();
@@ -716,7 +755,7 @@ public class Summary {
 						if (nextActionSale && SL1 == 2) {
 							nextDayAction = true;
 						}
-						if (daysAfterBuy>14&&nextActionSale && SL2 == 4) {
+						if (daysAfterBuy > 14 && nextActionSale && SL2 == 4) {
 							nextDayAction = true;
 						}
 						daysAfterBuy++;
