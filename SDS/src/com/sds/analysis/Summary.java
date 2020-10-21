@@ -562,18 +562,18 @@ public class Summary {
 		init();
 		// String symbol = "CIEN";
 		// processLastDayCCX(symbol, -1);
-		for (int dateId = 9020; dateId >8219; dateId--) {
+	//	for (int dateId = 9020; dateId >8219; dateId--) {
 			// processAllYTPSum(dateId);
 			// processAllYTPSum(dateId);
 			// System.out.println("Done " + dateId);
 			// processBOSY(dateId);
 			// processCBI(dateId);
 			// processBuySellPoints(dateId);
-			processDailyUTurnSummary(dateId);
+			//processDailyUTurnSummary(dateId);
 			//System.out.println("Done " + dateId);
-		}
+	//	}
 
-		//evaluateYield();
+		evaluateYield();
 	}
 
 	public static void processDailyUTurnSummary(int dateID) {
@@ -614,7 +614,7 @@ public class Summary {
 
 		try {
 			init();
-			String symbol = "FB";
+			String symbol = "SIG";
 			BuySellStmnt.setString(1, symbol);
 			BuySellStmnt.setInt(2, 8466);
 			ResultSet rs = BuySellStmnt.executeQuery();
@@ -692,6 +692,7 @@ public class Summary {
 						nextActionSale = false;
 						nextActionBuy = true;
 						buyPrice = 0.0f;
+						daysAfterBuy = 0;
 					} // else if (nextActionSale && SALY == 4 && OS > 20.0f && OB < 60.0f) {
 					else if (nextActionSale && sellMethod == 1 && SL1 == 2) {
 						// sale condition 1

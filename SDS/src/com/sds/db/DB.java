@@ -49,7 +49,7 @@ public class DB {
 	// TINYINT DEFAULT 0, APAS TINYINT DEFAULT 0, PRIMARY KEY (STOCKID, DATEID),APTV
 	// FLOAT DEFAULT 0.0,
 	// ALTER TABLE BBROCK ADD COLUMN BPY SMALLINT DEFAULT 0;
-	// SYPT INT DEFAULT 0, FOREIGN KEY (STOCKID) REFERENCES SYMBOLS(STOCKID) ON
+		// SYPT INT DEFAULT 0, FOREIGN KEY (STOCKID) REFERENCES SYMBOLS(STOCKID) ON
 	// DELETE CASCADE, FOREIGN KEY (DATEID) REFERENCES DATES(DATEID));
 	/* ALTER TABLE BBROCK ADD COLUMN TSM SMALLINT DEFAULT 0; //Teal color total summary between two days
 	ALTER TABLE BBROCK ADD COLUMN TOM TINYINT DEFAULT 0;  //Teal color moving one month summary
@@ -68,6 +68,9 @@ public class DB {
     ALTER TABLE BBROCK ADD COLUMN ADM FLOAT DEFAULT 0.0; //AVG DM OF THE PAST 250 DAYS
     ALTER TABLE BBROCK ADD COLUMN RK TINYINT UNSIGNED DEFAULT 0; //RANK OF CURRENT DM COMPARED TO LAST 250 DAYS, HIGHEST RK = 1, LOWEST =250
     ALTER TABLE BBROCK ADD COLUMN FUC TINYINT UNSIGNED DEFAULT 0; //UPC 1st 40 occurance within 30(or 40?) days, if accompanied by DM>100, then 8
+    // ALTER TABLE BBROCK ADD COLUMN BDY FLOAT DEFAULT 0.0; //from buy to sell point every day total yield
+	// ALTER TABLE BBROCK ADD COLUMN PDY TINYINT UNSIGNED DEFAULT 0; //positive gain days to achieve this yield
+
      //else then 4, check sequential of 4s to see if the second 4 price>1st 4 price like DOCU,ZM etc. for 8, then one 8 is enough. The rest of UPC>40
       //is denoted by 1, so it is convenient to calculate if another UPC>40 is within the reach of 30 days 
     //dateId - 252 ( 1 year )
@@ -153,6 +156,7 @@ public class DB {
 	private static PreparedStatement BuySellUpdate = null;
 	private static PreparedStatement currentUTurnStocks = null;
 	private static PreparedStatement UMACUpdate = null;
+	private static PreparedStatement updateBDYPDY = null;
 	//fucf, fud, updateFUC
 	
 	public static void closeConnection() {
@@ -633,6 +637,21 @@ public class DB {
 		}
 
 		return updateFUC ;
+	}
+	
+
+	public static PreparedStatement updateBDYPDY() {
+		if (updateBDYPDY == null) {
+			try {
+				String query = "UPDATE BBROCK SET BDY = ? , PDY=? WHERE  STOCKID = ? AND DATEID=?";
+				updateBDYPDY  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return updateBDYPDY ;
 	}
 	
 	public static PreparedStatement getMinClose() {
@@ -1291,7 +1310,7 @@ public class DB {
 		if (closePriceStmnt == null) {
 			try {
 
-				String query = "SELECT CLOSE FROM BBROCK  WHERE STOCKID = ? AND DATEID =? ";
+				String query = "SELECT CLOSE,PDY,BDY FROM BBROCK  WHERE STOCKID = ? AND DATEID =? ";
 
 				closePriceStmnt = dbcon.prepareStatement(query);
 			} catch (SQLException e) {
