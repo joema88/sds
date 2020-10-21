@@ -41,13 +41,15 @@ public class UpDownMeasure {
 	public static void main(String[] args) {
 
 		// DAILY ROUTINE
-		currentDateID = 9024;
+		currentDateID = 9025;
 		// processUpDownHistory();//no longer do DM update
 		// processDMAHistory(); //DM update here
 		// processDMRankAvgDMHistory();
 
-		// processFUCHistory();
+		//processFUCHistory();
 		// Summary.processDailyUTurnSummary(currentDateID);
+			int buyPoint = 9007;
+		//		processPDYHistory(buyPoint);
 
 		// ROUTINE AFTER STOCK SPLIT PROCESSING...
 		// After stock split, we need to download history, recalculate this
@@ -60,8 +62,8 @@ public class UpDownMeasure {
 		// update FUC history
 //	processStockFUCHistory(stockId);
 		// transfer missing data
-		
-		processPDYHistory() ;
+
+	
 	}
 
 	public static void processStockUpDownHistory(int stockID) {
@@ -1355,7 +1357,7 @@ public class UpDownMeasure {
 	// Accumulated yield of stocks since each stage buying to selling
 	// the purpose of such calculation is to find sector rotation or sector
 	// advantage
-	public static void processPDYHistory() {
+	public static void processPDYHistory(int buyPoint) {
 		try {
 
 			long t1 = System.currentTimeMillis();
@@ -1385,7 +1387,7 @@ public class UpDownMeasure {
 				// for (int k = strtDateId + upDays; k <= endDateId; k++) {
 				// for (int k = endDateId; k >= currentDateID; k--) {
 				// 9007 is the latest buying point, hard-coded for now
-				int buyPoint = 9007;
+				// int buyPoint = 9007;
 				for (int k = buyPoint; k <= endDateId; k++) {
 					boolean exist = false;
 					int adjustment = 0;
@@ -1430,19 +1432,19 @@ public class UpDownMeasure {
 
 	public static void processTodayPDY(int stockID, int dateId, int buyDateId) {
 		try {
-			//String query = "SELECT CLOSE,PDY,BDY FROM BBROCK  
-			//WHERE STOCKID = ? AND DATEID =? ";
+			// String query = "SELECT CLOSE,PDY,BDY FROM BBROCK
+			// WHERE STOCKID = ? AND DATEID =? ";
 
-			if (stockID == 5 ) {
+			if (stockID == 5) {
 				System.out.println("Testing...");
 			}
 			PreparedStatement closeStmnt = DB.getClosePriceStmnt();
 			PreparedStatement dateIDStmnt = DB.getDateIDStmnt();
-			//String query = "UPDATE BBROCK SET BDY = ? , PDY=? 
-			//WHERE  STOCKID = ? AND DATEID=?";
-			
+			// String query = "UPDATE BBROCK SET BDY = ? , PDY=?
+			// WHERE STOCKID = ? AND DATEID=?";
+
 			PreparedStatement updateBDYPDY = DB.updateBDYPDY();
-			
+
 			dateIDStmnt.setInt(1, stockID);
 			dateIDStmnt.setInt(2, dateId - 7);
 			dateIDStmnt.setInt(3, dateId);
@@ -1467,44 +1469,43 @@ public class UpDownMeasure {
 			closeStmnt.setInt(1, stockID);
 			closeStmnt.setInt(2, dateId);
 			ResultSet rs0 = closeStmnt.executeQuery();
-			
+
 			rs0.next();
 			float close0 = rs0.getFloat(1);
 			int pdy0 = rs0.getInt(2);
 			float bdy0 = rs0.getFloat(3);
-			
+
 			closeStmnt.setInt(1, stockID);
 			closeStmnt.setInt(2, dateIdStartUp);
 			ResultSet rs1 = closeStmnt.executeQuery();
-			
+
 			rs1.next();
 			float close1 = rs1.getFloat(1);
 			int pdy1 = rs1.getInt(2);
 			float bdy1 = rs1.getFloat(3);
-			
+
 			closeStmnt.setInt(1, stockID);
 			closeStmnt.setInt(2, buyDateId);
 			ResultSet rs2 = closeStmnt.executeQuery();
-			
+
 			rs2.next();
 			float close2 = rs2.getFloat(1);
 			int pdy2 = rs2.getInt(2);
-			float bdy2 = rs2.getFloat(3);	
-			
-			float bdy =100.0f* (close0 - close2)/close2;
+			float bdy2 = rs2.getFloat(3);
+
+			float bdy = 100.0f * (close0 - close2) / close2;
 			int pdy = pdy1;
-			if(close0>close1) {
+			if (close0 > close1) {
 				pdy = pdy + 1;
 			}
-			
-			//String query = "UPDATE BBROCK SET BDY = ? , PDY=? 
-			//WHERE  STOCKID = ? AND DATEID=?";
-			 updateBDYPDY.setFloat(1, bdy);
-			 updateBDYPDY.setInt(2,pdy);
-			 updateBDYPDY.setInt(3,stockID);
-			 updateBDYPDY.setInt(4,dateId);
-			 updateBDYPDY.executeUpdate();
-			 
+
+			// String query = "UPDATE BBROCK SET BDY = ? , PDY=?
+			// WHERE STOCKID = ? AND DATEID=?";
+			updateBDYPDY.setFloat(1, bdy);
+			updateBDYPDY.setInt(2, pdy);
+			updateBDYPDY.setInt(3, stockID);
+			updateBDYPDY.setInt(4, dateId);
+			updateBDYPDY.executeUpdate();
 
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
