@@ -109,6 +109,8 @@ public class BDYield {
 			}
 			
 			float yield = 100.0f*(totalValueNow-totalInvestment)/totalInvestment;
+			System.out.println("");
+			System.out.println("------------  Result -------------");
 			System.out.println("Total investment amount is "+totalInvestment+" total value now "+totalValueNow);
 			System.out.println("The investment yield now is "+yield+"%");
 			
@@ -131,8 +133,8 @@ public class BDYield {
 				spyEnd = rs4.getFloat(1);
 			}
 			float spyYield = 100.0f*(spyEnd - spyStart)/spyStart;
-			
-			System.out.println(" This compares to SPY buy at "+spyStart+" and hold at "+spyEnd+" yeild "+spyYield+"%");
+			System.out.println("");
+			System.out.println("This compares to SPY buy at "+spyStart+" and hold at "+spyEnd+" yeild "+spyYield+"%");
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}
