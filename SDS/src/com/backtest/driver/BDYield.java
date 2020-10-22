@@ -42,6 +42,37 @@ public class BDYield {
 		try {
 
 			excludeStocks = new Hashtable();
+			//sept stock split
+			excludeStocks.put("ACET", "ACET");
+			excludeStocks.put("AEHL", "AEHL");
+			excludeStocks.put("APEX", "APEX");
+			excludeStocks.put("AROW", "AROW");
+			excludeStocks.put("BIOC", "BIOC");
+			excludeStocks.put("HGSH", "HGSH");
+			excludeStocks.put("EGLE", "EGLE");
+			excludeStocks.put("GOVX", "GOVX");
+			excludeStocks.put("GECC", "GECC");
+			excludeStocks.put("HGEN", "HGEN");
+			excludeStocks.put("MRNS", "MRNS");
+			excludeStocks.put("NOG", "NOG");
+			excludeStocks.put("SYTA", "SYTA");
+			excludeStocks.put("SNSS", "SNSS");
+			excludeStocks.put("TOMZ", "TOMZ");
+			excludeStocks.put("TREX", "TREX");
+			excludeStocks.put("WLL", "WLL");
+			//OCT SPLIT
+			excludeStocks.put("AXAS", "AXAS");
+			excludeStocks.put("CHFS", "CHFS");
+			excludeStocks.put("KDNY", "KDNY");
+			excludeStocks.put("GLBS", "GLBS");
+			excludeStocks.put("GECC", "GECC");
+			excludeStocks.put("HPR", "HPR");
+			excludeStocks.put("NTES", "NTES");
+			excludeStocks.put("NEE", "NEE");
+			excludeStocks.put("NVUS", "NVUS");
+			excludeStocks.put("RUSHA", "RUSHA");
+			excludeStocks.put("NCTY", "NCTY");
+			excludeStocks.put("TC", "TC");
 			long t1 = System.currentTimeMillis();
 			PreparedStatement UTurn = DB.getUTurnStmnt();
 			PreparedStatement nextDayPrice = DB.getPriceByDateID();
@@ -65,57 +96,60 @@ public class BDYield {
 					// String query = "select CLOSE, a.DATEID,a.STOCKID, CDATE, b.SYMBOL FROM BBROCK
 					// a, SYMBOLS b,DATES c WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and
 					// a.STOCKID = ? AND a.DATEID=?";
-					nextDayPrice.setInt(1, stockID);
-					nextDayPrice.setInt(2, k + 1);
+					if (excludeStocks.containsKey(symbol)) {
+						System.out.println("Exclude split stock "+symbol);
+					}else if (!excludeStocks.containsKey(symbol)) {
+						nextDayPrice.setInt(1, stockID);
+						nextDayPrice.setInt(2, k + 1);
 
-					ResultSet rs1 = nextDayPrice.executeQuery();
-					if (rs1.next()) {
-						float price = rs1.getFloat(1);
-						String stockId = "" + rs1.getInt(3);
-						String cdate = rs1.getString(4);
-						String stock = rs1.getString(5);
-						int buyShare = (int) (investAmount / price);
-						totalInvestment = totalInvestment + buyShare * price;
-						if (!boughtStocks.containsKey(stockId)) {
-							boughtStocks.put(stockId, "" + buyShare);
-						} else {
-							System.out.println("********* Stock ID exist**********");
-							int existShare = Integer.parseInt(boughtStocks.get(stockId).toString());
-							int totalShare = existShare + buyShare;
-							boughtStocks.put(stockId, "" + totalShare);
+						ResultSet rs1 = nextDayPrice.executeQuery();
+						if (rs1.next()) {
+							float price = rs1.getFloat(1);
+							String stockId = "" + rs1.getInt(3);
+							String cdate = rs1.getString(4);
+							String stock = rs1.getString(5);
+							int buyShare = (int) (investAmount / price);
+							totalInvestment = totalInvestment + buyShare * price;
+							if (!boughtStocks.containsKey(stockId)) {
+								boughtStocks.put(stockId, "" + buyShare);
+							} else {
+								System.out.println("********* Stock ID exist**********");
+								int existShare = Integer.parseInt(boughtStocks.get(stockId).toString());
+								int totalShare = existShare + buyShare;
+								boughtStocks.put(stockId, "" + totalShare);
+							}
+							System.out.println("Buy stock " + stock + " on " + cdate + " at $" + price + " " + buyShare
+									+ " shares for total investment of $" + buyShare * price);
 						}
-						System.out.println("Buy stock " + stock + " on " + cdate + " at $" + price + " " + buyShare
-								+ " shares for total investment of $" + buyShare * price);
 					}
 
 				}
 
 			}
-			
+
 			Enumeration en = boughtStocks.keys();
-			while(en.hasMoreElements()) {
+			while (en.hasMoreElements()) {
 				int nextStockId = Integer.parseInt(en.nextElement().toString());
-				int shares  = Integer.parseInt(boughtStocks.get(""+nextStockId).toString());
-				
+				int shares = Integer.parseInt(boughtStocks.get("" + nextStockId).toString());
+
 				nextDayPrice.setInt(1, nextStockId);
 				nextDayPrice.setInt(2, endDateID);
 
 				ResultSet rs2 = nextDayPrice.executeQuery();
 				if (rs2.next()) {
 					float price = rs2.getFloat(1);
-					totalValueNow = totalValueNow + price*shares;
+					totalValueNow = totalValueNow + price * shares;
 				}
-				
+
 			}
-			
-			float yield = 100.0f*(totalValueNow-totalInvestment)/totalInvestment;
+
+			float yield = 100.0f * (totalValueNow - totalInvestment) / totalInvestment;
 			System.out.println("");
 			System.out.println("------------  Result -------------");
-			System.out.println("Total investment amount is "+totalInvestment+" total value now "+totalValueNow);
-			System.out.println("The investment yield now is "+yield+"%");
-			
-			//then check SPY Yield 6183
-			
+			System.out.println("Total investment amount is " + totalInvestment + " total value now " + totalValueNow);
+			System.out.println("The investment yield now is " + yield + "%");
+
+			// then check SPY Yield 6183
 
 			float spyStart = 0.0f;
 			float spyEnd = 0.0f;
@@ -132,9 +166,10 @@ public class BDYield {
 			if (rs4.next()) {
 				spyEnd = rs4.getFloat(1);
 			}
-			float spyYield = 100.0f*(spyEnd - spyStart)/spyStart;
+			float spyYield = 100.0f * (spyEnd - spyStart) / spyStart;
 			System.out.println("");
-			System.out.println("This compares to SPY buy at "+spyStart+" and hold at "+spyEnd+" yeild "+spyYield+"%");
+			System.out.println(
+					"This compares to SPY buy at " + spyStart + " and hold at " + spyEnd + " yeild " + spyYield + "%");
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}
