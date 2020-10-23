@@ -640,8 +640,9 @@ public class Summary {
 			int sellDate = 0;
 			float buyPrice = 0;
 			float sellPrice = 0;
+			
 			// String query = "select a.DATEID, CDATE, b.SYMBOL,
-			// CLOSE,BI,CBI,SALY,BOSY,BAT,TOT,OS, OB, OY, AY, SL1, SL2, BUY "
+			// CLOSE,BI,CBI,SALY,BOSY,BAT,TOT,OS, OB, OY, AY, SL1, SL2, BUY, c.CDATE  "
 			// +"FROM BBROCK a, SYMBOLS b, DATES c WHERE a.STOCKID = b.STOCKID and
 			// a.DATEID=c.DATEID and ( b.SYMBOL='SPY') AND a.DATEID>? order by a.DATEID
 			// ASC";
@@ -672,18 +673,19 @@ public class Summary {
 				SL1 = rs.getInt(15);
 				SL2 = rs.getInt(16);
 				BUY = rs.getInt(17);
+				cdate = rs.getString(18);
 				// System.out.println(dateId+" "+cdate+" "+symbol+" "+close+" "+BI+" "+CBI+" "
 				// +SALY+" "+BOSY+" "+BAT+" "+TOT+" "+OS+" "+OB+" "+OY+" "+AY);
 				if (k == 0) {
 					buyPrice = close;
 					startPrice = close;
 					nextActionSale = true;
-					System.out.print("Buy " + symbol + " at " + dateId + " at price " + close);
+					System.out.print("Buy " + symbol + " at " + cdate+" ("+dateId +")"+ " at price " + close);
 				} else {
 					if (nextDayAction && nextActionSale) {
 
 						float yeild = 100.0f * (close - buyPrice) / buyPrice;
-						System.out.println(", Sell at " + dateId + " at price " + close + " yield " + yeild);
+						System.out.println(", Sell at "+ " at " + cdate+" ("+dateId +")"+" at price " + close + " yield " + yeild);
 						totalYield = totalYield * (1.0f + yeild / 100.0f);
 						float buyHoldYield = 1.0f + (close - startPrice) / startPrice;
 						System.out.println("totalYield " + totalYield + " vs. buyHoldYield " + buyHoldYield);
@@ -765,7 +767,7 @@ public class Summary {
 					if (nextActionBuy && BUY == 1 && !nextActionSale) {
 						buyPrice = close;
 						nextActionSale = true;
-						System.out.print("Buy " + symbol + " at " + dateId + " at price " + close);
+						System.out.print("Buy " + symbol + " at "+ cdate+" ("+dateId +")"+ " at price " + close);
 					}
 
 				}
@@ -776,7 +778,7 @@ public class Summary {
 
 			if (nextActionSale) {
 				float yeild = 100.0f * (close - buyPrice) / buyPrice;
-				System.out.println(", Sell at " + dateId + " at price " + close + " yield " + yeild);
+				System.out.println(", Sell at " + " at " + cdate+" ("+dateId +")"+ " at price " + close + " yield " + yeild);
 				totalYield = totalYield * (1.0f + yeild / 100.0f);
 				System.out.println("");
 				System.out.println("------------------");

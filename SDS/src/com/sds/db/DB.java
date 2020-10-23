@@ -886,7 +886,7 @@ public class DB {
 			try {
 				String query = "select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, MARKCAP,CLOSE,DPC, UPC, DM, FUC AS UTURN "
 						+ " FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID "
-						+ " and  a.DATEID=? AND a.FUC>4 ORDER BY MARKCAP DESC";
+						+ " and  a.DATEID=? AND a.FUC>4 AND MARKCAP>1000 and a.DATEID<9010 ORDER BY MARKCAP DESC";
 				UTurnStmnt = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
@@ -1733,7 +1733,7 @@ public class DB {
 				// select SUM(TEAL), SUM(YELLOW), SUM(PINK) FROM BBROCK a, SYMBOLS b WHERE
 				// a.STOCKID = b.STOCKID and b.SYMBOL = ? AND DATEID>=? AND DATEID<=?;
 
-				String query = "select a.DATEID, CDATE, b.SYMBOL, CLOSE,BI,CBI,SALY,BOSY,BAT,TOT,OS, OB, OY, AY, SL1, SL2, BUY "
+				String query = "select a.DATEID, CDATE, b.SYMBOL, CLOSE,BI,CBI,SALY,BOSY,BAT,TOT,OS, OB, OY, AY, SL1, SL2, BUY, c.CDATE "
 						+ "FROM BBROCK a, SYMBOLS b, DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and ( b.SYMBOL=?)  AND a.DATEID>?   order by a.DATEID ASC";
 
 				BuySellStmnt = dbcon.prepareStatement(query);
