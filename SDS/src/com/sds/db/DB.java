@@ -18,6 +18,11 @@ public class DB {
 	// b.SYMBOL='MAR' order by a.DATEID DESC limit 300;
 
 	// create BBROCK table
+	//3. CREATE TABLE INDUSTRY(INDID SMALLINT, INDUSTRY VARCHAR(100), PRIMARY
+	// KEY(INDID));
+	//4. CREATE TABLE SUBINDUSTRY(INDID SMALLINT, SUBID TINYINT UNSIGNED, 
+	// SUBINDUSTRY VARCHAR(100), PRIMARY KEY (SUBID, INDID),
+	// FOREIGN KEY (INDID) REFERENCES INDUSTRY(INDID) ON DELETE CASCADE);
 	// 1. CREATE TABLE SYMBOLS(STOCKID SMALLINT, SYMBOL VARCHAR(10), PRIMARY
 	// KEY(STOCKID));
 	// 2. CREATE TABLE DATES(DATEID SMALLINT, CDATE DATE, PRIMARY KEY(DATEID));
@@ -170,10 +175,35 @@ public class DB {
 	private static PreparedStatement UMACUpdate = null;
 	private static PreparedStatement updateBDYPDY = null;
 	private static PreparedStatement UTurnStmnt = null;
+	private static PreparedStatement insertIndStmnt=null;
+	private static PreparedStatement IndStmnt=null;
+	private static PreparedStatement insertSubIndStmnt = null;
+	private static PreparedStatement subIndStmnt = null;
+	private static PreparedStatement subUnderIndStmnt = null;
 	// fucf, fud, updateFUC
 
 	public static void closeConnection() {
 		try {
+			if(subUnderIndStmnt != null) {
+				subUnderIndStmnt.close();
+				subUnderIndStmnt = null;
+			}
+			if(insertSubIndStmnt != null) {
+				insertSubIndStmnt.close();
+				insertSubIndStmnt = null;
+			}
+			if( subIndStmnt != null) {
+				subIndStmnt.close();
+				subIndStmnt = null;
+			}
+			if(insertIndStmnt != null) {
+				insertIndStmnt.close();
+				insertIndStmnt = null;
+			}
+			if( IndStmnt != null) {
+				IndStmnt.close();
+				IndStmnt = null;
+			}
 			if (UTurnStmnt != null) {
 				UTurnStmnt.close();
 				UTurnStmnt = null;
@@ -862,6 +892,80 @@ public class DB {
 		return BuySellUpdate;
 	}
 
+	public static PreparedStatement getSubIndustryStmnt() {
+		if (subIndStmnt == null) {
+			try {
+				String query = "select a.INDID , SUBID,INDUSTRY, SUBINDUSTRY FROM INDUSTRY a, SUBINDUSTRY b where a.INDID=b.INDID ORDER BY a.INDUSTRY ASC, b.SUBINDUSTRY ASC;";
+				subIndStmnt = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return subIndStmnt ;
+	}
+	
+	public static PreparedStatement getAllSubUnderIndustryStmnt() {
+		if (subUnderIndStmnt == null) {
+			try {
+				String query = "select INDID , SUBID,SUBINDUSTRY FROM  SUBINDUSTRY  where INDID = ?";
+				subUnderIndStmnt = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return subUnderIndStmnt;
+	}
+	public static PreparedStatement getSubIndInsertStatement() {
+		getConnection();
+
+		if (insertSubIndStmnt == null) {
+			try {
+				String query = "insert into SUBINDUSTRY (INDID ,SUBID, SUBINDUSTRY) values (?, ?, ?)";
+
+				insertSubIndStmnt  = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return insertSubIndStmnt ;
+	}
+	
+	//select INDID , INDUSTRY FROM INDUSTRY;
+	public static PreparedStatement getIndustryStmnt() {
+		if (IndStmnt == null) {
+			try {
+				String query = "select INDID , INDUSTRY FROM INDUSTRY ORDER BY INDUSTRY ASC";
+				IndStmnt = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return IndStmnt ;
+	}
+	
+	public static PreparedStatement getIndInsertStatement() {
+		getConnection();
+
+		if (insertIndStmnt == null) {
+			try {
+				String query = "insert into INDUSTRY (INDID , INDUSTRY) values (?, ?)";
+
+				insertIndStmnt  = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return insertIndStmnt ;
+	}
+	
 	public static PreparedStatement getBOYSStmnt() {
 		if (BOYSStmnt == null) {
 			try {

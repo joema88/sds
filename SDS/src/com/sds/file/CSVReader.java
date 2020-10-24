@@ -5,7 +5,9 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.Hashtable;
 
 import com.sds.db.DB;
 
@@ -944,7 +946,7 @@ public class CSVReader {
 								rockStmnt.setFloat(3, percentage);
 								rockStmnt.setFloat(4, close);
 								rockStmnt.setFloat(5, netChange);
-								if(atr>-999.0f&&atr<-7999.0f) {
+								if (atr > -999.0f && atr < -7999.0f) {
 									atr = 0.0f;
 								}
 								rockStmnt.setFloat(6, atr);
@@ -1029,4 +1031,156 @@ public class CSVReader {
 
 	}
 
+	public static void uploadIndustryCSVtoDB(String path, String fileName) {
+		String csvFile = path + fileName;
+		System.out.println("Processing file " + csvFile);
+		BufferedReader br = null;
+		String line = "";
+		String cvsSplitBy = ",";
+
+		// String query = "select INDID , INDUSTRY FROM INDUSTRY ORDER BY INDUSTRY ASC";
+		PreparedStatement industryStmnt = DB.getIndustryStmnt();
+		PreparedStatement insertIndustryStmnt = DB.getIndInsertStatement();
+		PreparedStatement subIndustryStmnt = DB.getSubIndustryStmnt();
+		PreparedStatement insertSubIndustryStmnt = DB.getSubIndInsertStatement();
+		PreparedStatement subUnderIndStmnt = DB.getAllSubUnderIndustryStmnt();
+
+		try {
+
+			ResultSet rs1 = industryStmnt.executeQuery();
+
+			Hashtable industries = new Hashtable();
+
+			while (rs1.next()) {
+				int iid = rs1.getInt(1);
+				String ind = rs1.getString(2);
+				industries.put(ind, "" + iid);
+			}
+
+			int indSize = industries.size();
+
+			// String query = "select a.INDID , SUBID,INDUSTRY, SUBINDUSTRY FROM INDUSTRY a,
+			// SUBINDUSTRY b where a.INDID=b.INDID ORDER BY a.INDUSTRY ASC, b.SUBINDUSTRY
+			// ASC;";
+
+			boolean start = false;
+			br = new BufferedReader(new FileReader(csvFile));
+			while ((line = br.readLine()) != null) {
+
+				String industry = "";
+				String subIndustry = "";
+				String symbol = "";
+				if (start) {
+
+					if (line.indexOf("\"") < 0) {// no " quick split
+						// use comma as separator
+						String[] data = line.split(cvsSplitBy);
+						symbol = data[0];
+						try {
+							industry = data[1];
+						} catch (Exception e) {
+
+						}
+						try {
+							subIndustry = data[2];
+						} catch (Exception e) {
+
+						}
+					} else { // if there is quote, loop through character by character
+						int length = line.length();
+						boolean quoteStart = false;
+						boolean quoteEnd = false;
+						boolean commaFound = false;
+						StringBuffer buff = new StringBuffer();
+						for (int k = 0; k < length; k++) {
+							if (line.charAt(k) == '"' && !quoteStart) {
+								quoteStart = true;
+							} else if (line.charAt(k) == '"' && quoteStart) {
+								quoteEnd = true;
+								if (industry.length() == 0) {
+									industry = buff.toString();
+									buff = new StringBuffer();
+									quoteStart = false;
+									quoteEnd = false;
+								} else {
+									subIndustry = buff.toString();
+								}
+							} else if (line.charAt(k) == ',' && quoteStart) {
+								// , in the middle of quotation, append
+								buff.append(line.charAt(k));
+							} else if (line.charAt(k) == ',' && !quoteStart) {
+								// ignore it, as it is the proper separator, except the first
+								// , tells you the previous value is symbol
+								if (symbol.length() == 0) {
+									symbol = buff.toString();
+									buff = new StringBuffer();
+								}
+							} else {
+								buff.append(line.charAt(k));
+							}
+
+						}
+
+						if (subIndustry.length() == 0) {
+							subIndustry = buff.toString();
+						}
+					}
+
+					if (industry != null && industry.length() > 2) {
+						// insert industry
+						// industry = "Oil: Gas & Consumable Fuels";
+						System.out.println(industry);
+						industry = industry.replace("\"", "");
+						industry = industry.replace(":", "");
+						if (!industries.containsKey(industry)) {
+							insertIndustryStmnt.setInt(1, ++indSize);
+							insertIndustryStmnt.setString(2, industry);
+							System.out.println("Try to insert " + industry + " :" + indSize);
+							insertIndustryStmnt.execute();
+							industries.put(industry, indSize);
+						}
+
+						if (subIndustry != null && subIndustry.length() > 2) {
+							// insert subIndustry
+							// String query = "insert into SUBINDUSTRY (INDID ,SUBID, SUBINDUSTRY) values
+							// (?, ?, ?)";
+							if (industries.containsKey(industry)) {
+								int indid = Integer.parseInt(industries.get(industry).toString());
+								subUnderIndStmnt.setInt(1, indid);
+								ResultSet rs2 = subUnderIndStmnt.executeQuery();
+								Hashtable subIndMap = new Hashtable();
+								// String query = "select INDID , SUBID,SUBINDUSTRY FROM SUBINDUSTRY where INDID
+								// = ?";
+
+								while (rs2.next()) {
+									String subInd = rs2.getString(3);
+									int subid = rs2.getInt(2);
+									subIndMap.put(subInd, "" + subid);
+								}
+
+								// String query = "insert into SUBINDUSTRY (INDID ,SUBID, SUBINDUSTRY) values
+								// (?, ?, ?)";
+								if (!subIndMap.containsKey(subIndustry)) {
+									insertSubIndustryStmnt.setInt(1, indid);
+									insertSubIndustryStmnt.setInt(2, subIndMap.size() + 1);
+									insertSubIndustryStmnt.setString(3, subIndustry);
+									insertSubIndustryStmnt.execute();
+								}
+							}
+						}
+
+					}
+
+					System.out.println(symbol + " -- " + industry + ": " + subIndustry);
+
+				}
+				if (line.indexOf("Sub-Industry") >= 0 && line.indexOf("Industry") >= 0)
+					start = true;
+
+			}
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
 }

@@ -614,7 +614,7 @@ public class Summary {
 
 		try {
 			init();
-			String symbol = "SIG";
+			String symbol = "AAPL";
 			BuySellStmnt.setString(1, symbol);
 			BuySellStmnt.setInt(2, 8466);
 			ResultSet rs = BuySellStmnt.executeQuery();
