@@ -25,6 +25,8 @@ public class DB {
 	// FOREIGN KEY (INDID) REFERENCES INDUSTRY(INDID) ON DELETE CASCADE);
 	// 1. CREATE TABLE SYMBOLS(STOCKID SMALLINT, SYMBOL VARCHAR(10), PRIMARY
 	// KEY(STOCKID));
+	//ALTER TABLE SYMBOLS ADD COLUMN INDID SMALLINT DEFAULT 0;
+	//ALTER TABLE SYMBOLS ADD COLUMN SUBID TINYINT UNSIGNED DEFAULT 0;
 	// 2. CREATE TABLE DATES(DATEID SMALLINT, CDATE DATE, PRIMARY KEY(DATEID));
 	// ALTER TABLE DATES ADD COLUMN OS FLOAT DEFAULT 0.0;
 	// ALTER TABLE DATES ADD COLUMN OB FLOAT DEFAULT 0.0;
@@ -180,10 +182,20 @@ public class DB {
 	private static PreparedStatement insertSubIndStmnt = null;
 	private static PreparedStatement subIndStmnt = null;
 	private static PreparedStatement subUnderIndStmnt = null;
+	private static PreparedStatement updateStockIndustryCode = null;
+	private static PreparedStatement IndCodeStmnt = null;
 	// fucf, fud, updateFUC
 
 	public static void closeConnection() {
 		try {
+			if(IndCodeStmnt != null) {
+				IndCodeStmnt.close();
+				IndCodeStmnt = null;
+			}
+			if( updateStockIndustryCode != null) {
+				updateStockIndustryCode.close();
+				updateStockIndustryCode = null;
+			}
 			if(subUnderIndStmnt != null) {
 				subUnderIndStmnt.close();
 				subUnderIndStmnt = null;
@@ -933,6 +945,36 @@ public class DB {
 		}
 
 		return insertSubIndStmnt ;
+	}
+	
+
+	public static PreparedStatement getIndustryCodeStmnt() {
+		if (IndCodeStmnt == null) {
+			try {
+				String query = "select a.INDID , SUBID,INDUSTRY, SUBINDUSTRY FROM INDUSTRY a, SUBINDUSTRY b where a.INDID=b.INDID AND a.INDUSTRY=? AND b.SUBINDUSTRY=?";
+				IndCodeStmnt = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return IndCodeStmnt ;
+	}
+	
+	
+	public static PreparedStatement updateStockIndustryCode() {
+		if (updateStockIndustryCode == null) {
+			try {
+				String query = "UPDATE SYMBOLS SET INDID = ?, SUBID = ? WHERE SYMBOL = ?";
+				updateStockIndustryCode = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return updateStockIndustryCode;
 	}
 	
 	//select INDID , INDUSTRY FROM INDUSTRY;

@@ -1044,6 +1044,8 @@ public class CSVReader {
 		PreparedStatement subIndustryStmnt = DB.getSubIndustryStmnt();
 		PreparedStatement insertSubIndustryStmnt = DB.getSubIndInsertStatement();
 		PreparedStatement subUnderIndStmnt = DB.getAllSubUnderIndustryStmnt();
+		PreparedStatement updateStockIndustryCode = DB.updateStockIndustryCode();
+		PreparedStatement IndCodeStmnt = DB.getIndustryCodeStmnt();
 
 		try {
 
@@ -1167,11 +1169,28 @@ public class CSVReader {
 									insertSubIndustryStmnt.execute();
 								}
 							}
+
+							// String query = "select a.INDID , SUBID,INDUSTRY, SUBINDUSTRY
+							// FROM INDUSTRY a, SUBINDUSTRY b where a.INDID=b.INDID AND a.INDUSTRY=?,
+							// b.SUBINDUSTRY=?";
+
+							IndCodeStmnt.setString(1, industry);
+							IndCodeStmnt.setString(2, subIndustry);
+							ResultSet rs4 = IndCodeStmnt.executeQuery();
+							if (rs4.next()) {
+								int indid = rs4.getInt(1);
+								int subid = rs4.getInt(2);
+								
+								//String query = "UPDATE SYMBOLS SET INDID = ?, SUBID = ? WHERE SYMBOL = ?";
+								updateStockIndustryCode.setInt(1, indid);
+								updateStockIndustryCode.setInt(2, subid);
+								updateStockIndustryCode.setString(3,symbol);
+								updateStockIndustryCode.execute();
+								System.out.println(symbol + " -- " + industry + ": " + subIndustry);
+							}
 						}
 
 					}
-
-					System.out.println(symbol + " -- " + industry + ": " + subIndustry);
 
 				}
 				if (line.indexOf("Sub-Industry") >= 0 && line.indexOf("Industry") >= 0)
