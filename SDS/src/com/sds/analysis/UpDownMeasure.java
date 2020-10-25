@@ -43,18 +43,19 @@ public class UpDownMeasure {
 		// DAILY ROUTINE
 		currentDateID = 9027;
 		// processUpDownHistory();//no longer do DM update
-		//daily step 1
+		// daily step 1
 		// processDMAHistory(); //DM update here
-		//daily step 2
+		// daily step 2
 		// processDMRankAvgDMHistory();
-		//daily step 3
+		// daily step 3
 		// processFUCHistory();
-		//daily step 4
+		// daily step 4
 		// Summary.processDailyUTurnSummary(currentDateID);
 		int buyDateId = 9007;
-		//daily step 5
-		//processTodayAllPDY(currentDateID, buyDateId);
+		// daily step 5
+		// processTodayAllPDY(currentDateID, buyDateId);
 		// processPDYHistory(buyDateId);
+		processIndustryAVGPDYHistory(buyDateId);
 
 		// ROUTINE AFTER STOCK SPLIT PROCESSING...
 		// After stock split, we need to download history, recalculate this
@@ -1360,7 +1361,125 @@ public class UpDownMeasure {
 
 	// Accumulated yield of stocks since each stage buying to selling
 	// the purpose of such calculation is to find sector rotation or sector
-	// advantage
+	// advantage, this is done after individual stock calculation of such
+	// this is at Industry sector and sub sector levels
+	public static void processIndustryAVGPDYHistory(int buyPoint) {
+		try {
+
+			long t1 = System.currentTimeMillis();
+			PreparedStatement indIdStmnt = DB.getIndIDStmnt();
+			PreparedStatement subIndStockInfo = DB.getAllSubIndStockInfo();
+			PreparedStatement indAvgYieldUpdate = DB.getIndAvgYieldUpdateStmnt();
+			PreparedStatement subIndAvgYieldUpdate = DB.getSubIndAvgYieldUpdateStmnt();
+
+			// need a for loop here for history
+
+			for (int k = buyPoint + 1; k <= 9027; k++) {
+				System.out.println("Processing dateId--"+k);
+				indIdStmnt.setInt(1, k); // only after the buyPoint 1 day we have calculation
+
+				ResultSet rs = indIdStmnt.executeQuery();
+				int preIndId = 0;
+				int currentIndId = 0;
+				int currentSubIndId = 0;
+			
+				Hashtable IndStocks = new Hashtable();
+				float indSumBDY = 0.0f;
+				int indSumPDY = 0;
+				while (rs.next()) {
+					if (preIndId == 0) {
+						preIndId = rs.getInt(2);
+					}
+
+					if (currentIndId != preIndId) { // new industry
+						// update industry avg for all stocks
+						System.out.println("Processing dateId--"+k+" for Industry "+currentIndId);
+						
+						Enumeration en = IndStocks.keys();
+
+						while (en.hasMoreElements()) {
+							String sym = en.nextElement().toString();
+							int stockId = Integer.parseInt(IndStocks.get(sym).toString());
+							// String query = "UPDATE BBROCK SET IAY = ?, IPY=?
+							// WHERE STOCKID = ? AND DATEID =? ";
+							float iay = indSumBDY / (IndStocks.size() * 1.0f);
+							float ipy = (indSumPDY * 1.0f) / (IndStocks.size() * 1.0f);
+							indAvgYieldUpdate.setFloat(1, iay);
+							indAvgYieldUpdate.setFloat(2, ipy);
+							indAvgYieldUpdate.setInt(3, stockId);
+							indAvgYieldUpdate.setInt(4, k);
+							indAvgYieldUpdate.executeUpdate();
+						}
+						// reset sum
+						indSumBDY = 0.0f;
+						indSumPDY = 0;
+						IndStocks = new Hashtable();
+					}
+
+					// select COUNT(*),b.INDID, INDUSTRY,b.SUBID, SUBINDUSTRY FROM BBROCK a, SYMBOLS
+					// b,DATES c, INDUSTRY d, SUBINDUSTRY e
+					// WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.INDID=d.INDID and
+					// b.INDID=e.INDID and b.SUBID=e.SUBID and a.DATEID = ?
+					// GROUP BY b.INDID,b.SUBID ORDER BY b.INDID ASC,b.SUBID ASC
+
+					currentIndId = rs.getInt(2);
+					currentSubIndId = rs.getInt(4);
+
+					// String query = "SELECT a.DATEID, CDATE, a.STOCKID,b.SYMBOL, close,
+//BDY,PDY FROM  BBROCK a, SYMBOLS b, DATES c WHERE a.DATEID=c.DATEID and a.DATEID=? 
+					// and a.STOCKID=b.STOCKID and b.INDID=? and b.SUBID=?;";
+					subIndStockInfo.setInt(1, k);
+					subIndStockInfo.setInt(2, currentIndId);
+					subIndStockInfo.setInt(3, currentSubIndId);
+
+					ResultSet rs1 = subIndStockInfo.executeQuery();
+					Hashtable subIndStocks = new Hashtable();
+					float sumBDY = 0.0f;
+					int sumPDY = 0;
+
+					while (rs1.next()) {
+						String symb = rs1.getString(4);
+						int stockId = rs1.getInt(3);
+						float bdy = rs1.getFloat(6);
+						int pdy = rs1.getInt(7);
+						subIndStocks.put(symb, "" + stockId);
+						sumBDY = sumBDY + bdy;
+						sumPDY = sumPDY + pdy;
+					}
+
+					indSumBDY = indSumBDY + sumBDY;
+					indSumPDY = indSumPDY + sumPDY;
+
+					float avgBDY = sumBDY / (subIndStocks.size() * 1.0f);
+					float avgPDY = (sumPDY * 1.0f) / (subIndStocks.size() * 1.0f);
+
+					Enumeration en = subIndStocks.keys();
+					System.out.println("Processing dateId--"+k+" for Industry "+currentIndId+" sunInd "+currentSubIndId);
+					while (en.hasMoreElements()) {
+						String sym = en.nextElement().toString();
+						int stockId = Integer.parseInt(subIndStocks.get(sym).toString());
+						IndStocks.put(sym, "" + stockId);
+						// String query = "UPDATE BBROCK SET SAY = ?, SPY=?
+						// WHERE STOCKID = ? AND DATEID =? ";
+
+						subIndAvgYieldUpdate.setFloat(1, avgBDY);
+						subIndAvgYieldUpdate.setFloat(2, avgPDY);
+						subIndAvgYieldUpdate.setInt(3, stockId);
+						subIndAvgYieldUpdate.setInt(4, k);
+						subIndAvgYieldUpdate.executeUpdate();
+					}
+
+				}
+			}
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
+
+	// Accumulated yield of stocks since each stage buying to selling
+	// the purpose of such calculation is to find sector rotation or sector
+	// advantage, this is individual stock calculation
 	public static void processPDYHistory(int buyPoint) {
 		try {
 
@@ -1445,7 +1564,7 @@ public class UpDownMeasure {
 			while (rs.next()) {
 				sc++;
 				int stockID = rs.getInt(1);
-				System.out.println("Processing stock "+stockID);
+				System.out.println("Processing stock " + stockID);
 				processTodayPDY(stockID, dateId, buyDateId);
 			}
 

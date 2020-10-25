@@ -58,6 +58,10 @@ public class DB {
 	// ALTER TABLE BBROCK ADD COLUMN BPY SMALLINT DEFAULT 0;
 	// SYPT INT DEFAULT 0, FOREIGN KEY (STOCKID) REFERENCES SYMBOLS(STOCKID) ON
 	// DELETE CASCADE, FOREIGN KEY (DATEID) REFERENCES DATES(DATEID));
+	// ALTER TABLE BBROCK ADD COLUMN IAY FLOAT DEFAULT 0.0; //Industry sector avg BDY
+	// ALTER TABLE BBROCK ADD COLUMN IPY FLOAT DEFAULT 0.0; //Industry sector avg PDY
+	// ALTER TABLE BBROCK ADD COLUMN SAY FLOAT DEFAULT 0.0; //Industry sub sector sector avg BDY
+	// ALTER TABLE BBROCK ADD COLUMN SPY FLOAT DEFAULT 0.0; //Industry sub sector avg PDY
 	/*
 	 * ALTER TABLE BBROCK ADD COLUMN TSM SMALLINT DEFAULT 0; //Teal color total
 	 * summary between two days ALTER TABLE BBROCK ADD COLUMN TOM TINYINT DEFAULT 0;
@@ -184,10 +188,31 @@ public class DB {
 	private static PreparedStatement subUnderIndStmnt = null;
 	private static PreparedStatement updateStockIndustryCode = null;
 	private static PreparedStatement IndCodeStmnt = null;
+	private static PreparedStatement indIdStmnt = null;
+	private static PreparedStatement indAvgYieldUpdate = null;
+	private static PreparedStatement subIndAvgYieldUpdate = null;
+	private static PreparedStatement subIndStockInfo = null;
+	//,,
 	// fucf, fud, updateFUC
 
 	public static void closeConnection() {
 		try {
+			if(subIndStockInfo != null) {
+				subIndStockInfo.close();
+				subIndStockInfo = null;
+			}
+			if(subIndAvgYieldUpdate != null) {
+				subIndAvgYieldUpdate.close();
+				subIndAvgYieldUpdate = null;
+			}
+			if(indAvgYieldUpdate != null) {
+				indAvgYieldUpdate.close();
+				indAvgYieldUpdate = null;
+			}
+			if(indIdStmnt != null) {
+				indIdStmnt.close();
+				indIdStmnt = null;
+			}
 			if(IndCodeStmnt != null) {
 				IndCodeStmnt.close();
 				IndCodeStmnt = null;
@@ -1518,6 +1543,74 @@ public class DB {
 		return upcStmnt;
 	}
 
+	public static PreparedStatement getAllSubIndStockInfo() {
+		if (subIndStockInfo == null) {
+			try {
+				String query = "SELECT a.DATEID, CDATE, a.STOCKID,b.SYMBOL, close, BDY,PDY FROM  BBROCK a, SYMBOLS b, DATES c WHERE a.DATEID=c.DATEID and a.DATEID=? and a.STOCKID=b.STOCKID and b.INDID=? and b.SUBID=?;";
+				subIndStockInfo = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return subIndStockInfo;
+	}
+	
+	//select COUNT(*),b.INDID, INDUSTRY,b.SUBID, SUBINDUSTRY FROM BBROCK a, SYMBOLS b,DATES c, INDUSTRY d, SUBINDUSTRY e  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.INDID=d.INDID and b.INDID=e.INDID and b.SUBID=e.SUBID and a.DATEID =9026 
+	//GROUP BY b.INDID,b.SUBID ORDER BY  b.INDID ASC,b.SUBID ASC;
+	public static PreparedStatement getIndIDStmnt() {
+		getConnection();
+
+		if (indIdStmnt == null) {
+			try {
+
+				String query = "select COUNT(*),b.INDID, INDUSTRY,b.SUBID, SUBINDUSTRY FROM BBROCK a, SYMBOLS b,DATES c, INDUSTRY d, SUBINDUSTRY e  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.INDID=d.INDID and b.INDID=e.INDID and b.SUBID=e.SUBID and a.DATEID = ?  GROUP BY b.INDID,b.SUBID ORDER BY  b.INDID ASC,b.SUBID ASC";
+
+				indIdStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return indIdStmnt;
+	}
+	
+	
+	public static PreparedStatement getIndAvgYieldUpdateStmnt() {
+		getConnection();
+
+		if (indAvgYieldUpdate == null) {
+			try {
+
+				String query = "UPDATE BBROCK SET IAY = ?, IPY=? WHERE STOCKID = ? AND DATEID =? ";
+
+				indAvgYieldUpdate = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return indAvgYieldUpdate;
+	}
+
+	public static PreparedStatement getSubIndAvgYieldUpdateStmnt() {
+		getConnection();
+
+		if (subIndAvgYieldUpdate == null) {
+			try {
+
+				String query = "UPDATE BBROCK SET SAY = ?, SPY=? WHERE STOCKID = ? AND DATEID =? ";
+
+				subIndAvgYieldUpdate = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return subIndAvgYieldUpdate;
+	}
+	
 	public static PreparedStatement getCX520Stmnt() {
 		getConnection();
 
