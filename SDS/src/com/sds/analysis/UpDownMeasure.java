@@ -43,14 +43,18 @@ public class UpDownMeasure {
 		// DAILY ROUTINE
 		currentDateID = 9027;
 		// processUpDownHistory();//no longer do DM update
+		//daily step 1
 		// processDMAHistory(); //DM update here
+		//daily step 2
 		// processDMRankAvgDMHistory();
-
-		//processFUCHistory();
-		 //Summary.processDailyUTurnSummary(currentDateID);
-			int buyPoint = 9007;
-			buyPoint = currentDateID; //THIS NEED TO BE COMMENTED OUT IF BUYPOINT CHANGE
-		//	processPDYHistory(buyPoint);
+		//daily step 3
+		// processFUCHistory();
+		//daily step 4
+		// Summary.processDailyUTurnSummary(currentDateID);
+		int buyDateId = 9007;
+		//daily step 5
+		//processTodayAllPDY(currentDateID, buyDateId);
+		// processPDYHistory(buyDateId);
 
 		// ROUTINE AFTER STOCK SPLIT PROCESSING...
 		// After stock split, we need to download history, recalculate this
@@ -64,7 +68,6 @@ public class UpDownMeasure {
 //	processStockFUCHistory(stockId);
 		// transfer missing data
 
-	
 	}
 
 	public static void processStockUpDownHistory(int stockID) {
@@ -1428,6 +1431,26 @@ public class UpDownMeasure {
 
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
+		}
+	}
+
+	public static void processTodayAllPDY(int dateId, int buyDateId) {
+		try {
+			PreparedStatement allStocks = DB.getAllCurrentStockIDs();
+			allStocks.setInt(1, dateId);
+
+			ResultSet rs = allStocks.executeQuery();
+			int sc = 0;
+			System.out.println("-----------Begin---------");
+			while (rs.next()) {
+				sc++;
+				int stockID = rs.getInt(1);
+				System.out.println("Processing stock "+stockID);
+				processTodayPDY(stockID, dateId, buyDateId);
+			}
+
+		} catch (Exception ex) {
+
 		}
 	}
 

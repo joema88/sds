@@ -548,6 +548,19 @@ public class DB {
 		return stockIds;
 	}
 
+	public static PreparedStatement getAllCurrentStockIDs() {
+		if (stockIds == null) {
+			try {
+				String query = "SELECT DISTINCT(STOCKID) FROM  BBROCK WHERE DATEID = ? ";
+				stockIds = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return stockIds;
+	}
 	public static PreparedStatement getAllStocks() {
 		if (stocks == null) {
 			try {
