@@ -41,16 +41,16 @@ public class UpDownMeasure {
 	public static void main(String[] args) {
 
 		// DAILY ROUTINE
-		currentDateID = 9027;
+		currentDateID = 9028;
 		// processUpDownHistory();//no longer do DM update
 		// daily step 1
 		// processDMAHistory(); //DM update here
 		// daily step 2
-		// processDMRankAvgDMHistory();
+		 //processDMRankAvgDMHistory();
 		// daily step 3
 		// processFUCHistory();
 		// daily step 4
-		// Summary.processDailyUTurnSummary(currentDateID);
+		 //Summary.processDailyUTurnSummary(currentDateID);
 		int buyDateId = 9007;
 		// daily step 5
 		// processTodayAllPDY(currentDateID, buyDateId);

@@ -192,11 +192,16 @@ public class DB {
 	private static PreparedStatement indAvgYieldUpdate = null;
 	private static PreparedStatement subIndAvgYieldUpdate = null;
 	private static PreparedStatement subIndStockInfo = null;
+	private static PreparedStatement updateStockSectorStmnt = null;
 	//,,
 	// fucf, fud, updateFUC
 
 	public static void closeConnection() {
 		try {
+			if(updateStockSectorStmnt != null) {
+				updateStockSectorStmnt.close();
+				updateStockSectorStmnt = null;
+			}
 			if(subIndStockInfo != null) {
 				subIndStockInfo.close();
 				subIndStockInfo = null;
@@ -1609,6 +1614,23 @@ public class DB {
 		}
 
 		return subIndAvgYieldUpdate;
+	}
+	
+	
+	public static PreparedStatement updateStockSectorStmnt() {
+		getConnection();
+
+		if (updateStockSectorStmnt == null) {
+			try {
+
+				String query = "UPDATE SYMBOLS SET INDID = ?, SUBID =? WHERE SYMBOL= ? ";
+				updateStockSectorStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return updateStockSectorStmnt;
 	}
 	
 	public static PreparedStatement getCX520Stmnt() {
