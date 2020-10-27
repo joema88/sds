@@ -1,0 +1,61 @@
+//1. Overall US market buy/sell signal, SL1,SL2 --> Sell signal, BUY-->buy signal
+//This is short term weeks to months buy/sell wave judgement based on the percentage
+//of Teal, Pink and Yellow stock each day and calculation
+// Detail logic is defined in method processBuySellPoints of com.sds.analysis.Summary class
+// if(SALY == 4 && OS > 20.0f && OB < 60.0f)-->SL1 = 2
+//if (OS > 30.0f && OB < 45.0f) --> SL2 = 4
+// BOSY == 108 --> Buy =1, BOSY=100, wait 3 more BOSY=8
+
+SET @SYMB :='SPY';
+select a.DATEID, CDATE, b.SYMBOL, CLOSE,c.BI,c.CBI,c.SALY,c.SL1,c.SL2,c.BUY, a.FUC, AMC,c.BOSY,BAT,TOT,OS, OB, OY, AY  FROM BBROCK a, SYMBOLS b, DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and ( b.SYMBOL=@SYMB)  order by a.DATEID DeSC limit 100;
+
+****************************************
+
+//2. Industry sector average yield since the buy signal of short term wave (weeks to months)
+// Thus we could focus on selecting stocks within the strong sector(s)
+
+SET @DATE_ID :=9028;
+select COUNT(*),INDUSTRY,AVG(IAY), AVG(IPY) FROM BBROCK a, SYMBOLS b,DATES c, INDUSTRY d  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.INDID=d.INDID  and a.DATEID =@DATE_ID GROUP BY INDUSTRY ORDER BY AVG(IAY) DESC;
+
+*********************************
+//3.Industry sector and sub Industry average yield since the buy signal of short term wave (weeks to months)
+// Thus we could focus on selecting stocks within the strong sector(s), be carefully the impact of split (reverse)
+// and fake data (short squeeze etc) sector especially in the beginning of buy signal stage
+
+SET @DATE_ID :=9028;
+select COUNT(*),INDUSTRY,SUBINDUSTRY, AVG(SAY), AVG(SPY) FROM BBROCK a, SYMBOLS b,DATES c, INDUSTRY d, SUBINDUSTRY e  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.INDID=d.INDID and b.INDID=e.INDID and b.SUBID=e.SUBID and a.DATEID =@DATE_ID GROUP BY INDUSTRY,SUBINDUSTRY ORDER BY AVG(SAY) DESC;
+
+*********************************************
+//4. Individual stock wave yield ranking with Industry and sub-industry
+//ETF
+SET @DATE_ID :=9028;
+select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, CLOSE, FUC, BDY,PDY,DPC, DDS, UDS, UPC, DM, DA FROM BBROCK a, SYMBOLS b,DATES c, INDUSTRY d  WHERE a.STOCKID = b.STOCKID and  b.INDID=d.INDID and d.INDID =69 and a.DATEID=c.DATEID and a.DATEID =@DATE_ID  ORDER BY BDY DESC;
+
+SET @DATE_ID := 9028;
+select a.DATEID, CDATE,a.STOCKID, b.SYMBOL, CLOSE, BDY,PDY,DPC, UPC, FUC,SUBSTRING(SUBINDUSTRY,1,15), b.SUBID,SUBSTRING(INDUSTRY,1,20),b.INDID FROM BBROCK a, SYMBOLS b,DATES c, INDUSTRY d, SUBINDUSTRY e  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.INDID=d.INDID and b.INDID=e.INDID and b.SUBID=e.SUBID and a.DATEID =@DATE_ID order by BDY DESC limit 500;
+
+//with sub industry only
+
+SET @DATE_ID := 9028;
+select a.DATEID, CDATE,a.STOCKID, b.SYMBOL, CLOSE, BDY,PDY,DPC, UPC, FUC,SUBSTRING(SUBINDUSTRY,1,15), b.SUBID FROM BBROCK a, SYMBOLS b,DATES c, INDUSTRY d, SUBINDUSTRY e  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.INDID=d.INDID and b.INDID=e.INDID and b.SUBID=e.SUBID and a.DATEID =@DATE_ID order by BDY DESC limit 500;
+
+//with industry only
+
+SET @DATE_ID := 9028;
+select a.DATEID, CDATE,a.STOCKID, b.SYMBOL, CLOSE, BDY,PDY,DPC, UPC, FUC,SUBSTRING(INDUSTRY,1,15), b.INDID FROM BBROCK a, SYMBOLS b,DATES c, INDUSTRY d, SUBINDUSTRY e  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.INDID=d.INDID and b.INDID=e.INDID and b.SUBID=e.SUBID and a.DATEID =@DATE_ID order by BDY DESC limit 500;
+
+******************************
+//5. Single stock UTURN, Wave yield query
+
+SET @SYMB := 'SIG';
+select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, CLOSE, FUC, BDY,PDY,DPC, DDS, UDS, UPC, DM, DA FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and ( b.SYMBOL=@SYMB)  order by a.DATEID DeSC limit 550;
+
+*********************************
+//6. FUC=8, explosive stocks of the day
+
+SET @DATE_ID := 9008;
+select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, MARKCAP,CLOSE,FUC, MOR, YOR, BT9,SUBSTRING(INDUSTRY,1,10), b.INDID,SUBSTRING(SUBINDUSTRY,1,15), b.SUBID FROM BBROCK a, SYMBOLS b,DATES c,INDUSTRY d, SUBINDUSTRY e   WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.INDID=d.INDID and b.INDID=e.INDID and b.SUBID=e.SUBID and ( a.DATEID=@DATE_ID)  AND a.FUC>3 ORDER BY MARKCAP DESC;
+
+*************************
+//FUC>=1 STOCK COUNT VS. DATE, good reference of big trend and market top/bottom, ><500 seems important
+select a.DATEID,b.CDATE,  COUNT(*) FROM BBROCK a, DATES b WHERE a.DATEID=b.DATEID and FUC>0 GROUP BY DATEID ORDER BY DATEID DESC limit 200;
