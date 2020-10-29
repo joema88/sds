@@ -41,25 +41,30 @@ public class UpDownMeasure {
 	public static void main(String[] args) {
 
 		// DAILY ROUTINE
-		currentDateID = 9028;
+		currentDateID = 9031;
 		// processUpDownHistory();//no longer do DM update
 		// daily step 1
 		// processDMAHistory(); //DM update here
 		// daily step 2
-		 //processDMRankAvgDMHistory();
+		// processDMRankAvgDMHistory();
 		// daily step 3
 		// processFUCHistory();
 		// daily step 4
-		 //Summary.processDailyUTurnSummary(currentDateID);
-		int buyDateId = 9007;
+		// Summary.processDailyUTurnSummary(currentDateID);
+		// int buyDateId = 9007; //buy date
+		int buyDateId = 9028; // sell date, accumulator start here
 		// daily step 5
 		// processTodayAllPDY(currentDateID, buyDateId);
 		// daily step 6
-		//processTodayIndustryAVGPDY(currentDateID);
-		
-		
+		// processTodayIndustryAVGPDY(currentDateID);
+		// daily step 7, update daily OBI (Over bought indicator)
+		// processOBIHistory(1);
+		// daily step 8, update daily f1, f8 count
+		//processF18History(1);
+
 		// processPDYHistory(buyDateId);
-		//processIndustryAVGPDYHistory(buyDateId);
+		// processIndustryAVGPDYHistory(buyDateId);
+		// processOBIHistory(320) ;
 
 		// ROUTINE AFTER STOCK SPLIT PROCESSING...
 		// After stock split, we need to download history, recalculate this
@@ -255,6 +260,43 @@ public class UpDownMeasure {
 			long t2 = System.currentTimeMillis();
 
 			long t3 = System.currentTimeMillis();
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
+
+	public static void processF18History(int length) {
+		try {
+			PreparedStatement f1UpdateStmnt = DB.f1UpdateStmnt();
+			PreparedStatement f8UpdateStmnt = DB.f8UpdateStmnt();
+			PreparedStatement fucStmnt = DB.getFUCHistoryStmnt();
+			// String query = "select a.DATEID,b.CDATE, COUNT(*) FROM BBROCK a, DATES b
+			// WHERE a.DATEID=b.DATEID and FUC>? GROUP BY DATEID ORDER BY DATEID DESC limit
+			// ?;";
+			fucStmnt.setInt(1, 0);
+			fucStmnt.setInt(2, length);
+			ResultSet rs1 = fucStmnt.executeQuery();
+			while (rs1.next()) {
+				int dateId = rs1.getInt(1);
+				int f1Count = rs1.getInt(3);
+				f1UpdateStmnt.setInt(1, f1Count);
+				f1UpdateStmnt.setInt(2, dateId);
+				f1UpdateStmnt.executeUpdate();
+
+			}
+
+			fucStmnt.setInt(1, 4);
+			fucStmnt.setInt(2, length);
+			ResultSet rs2 = fucStmnt.executeQuery();
+			while (rs2.next()) {
+				int dateId = rs2.getInt(1);
+				int f1Count = rs2.getInt(3);
+				f8UpdateStmnt.setInt(1, f1Count);
+				f8UpdateStmnt.setInt(2, dateId);
+				f8UpdateStmnt.executeUpdate();
+
+			}
 
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
@@ -1162,6 +1204,30 @@ public class UpDownMeasure {
 			}
 
 			System.out.println("process done for " + stockID);
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
+
+	public static void processOBIHistory(int length) {
+		try {
+			PreparedStatement OBIHistoryStmnt = DB.getOBIHistoryStmnt();
+			PreparedStatement UpdateOBIStmnt = DB.getUpdateOBIStmnt();
+
+			// the last 1 and half data is more reliable
+			OBIHistoryStmnt.setInt(1, length);
+			ResultSet rs = OBIHistoryStmnt.executeQuery();
+
+			while (rs.next()) {
+				int dateId = rs.getInt(1);
+				int obi = rs.getInt(3);
+
+				UpdateOBIStmnt.setInt(1, obi);
+				UpdateOBIStmnt.setInt(2, dateId);
+				UpdateOBIStmnt.executeUpdate();
+				System.out.println("DateId done " + dateId);
+			}
 
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);

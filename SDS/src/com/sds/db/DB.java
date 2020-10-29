@@ -43,6 +43,14 @@ public class DB {
 	// ALTER TABLE DATES ADD COLUMN SL2 TINYINT DEFAULT 0;
 	// ALTER TABLE DATES ADD COLUMN UC SMALLINT DEFAULT 0;
 	// ALTER TABLE DATES ADD COLUMN AMC FLOAT DEFAULT 0.0;
+	// ALTER TABLE DATES ADD COLUMN OBI SMALLINT DEFAULT 0;
+	//OBI, an over bought indicator defined by query
+	//select a.DATEID, CDATE, COUNT(*)  FROM BBROCK a, DATES c  WHERE a.DATEID=c.DATEID 
+	// and PASS>3 AND CCX>0 AND CCX<=14 
+	//group by a.DATEID, CDATE order by a.DATEID DeSC limit 320;
+	// ALTER TABLE DATES ADD COLUMN F1 SMALLINT DEFAULT 0; //FUC>0 NUMBER COUNT OF THE DAY
+	// ALTER TABLE DATES ADD COLUMN F8 SMALLINT DEFAULT 0; //FUC=8 NUMBER COUNT OF THE DAY
+	
 	// 3. CREATE TABLE BBROCK(STOCKID SMALLINT, DATEID SMALLINT, PERCENT FLOAT
 	// DEFAULT 0.0, CLOSE FLOAT DEFAULT 0.0,NETCHANGE FLOAT DEFAULT 0.0, ATR FLOAT
 	// DEFAULT 0.0, OPEN FLOAT DEFAULT 0.0,HIGH FLOAT DEFAULT 0.0, LOW FLOAT DEFAULT
@@ -193,11 +201,37 @@ public class DB {
 	private static PreparedStatement subIndAvgYieldUpdate = null;
 	private static PreparedStatement subIndStockInfo = null;
 	private static PreparedStatement updateStockSectorStmnt = null;
+	private static PreparedStatement OBIHistoryStmnt = null;
+	private static PreparedStatement UpdateOBIStmnt = null;
+	private static PreparedStatement f1UpdateStmnt = null;
+	private static PreparedStatement f8UpdateStmnt = null;
+	private static PreparedStatement fucStmnt = null;
+	//f1UpdateStmnt , fucStmnt
 	//,,
 	// fucf, fud, updateFUC
 
 	public static void closeConnection() {
 		try {
+			if(fucStmnt != null ) {
+				fucStmnt.close();
+				fucStmnt = null;
+			}
+			if( f1UpdateStmnt != null ) {
+				f1UpdateStmnt.close();
+				f1UpdateStmnt = null;
+			}
+			if( f8UpdateStmnt != null ) {
+				f8UpdateStmnt.close();
+				f8UpdateStmnt = null;
+			}
+			if(OBIHistoryStmnt != null) {
+				OBIHistoryStmnt.close();
+				OBIHistoryStmnt = null;
+			}
+			if(UpdateOBIStmnt != null) {
+				UpdateOBIStmnt.close();
+				UpdateOBIStmnt = null;
+			}
 			if(updateStockSectorStmnt != null) {
 				updateStockSectorStmnt.close();
 				updateStockSectorStmnt = null;
@@ -1547,7 +1581,60 @@ public class DB {
 
 		return upcStmnt;
 	}
+	
+	public static PreparedStatement getFUCHistoryStmnt() {
+		getConnection();
 
+		if (fucStmnt == null) {
+			try {
+
+				String query = "select a.DATEID,b.CDATE,  COUNT(*) FROM BBROCK a, DATES b WHERE a.DATEID=b.DATEID and FUC>? GROUP BY DATEID ORDER BY DATEID DESC limit ?;";
+
+				fucStmnt  = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return fucStmnt;
+	}
+	
+
+	public static PreparedStatement f1UpdateStmnt() {
+		getConnection();
+
+		if (f1UpdateStmnt == null) {
+			try {
+
+				String query = "UPDATE DATES SET F1 = ?  WHERE  DATEID =? ";
+
+				f1UpdateStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return f1UpdateStmnt;
+	}
+	
+	public static PreparedStatement f8UpdateStmnt() {
+		getConnection();
+
+		if (f8UpdateStmnt == null) {
+			try {
+
+				String query = "UPDATE DATES SET F8 = ?  WHERE  DATEID =? ";
+
+				f8UpdateStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return f8UpdateStmnt;
+	}
+	
+	
 	public static PreparedStatement getAllSubIndStockInfo() {
 		if (subIndStockInfo == null) {
 			try {
@@ -1830,6 +1917,44 @@ public class DB {
 		return colorRankSumStmnt;
 	}
 
+//	select a.DATEID, CDATE, COUNT(*)  FROM BBROCK a, DATES c  WHERE a.DATEID=c.DATEID and PASS>3 AND CCX>0 AND CCX<=14 
+//			group by a.DATEID, CDATE order by a.DATEID DeSC limit 320;
+	
+	public static PreparedStatement getOBIHistoryStmnt() {
+		getConnection();
+
+		if (OBIHistoryStmnt == null) {
+			try {
+
+				String query = "select a.DATEID, CDATE, COUNT(*)  FROM BBROCK a, DATES c  WHERE a.DATEID=c.DATEID and PASS>3 AND CCX>0 AND CCX<=14 group by a.DATEID, CDATE order by a.DATEID DeSC limit ?; ";
+				OBIHistoryStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return OBIHistoryStmnt;
+	}
+	
+	public static PreparedStatement getUpdateOBIStmnt() {
+		getConnection();
+
+		if (UpdateOBIStmnt == null) {
+			try {
+
+				// select SUM(TEAL), SUM(YELLOW), SUM(PINK) FROM BBROCK a, SYMBOLS b WHERE
+				// a.STOCKID = b.STOCKID and b.SYMBOL = ? AND DATEID>=? AND DATEID<=?;
+
+				String query = "UPDATE DATES SET OBI = ? WHERE DATEID =?";
+				UpdateOBIStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return UpdateOBIStmnt;
+	}
+	
 	public static PreparedStatement getAvgDMStmnt() {
 		getConnection();
 
