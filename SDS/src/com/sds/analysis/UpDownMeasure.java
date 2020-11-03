@@ -38,10 +38,21 @@ public class UpDownMeasure {
 	private static int upDays = 30; // this is used to measure 40% up days
 	private static int downDays = 250; // this is used to measure 60% down days
 
+	// int buyDateId = 9007; //buy date
+	private static int buyDateId = 9028; // sell date, accumulator start here
+
+	public static int[] buyDateIds = new int[2];
+
+	public static void initBuyDateIDS() {
+		// 9007,9028
+		buyDateIds[0] = 9007;
+		buyDateIds[1] = 9028;
+	}
+
 	public static void main(String[] args) {
 
 		// DAILY ROUTINE
-		currentDateID = 9031;
+		currentDateID = 9033;
 		// processUpDownHistory();//no longer do DM update
 		// daily step 1
 		// processDMAHistory(); //DM update here
@@ -52,15 +63,15 @@ public class UpDownMeasure {
 		// daily step 4
 		// Summary.processDailyUTurnSummary(currentDateID);
 		// int buyDateId = 9007; //buy date
-		int buyDateId = 9028; // sell date, accumulator start here
+
 		// daily step 5
-		// processTodayAllPDY(currentDateID, buyDateId);
+		// processTodayAllPDY(currentDateID, buyDateId,-1);
 		// daily step 6
-		// processTodayIndustryAVGPDY(currentDateID);
+		// processTodayIndustryAVGPDY(currentDateID,-1);
 		// daily step 7, update daily OBI (Over bought indicator)
 		// processOBIHistory(1);
 		// daily step 8, update daily f1, f8 count
-		//processF18History(1);
+		// processF18History(1);
 
 		// processPDYHistory(buyDateId);
 		// processIndustryAVGPDYHistory(buyDateId);
@@ -291,6 +302,43 @@ public class UpDownMeasure {
 			ResultSet rs2 = fucStmnt.executeQuery();
 			while (rs2.next()) {
 				int dateId = rs2.getInt(1);
+				int f1Count = rs2.getInt(3);
+				f8UpdateStmnt.setInt(1, f1Count);
+				f8UpdateStmnt.setInt(2, dateId);
+				f8UpdateStmnt.executeUpdate();
+
+			}
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
+
+	public static void processF18Today(int dateId) {
+		try {
+			PreparedStatement f1UpdateStmnt = DB.f1UpdateStmnt();
+			PreparedStatement f8UpdateStmnt = DB.f8UpdateStmnt();
+			PreparedStatement fucStmnt = DB.getFUCTodayStmnt();
+			// String query = "select a.DATEID,b.CDATE, COUNT(*) FROM BBROCK a, DATES b
+			// WHERE a.DATEID=b.DATEID and FUC>? GROUP BY DATEID ORDER BY DATEID DESC limit
+			// ?;";
+			fucStmnt.setInt(1, 0);
+			fucStmnt.setInt(2, dateId);
+			ResultSet rs1 = fucStmnt.executeQuery();
+			while (rs1.next()) {
+				// int dateId = rs1.getInt(1);
+				int f1Count = rs1.getInt(3);
+				f1UpdateStmnt.setInt(1, f1Count);
+				f1UpdateStmnt.setInt(2, dateId);
+				f1UpdateStmnt.executeUpdate();
+
+			}
+
+			fucStmnt.setInt(1, 4);
+			fucStmnt.setInt(2, dateId);
+			ResultSet rs2 = fucStmnt.executeQuery();
+			while (rs2.next()) {
+				// int dateId = rs2.getInt(1);
 				int f1Count = rs2.getInt(3);
 				f8UpdateStmnt.setInt(1, f1Count);
 				f8UpdateStmnt.setInt(2, dateId);
@@ -954,7 +1002,11 @@ public class UpDownMeasure {
 			float MD = cUPC - mDPC;
 			int MA = dateId - mDateID;
 
-			updateMaxUpDown.setFloat(1, MD);
+			if (dateId == 8454) {
+				updateMaxUpDown.setFloat(1, 0);
+			} else {
+				updateMaxUpDown.setFloat(1, MD);
+			}
 			if (MA > 250)
 				MA = 250;
 			updateMaxUpDown.setInt(2, MA);
@@ -1234,6 +1286,30 @@ public class UpDownMeasure {
 		}
 	}
 
+	public static void processTodayOBI(int dateId) {
+		try {
+			PreparedStatement todayOBIStmnt = DB.getTodayOBIStmnt();
+			PreparedStatement UpdateOBIStmnt = DB.getUpdateOBIStmnt();
+
+			// the last 1 and half data is more reliable
+			todayOBIStmnt.setInt(1, dateId);
+			ResultSet rs = todayOBIStmnt.executeQuery();
+
+			while (rs.next()) {
+				// int dateId = rs.getInt(1);
+				int obi = rs.getInt(3);
+
+				UpdateOBIStmnt.setInt(1, obi);
+				UpdateOBIStmnt.setInt(2, dateId);
+				UpdateOBIStmnt.executeUpdate();
+				System.out.println("DateId done " + dateId);
+			}
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
+
 	public static void processDMAHistory() {
 		try {
 
@@ -1433,19 +1509,19 @@ public class UpDownMeasure {
 	// the purpose of such calculation is to find sector rotation or sector
 	// advantage, this is done after individual stock calculation of such
 	// this is at Industry sector and sub sector levels
-	public static void processIndustryAVGPDYHistory(int buyPoint) {
+	public static void ZZprocessIndustryAVGPDYHistory(int buyPoint) {
 
 		long t1 = System.currentTimeMillis();
 
 		// need a for loop here for history
 
 		for (int k = buyPoint + 1; k <= 9027; k++) {
-			processTodayIndustryAVGPDY(k);
+			processTodayIndustryAVGPDY(k, -1);
 		}
 
 	}
 
-	public static void processTodayIndustryAVGPDY(int dateId) {
+	public static void processTodayIndustryAVGPDY(int dateId, int stockID) {
 		try {
 			PreparedStatement indIdStmnt = DB.getIndIDStmnt();
 			PreparedStatement subIndStockInfo = DB.getAllSubIndStockInfo();
@@ -1479,13 +1555,26 @@ public class UpDownMeasure {
 						int stockId = Integer.parseInt(IndStocks.get(sym).toString());
 						// String query = "UPDATE BBROCK SET IAY = ?, IPY=?
 						// WHERE STOCKID = ? AND DATEID =? ";
-						float iay = indSumBDY / (IndStocks.size() * 1.0f);
-						float ipy = (indSumPDY * 1.0f) / (IndStocks.size() * 1.0f);
-						indAvgYieldUpdate.setFloat(1, iay);
-						indAvgYieldUpdate.setFloat(2, ipy);
-						indAvgYieldUpdate.setInt(3, stockId);
-						indAvgYieldUpdate.setInt(4, dateId);
-						indAvgYieldUpdate.executeUpdate();
+						boolean update = false;
+						if (stockID > 0 && stockID == (20000 + stockId)) {
+							update = true;
+						} else if (stockID < 0) {
+							update = true;
+						}
+
+						if (update) {
+							float iay = indSumBDY / (IndStocks.size() * 1.0f);
+							float ipy = (indSumPDY * 1.0f) / (IndStocks.size() * 1.0f);
+							indAvgYieldUpdate.setFloat(1, iay);
+							indAvgYieldUpdate.setFloat(2, ipy);
+							if (stockID > 0) {
+								indAvgYieldUpdate.setInt(3, stockID);
+							} else {
+								indAvgYieldUpdate.setInt(3, stockId);
+							}
+							indAvgYieldUpdate.setInt(4, dateId);
+							indAvgYieldUpdate.executeUpdate();
+						}
 					}
 					// reset sum
 					indSumBDY = 0.0f;
@@ -1540,11 +1629,24 @@ public class UpDownMeasure {
 					// String query = "UPDATE BBROCK SET SAY = ?, SPY=?
 					// WHERE STOCKID = ? AND DATEID =? ";
 
-					subIndAvgYieldUpdate.setFloat(1, avgBDY);
-					subIndAvgYieldUpdate.setFloat(2, avgPDY);
-					subIndAvgYieldUpdate.setInt(3, stockId);
-					subIndAvgYieldUpdate.setInt(4, dateId);
-					subIndAvgYieldUpdate.executeUpdate();
+					boolean update = false;
+					if (stockID > 0 && stockID == (20000 + stockId)) {
+						update = true;
+					} else if (stockID < 0) {
+						update = true;
+					}
+
+					if (update) {
+						subIndAvgYieldUpdate.setFloat(1, avgBDY);
+						subIndAvgYieldUpdate.setFloat(2, avgPDY);
+						if (stockID > 0) {
+							subIndAvgYieldUpdate.setInt(3, stockID);
+						} else {
+							subIndAvgYieldUpdate.setInt(3, stockId);
+						}
+						subIndAvgYieldUpdate.setInt(4, dateId);
+						subIndAvgYieldUpdate.executeUpdate();
+					}
 				}
 
 			}
@@ -1629,21 +1731,24 @@ public class UpDownMeasure {
 		}
 	}
 
-	public static void processTodayAllPDY(int dateId, int buyDateId) {
+	public static void processTodayAllPDY(int dateId, int buyDateId, int stockID) {
 		try {
-			PreparedStatement allStocks = DB.getAllCurrentStockIDs();
-			allStocks.setInt(1, dateId);
+			if (stockID < 0) {
+				PreparedStatement allStocks = DB.getAllCurrentStockIDs();
+				allStocks.setInt(1, dateId);
 
-			ResultSet rs = allStocks.executeQuery();
-			int sc = 0;
-			System.out.println("-----------Begin---------");
-			while (rs.next()) {
-				sc++;
-				int stockID = rs.getInt(1);
-				System.out.println("Processing stock " + stockID);
+				ResultSet rs = allStocks.executeQuery();
+				int sc = 0;
+				System.out.println("-----------Begin---------");
+				while (rs.next()) {
+					sc++;
+					stockID = rs.getInt(1);
+					System.out.println("Processing stock " + stockID);
+					processTodayPDY(stockID, dateId, buyDateId);
+				}
+			} else {
 				processTodayPDY(stockID, dateId, buyDateId);
 			}
-
 		} catch (Exception ex) {
 
 		}

@@ -206,12 +206,52 @@ public class DB {
 	private static PreparedStatement f1UpdateStmnt = null;
 	private static PreparedStatement f8UpdateStmnt = null;
 	private static PreparedStatement fucStmnt = null;
+	private static PreparedStatement originalDataStmnt = null;
+	private static PreparedStatement insertDataStmnt = null;
+	private static PreparedStatement stockSymbol = null;
+	private static PreparedStatement deleteStockRecord = null;
+	private static PreparedStatement todayOBIStmnt = null;
+	private static PreparedStatement fucTodayStmnt = null;
+	private static PreparedStatement minDPC = null;
+	private static PreparedStatement updatePDYToOne = null;
 	//f1UpdateStmnt , fucStmnt
 	//,,
 	// fucf, fud, updateFUC
 
 	public static void closeConnection() {
 		try {
+			if( updatePDYToOne != null) {
+				updatePDYToOne.close();
+				updatePDYToOne = null;
+			}
+			if( minDPC != null) {
+				minDPC.close();
+				minDPC = null;
+			}
+			if(fucTodayStmnt != null) {
+				fucTodayStmnt.close();
+				fucTodayStmnt = null;
+			}
+			if( todayOBIStmnt != null) {
+				todayOBIStmnt.close();
+				todayOBIStmnt = null;
+			}
+			if( deleteStockRecord != null) {
+				deleteStockRecord.close();
+				deleteStockRecord = null;
+			}
+			if( stockSymbol  != null) {
+				stockSymbol.close();
+				stockSymbol = null;
+			}
+			if(insertDataStmnt != null) {
+				insertDataStmnt.close();
+				insertDataStmnt = null;
+			}
+			if(originalDataStmnt != null) {
+				originalDataStmnt.close();
+				originalDataStmnt = null;
+			}
 			if(fucStmnt != null ) {
 				fucStmnt.close();
 				fucStmnt = null;
@@ -638,6 +678,20 @@ public class DB {
 
 		return stocks;
 	}
+	
+	public static PreparedStatement getStockSymbol() {
+		if (stockSymbol == null) {
+			try {
+				String query = "SELECT SYMBOL FROM  SYMBOLS WHERE STOCKID = ?";
+				stockSymbol = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return stockSymbol;
+	}
 
 	public static PreparedStatement getStockDateIDRange() {
 		if (dateIDRange == null) {
@@ -715,17 +769,18 @@ public class DB {
 	}
 
 	public static PreparedStatement getMinDPC() {
-		if (minClose == null) {
+		if (minDPC == null) {
 			try {
 				String query = "select DPC, DATEID FROM BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=? ORDER BY DPC ASC LIMIT 1";
-				minClose = getConnection().prepareStatement(query);
+				minDPC = getConnection().prepareStatement(query);
+				System.out.println(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
 			}
 
 		}
 
-		return minClose;
+		return minDPC;
 	}
 
 	public static PreparedStatement getFUD() {
@@ -1085,6 +1140,36 @@ public class DB {
 		return insertIndStmnt ;
 	}
 	
+	
+	public static PreparedStatement getOriginalData() {
+		if (originalDataStmnt == null) {
+			try {
+				String query = "SELECT STOCKID,DATEID,PERCENT,CLOSE,NETCHANGE,ATR,OPEN,HIGH,LOW,LOW52,HIGH52,MARKCAP,VOLUME,YELLOW,TEAL,PINK,CX520 FROM BBROCK WHERE STOCKID=? ORDER BY DATEID DESC";
+				originalDataStmnt  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return originalDataStmnt ;
+	}	
+	
+	
+	public static PreparedStatement insertOriginalData() {
+		if (insertDataStmnt == null) {
+			try {
+				String query = "INSERT INTO BBROCK (STOCKID,DATEID,PERCENT,CLOSE,NETCHANGE,ATR,OPEN,HIGH,LOW,LOW52,HIGH52,MARKCAP,VOLUME,YELLOW,TEAL,PINK,CX520) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+				insertDataStmnt   = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return insertDataStmnt  ;
+	}	
+	
 	public static PreparedStatement getBOYSStmnt() {
 		if (BOYSStmnt == null) {
 			try {
@@ -1180,6 +1265,20 @@ public class DB {
 		return SYPTUpdate;
 	}
 
+	public static PreparedStatement updatePDYToOne() {
+		if (updatePDYToOne == null) {
+			try {
+				String query = "UPDATE BBROCK SET PDY= 1  WHERE  STOCKID=? AND DATEID = ?";
+				updatePDYToOne = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return updatePDYToOne;
+	}
+	
 	public static PreparedStatement getUMACUpdate() {
 		if (UMACUpdate == null) {
 			try {
@@ -1600,6 +1699,25 @@ public class DB {
 	}
 	
 
+	public static PreparedStatement getFUCTodayStmnt() {
+		getConnection();
+
+		if (fucTodayStmnt == null) {
+			try {
+
+				String query = "select a.DATEID,b.CDATE,  COUNT(*) FROM BBROCK a, DATES b WHERE a.DATEID=b.DATEID and FUC>? AND a.DATEID=? GROUP BY DATEID";
+
+				fucTodayStmnt  = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return fucTodayStmnt;
+	}
+	
+
+	
 	public static PreparedStatement f1UpdateStmnt() {
 		getConnection();
 
@@ -1936,6 +2054,21 @@ public class DB {
 		return OBIHistoryStmnt;
 	}
 	
+	public static PreparedStatement getTodayOBIStmnt() {
+		getConnection();
+
+		if (todayOBIStmnt == null) {
+			try {
+
+				String query = "select a.DATEID, CDATE, COUNT(*)  FROM BBROCK a, DATES c  WHERE a.DATEID=c.DATEID and PASS>3 AND CCX>0 AND CCX<=14 and a.DATEID=? group by a.DATEID, CDATE ";
+				todayOBIStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return todayOBIStmnt;
+	}
 	public static PreparedStatement getUpdateOBIStmnt() {
 		getConnection();
 
@@ -1987,6 +2120,22 @@ public class DB {
 		return dmRank;
 	}
 
+	public static PreparedStatement deleteStockRecord() {
+		getConnection();
+
+		if (deleteStockRecord == null) {
+			try {
+
+				String query = "DELETE FROM BBROCK  WHERE STOCKID =  ? ";
+				deleteStockRecord = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return deleteStockRecord;
+	}
+	
 	public static PreparedStatement getDateIDStmnt() {
 		getConnection();
 
