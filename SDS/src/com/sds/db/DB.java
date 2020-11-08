@@ -214,12 +214,17 @@ public class DB {
 	private static PreparedStatement fucTodayStmnt = null;
 	private static PreparedStatement minDPC = null;
 	private static PreparedStatement updatePDYToOne = null;
+	private static PreparedStatement StockDateIDAsc = null;
 	//f1UpdateStmnt , fucStmnt
 	//,,
 	// fucf, fud, updateFUC
 
 	public static void closeConnection() {
 		try {
+			if(StockDateIDAsc != null) {
+				StockDateIDAsc.close();
+				StockDateIDAsc = null;
+			}
 			if( updatePDYToOne != null) {
 				updatePDYToOne.close();
 				updatePDYToOne = null;
@@ -2135,6 +2140,23 @@ public class DB {
 
 		return deleteStockRecord;
 	}
+	
+	public static PreparedStatement getStockDateIDAsc() {
+		getConnection();
+
+		if (StockDateIDAsc == null) {
+			try {
+
+				String query = "SELECT DATEID FROM BBROCK  WHERE STOCKID =  ? ORDER BY DATEID ASC";
+				StockDateIDAsc = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return StockDateIDAsc;
+	}
+
 	
 	public static PreparedStatement getDateIDStmnt() {
 		getConnection();

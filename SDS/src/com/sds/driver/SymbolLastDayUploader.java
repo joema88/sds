@@ -18,6 +18,17 @@ public class SymbolLastDayUploader {
 			int stockIDInput = DB.getSymbolID(stock);
 
 			int dateID = DB.getDateID(date);
+			processDailySummary(dateID, stockIDInput);
+
+		} catch (Exception ex) {
+			System.out.println("Error at processDailySummaryScore...");
+			ex.printStackTrace(System.out);
+		}
+
+	}
+
+	public static void processDailySummary(int dateID, int stockIDInput) {
+		try {
 			PreparedStatement stmnt = DB.getStockIDQueryStmnt();
 			stmnt.setInt(1, dateID);
 			ResultSet rs = stmnt.executeQuery();
@@ -86,10 +97,8 @@ public class SymbolLastDayUploader {
 				}
 			}
 		} catch (Exception ex) {
-			System.out.println("Error at processDailySummaryScore...");
 			ex.printStackTrace(System.out);
 		}
-
 	}
 
 	// TOD DO (6/4/2020): CCX, BDCX, BDW ARE NOT UPDATED OR CALCULATED IN DAILY

@@ -39,23 +39,24 @@ public class UpDownMeasure {
 	private static int downDays = 250; // this is used to measure 60% down days
 
 	// int buyDateId = 9007; //buy date
-	private static int buyDateId = 9028; // sell date, accumulator start here
+	private static int buyDateId = 9034; // sell date, accumulator start here
 
-	public static int[] buyDateIds = new int[2];
+	public static int[] buyDateIds = new int[3];
 
 	public static void initBuyDateIDS() {
 		// 9007,9028
 		buyDateIds[0] = 9007;
 		buyDateIds[1] = 9028;
+		buyDateIds[2] = 9034;
 	}
 
 	public static void main(String[] args) {
 
 		// DAILY ROUTINE
-		currentDateID = 9033;
+		currentDateID = 9037;
 		// processUpDownHistory();//no longer do DM update
 		// daily step 1
-		// processDMAHistory(); //DM update here
+	  // processDMAHistory(); //DM update here
 		// daily step 2
 		// processDMRankAvgDMHistory();
 		// daily step 3
@@ -67,11 +68,11 @@ public class UpDownMeasure {
 		// daily step 5
 		// processTodayAllPDY(currentDateID, buyDateId,-1);
 		// daily step 6
-		// processTodayIndustryAVGPDY(currentDateID,-1);
+		//processTodayIndustryAVGPDY(currentDateID,-1);
 		// daily step 7, update daily OBI (Over bought indicator)
-		// processOBIHistory(1);
+		//processOBIHistory(1);
 		// daily step 8, update daily f1, f8 count
-		// processF18History(1);
+		//processF18History(1);
 
 		// processPDYHistory(buyDateId);
 		// processIndustryAVGPDYHistory(buyDateId);
@@ -1821,6 +1822,11 @@ public class UpDownMeasure {
 			int pdy = pdy1;
 			if (close0 > close1) {
 				pdy = pdy + 1;
+			}
+			
+			//fresh buy point start, reset pdy = 1
+			if((dateId-buyDateId)==1) {
+				pdy = 1;
 			}
 
 			// String query = "UPDATE BBROCK SET BDY = ? , PDY=?

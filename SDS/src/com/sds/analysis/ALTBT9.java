@@ -126,6 +126,7 @@ public class ALTBT9 {
 							}
 						}
 
+						System.out.println("pdateId "+pdateId+" totalPass "+totalPass);
 						if (totalPass < 12) {
 							passPointsUpdate.setInt(1, totalPass);
 							passPointsUpdate.setInt(2, stockID);
@@ -166,6 +167,8 @@ public class ALTBT9 {
 					}
 				}
 
+				System.out.println("2 .. pdateId "+pdateId+" totalPass "+totalPass);
+				
 				if (totalPass < 12) {
 					passPointsUpdate.setInt(1, totalPass);
 					passPointsUpdate.setInt(2, stockID);
