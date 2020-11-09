@@ -93,7 +93,7 @@ public class RecalSteps {
 					UpDownMeasure.processTodayDMA(stockID, k);
 					UpDownMeasure.processTodayDMRankAvgDM(stockID, k);
 					UpDownMeasure.processTodayFUC(stockID, k);
-					//Summary.processDailyUTurnSummary(k);
+					Summary.processDailyUTurnSummary(k);
 				}
 			}
 
@@ -152,9 +152,9 @@ public class RecalSteps {
 						index++;
 					}
 
-					// UpDownMeasure.processTodayIndustryAVGPDY(k);
-					// UpDownMeasure.processTodayOBI(k);
-					// UpDownMeasure.processF18Today(k);
+					 UpDownMeasure.processTodayIndustryAVGPDY(k, stockID);
+				     UpDownMeasure.processTodayOBI(k);
+					 UpDownMeasure.processF18Today(k);
 				}
 
 			}
