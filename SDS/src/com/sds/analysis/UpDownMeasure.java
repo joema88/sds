@@ -53,10 +53,10 @@ public class UpDownMeasure {
 	public static void main(String[] args) {
 
 		// DAILY ROUTINE
-		currentDateID = 9037;
+		currentDateID = 9040;
 		// processUpDownHistory();//no longer do DM update
 		// daily step 1
-	  // processDMAHistory(); //DM update here
+		// processDMAHistory(); //DM update here
 		// daily step 2
 		// processDMRankAvgDMHistory();
 		// daily step 3
@@ -66,14 +66,17 @@ public class UpDownMeasure {
 		// int buyDateId = 9007; //buy date
 
 		// daily step 5
-		// processTodayAllPDY(currentDateID, buyDateId,-1);
+		//processTodayAllPDY(currentDateID, buyDateId,-1);
 		// daily step 6
-		//processTodayIndustryAVGPDY(currentDateID,-1);
+		// processTodayIndustryAVGPDY(currentDateID,-1);
 		// daily step 7, update daily OBI (Over bought indicator)
-		//processOBIHistory(1);
+		// processOBIHistory(1);
 		// daily step 8, update daily f1, f8 count
-		//processF18History(1);
+		// processF18History(1);
+		// daily step 8, process D2, D9 for each stock
+		// processD2D9History(true);
 
+		//processD2D9History(false);
 		// processPDYHistory(buyDateId);
 		// processIndustryAVGPDYHistory(buyDateId);
 		// processOBIHistory(320) ;
@@ -1263,6 +1266,157 @@ public class UpDownMeasure {
 		}
 	}
 
+	public static void processD2D9History(int stockID) {
+		try {
+
+			long t1 = System.currentTimeMillis();
+			PreparedStatement dateIDStmnt = DB.getDateIDStmnt();
+
+			PreparedStatement dateIdRange = DB.getStockDateIDRange();
+			PreparedStatement dateIDExistStmnt = DB.checkDateIDExistsStmnt();
+
+			dateIdRange.setInt(1, stockID);
+
+			ResultSet dateRS = dateIdRange.executeQuery();
+
+			dateRS.next();
+
+			int strtDateId = dateRS.getInt(1);
+			int endDateId = dateRS.getInt(2);
+
+			// for (int k = endDateId; k >= strtDateId; k--) {
+			for (int k = endDateId; k >= strtDateId; k--) {
+				// for (int k = currentDateID; k >= currentDateID; k--) {
+				boolean exist = false;
+				int adjustment = 0;
+				int lcMax = 10;
+				int lc = 0;
+				do {
+					dateIDExistStmnt.setInt(1, stockID);
+					dateIDExistStmnt.setInt(2, k);
+
+					ResultSet dateIDExist = dateIDExistStmnt.executeQuery();
+
+					dateIDExist.next();
+
+					int count = dateIDExist.getInt(1);
+
+					if (count > 0) {
+						exist = true;
+					} else {
+						k--;
+						adjustment++;
+					}
+					lc++;
+
+				} while (!exist && lc < lcMax);
+
+				if (exist)
+					processD2Today(stockID, k);
+			}
+
+			for (int k = endDateId; k >= strtDateId; k--) {
+				// for (int k = currentDateID; k >= currentDateID; k--) {
+				boolean exist = false;
+				int adjustment = 0;
+				int lcMax = 10;
+				int lc = 0;
+				do {
+					dateIDExistStmnt.setInt(1, stockID);
+					dateIDExistStmnt.setInt(2, k);
+
+					ResultSet dateIDExist = dateIDExistStmnt.executeQuery();
+
+					dateIDExist.next();
+
+					int count = dateIDExist.getInt(1);
+
+					if (count > 0) {
+						exist = true;
+					} else {
+						k--;
+						adjustment++;
+					}
+					lc++;
+
+				} while (!exist && lc < lcMax);
+
+				if (exist)
+					processD9Today(stockID, k);
+			}
+			System.out.println("process done for " + stockID);
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
+
+	public static void processD2Today(int stockID, int dateId) {
+		try {
+
+			// "select CLOSE, DATEID, VOLUME,MARKCAP, D2 from BBROCK WHERE STOCKID=? and
+			// DATEID>=?
+			// and DATEID<=? ORDER BY DATEID ASC";
+			PreparedStatement dailyPrice = DB.getDailyPrice();
+			// String query = "UPDATE BBROCK SET D2=? WHERE STOCKID=? and DATEID=?";
+			PreparedStatement updateD2 = DB.updateD2();
+
+			dailyPrice.setInt(1, stockID);
+			dailyPrice.setInt(2, dateId);
+			dailyPrice.setInt(3, dateId);
+
+			ResultSet rs = dailyPrice.executeQuery();
+
+			if (rs.next()) {
+				float close = rs.getFloat(1);
+				float vol = rs.getFloat(3);
+				float markcap = rs.getFloat(4);
+				if (markcap > 0.0001 && vol > 1.0f && close > 0.01f) {
+					float d2 = 1000000.0f*markcap / (vol * close);
+					updateD2.setFloat(1, d2);
+					updateD2.setInt(2, stockID);
+					updateD2.setInt(3, dateId);
+					updateD2.executeUpdate();
+
+				}
+			}
+
+		} catch (Exception ex) {
+
+		}
+	}
+
+	public static void processD9Today(int stockID, int dateId) {
+		try {
+
+			// String query = "select AVG(DD) from BBROCK WHERE
+			// STOCKID=? and DATEID>=? and DATEID<=?";
+
+			PreparedStatement avgD2 = DB.getAvgD2();
+			// String query = "UPDATE BBROCK SET D9=? WHERE STOCKID=? and DATEID=?";
+			PreparedStatement updateD9 = DB.updateD9();
+
+			avgD2.setInt(1, stockID);
+			avgD2.setInt(2, dateId - 9);
+			avgD2.setInt(3, dateId);
+
+			ResultSet rs = avgD2.executeQuery();
+
+			if (rs.next()) {
+				float d9 = rs.getFloat(1);
+
+				updateD9.setFloat(1, d9);
+				updateD9.setInt(2, stockID);
+				updateD9.setInt(3, dateId);
+				updateD9.executeUpdate();
+
+			}
+
+		} catch (Exception ex) {
+
+		}
+	}
+
 	public static void processOBIHistory(int length) {
 		try {
 			PreparedStatement OBIHistoryStmnt = DB.getOBIHistoryStmnt();
@@ -1304,6 +1458,110 @@ public class UpDownMeasure {
 				UpdateOBIStmnt.setInt(2, dateId);
 				UpdateOBIStmnt.executeUpdate();
 				System.out.println("DateId done " + dateId);
+			}
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
+
+	public static void processD2D9History(boolean lastOnly) {
+		try {
+
+			long t1 = System.currentTimeMillis();
+			PreparedStatement dateIDStmnt = DB.getDateIDStmnt();
+
+			PreparedStatement allStocks = DB.getAllStockIDs();
+			PreparedStatement dateIdRange = DB.getStockDateIDRange();
+			PreparedStatement dateIDExistStmnt = DB.checkDateIDExistsStmnt();
+			allStocks.setInt(1, 1);
+
+			ResultSet rs = allStocks.executeQuery();
+			int sc = 0;
+			System.out.println("-----------Begin---------");
+			while (rs.next()) {
+				sc++;
+				int stockID = rs.getInt(1);
+
+				if (stockID == 48) {
+					System.out.println("AMZN");
+				}
+
+				dateIdRange.setInt(1, stockID);
+
+				ResultSet dateRS = dateIdRange.executeQuery();
+
+				dateRS.next();
+
+				int strtDateId = dateRS.getInt(1);
+				int endDateId = dateRS.getInt(2);
+
+				// 8923 is the starting date with volume and marketcap
+				for (int k = endDateId; k >= 8923; k--) {
+					boolean exist = false;
+					int adjustment = 0;
+					int lcMax = 10;
+					int lc = 0;
+					do {
+						dateIDExistStmnt.setInt(1, stockID);
+						dateIDExistStmnt.setInt(2, k);
+
+						ResultSet dateIDExist = dateIDExistStmnt.executeQuery();
+
+						dateIDExist.next();
+
+						int count = dateIDExist.getInt(1);
+
+						if (count > 0) {
+							exist = true;
+						} else {
+							k--;
+							adjustment++;
+						}
+						lc++;
+
+					} while (!exist && lc < lcMax);
+
+					if (exist) {
+						processD2Today(stockID, k);
+						if (lastOnly)
+							break;
+					}
+				}
+
+				// 8923 is the starting date with volume and marketcap
+				for (int k = endDateId; k >= 8923; k--) {
+					boolean exist = false;
+					int adjustment = 0;
+					int lcMax = 10;
+					int lc = 0;
+					do {
+						dateIDExistStmnt.setInt(1, stockID);
+						dateIDExistStmnt.setInt(2, k);
+
+						ResultSet dateIDExist = dateIDExistStmnt.executeQuery();
+
+						dateIDExist.next();
+
+						int count = dateIDExist.getInt(1);
+
+						if (count > 0) {
+							exist = true;
+						} else {
+							k--;
+							adjustment++;
+						}
+						lc++;
+
+					} while (!exist && lc < lcMax);
+
+					if (exist) {
+						processD9Today(stockID, k);
+						if (lastOnly)
+							break;
+					}
+				}
+				System.out.println("process done for " + stockID);
 			}
 
 		} catch (Exception ex) {
@@ -1510,7 +1768,7 @@ public class UpDownMeasure {
 	// the purpose of such calculation is to find sector rotation or sector
 	// advantage, this is done after individual stock calculation of such
 	// this is at Industry sector and sub sector levels
-	public static void ZZprocessIndustryAVGPDYHistory(int buyPoint) {
+	public static void processIndustryAVGPDYHistory(int buyPoint) {
 
 		long t1 = System.currentTimeMillis();
 
@@ -1823,9 +2081,9 @@ public class UpDownMeasure {
 			if (close0 > close1) {
 				pdy = pdy + 1;
 			}
-			
-			//fresh buy point start, reset pdy = 1
-			if((dateId-buyDateId)==1) {
+
+			// fresh buy point start, reset pdy = 1
+			if ((dateId - buyDateId) == 1) {
 				pdy = 1;
 			}
 

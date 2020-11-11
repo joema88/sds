@@ -18,15 +18,15 @@ public class DB {
 	// b.SYMBOL='MAR' order by a.DATEID DESC limit 300;
 
 	// create BBROCK table
-	//3. CREATE TABLE INDUSTRY(INDID SMALLINT, INDUSTRY VARCHAR(100), PRIMARY
+	// 3. CREATE TABLE INDUSTRY(INDID SMALLINT, INDUSTRY VARCHAR(100), PRIMARY
 	// KEY(INDID));
-	//4. CREATE TABLE SUBINDUSTRY(INDID SMALLINT, SUBID TINYINT UNSIGNED, 
+	// 4. CREATE TABLE SUBINDUSTRY(INDID SMALLINT, SUBID TINYINT UNSIGNED,
 	// SUBINDUSTRY VARCHAR(100), PRIMARY KEY (SUBID, INDID),
 	// FOREIGN KEY (INDID) REFERENCES INDUSTRY(INDID) ON DELETE CASCADE);
 	// 1. CREATE TABLE SYMBOLS(STOCKID SMALLINT, SYMBOL VARCHAR(10), PRIMARY
 	// KEY(STOCKID));
-	//ALTER TABLE SYMBOLS ADD COLUMN INDID SMALLINT DEFAULT 0;
-	//ALTER TABLE SYMBOLS ADD COLUMN SUBID TINYINT UNSIGNED DEFAULT 0;
+	// ALTER TABLE SYMBOLS ADD COLUMN INDID SMALLINT DEFAULT 0;
+	// ALTER TABLE SYMBOLS ADD COLUMN SUBID TINYINT UNSIGNED DEFAULT 0;
 	// 2. CREATE TABLE DATES(DATEID SMALLINT, CDATE DATE, PRIMARY KEY(DATEID));
 	// ALTER TABLE DATES ADD COLUMN OS FLOAT DEFAULT 0.0;
 	// ALTER TABLE DATES ADD COLUMN OB FLOAT DEFAULT 0.0;
@@ -44,13 +44,16 @@ public class DB {
 	// ALTER TABLE DATES ADD COLUMN UC SMALLINT DEFAULT 0;
 	// ALTER TABLE DATES ADD COLUMN AMC FLOAT DEFAULT 0.0;
 	// ALTER TABLE DATES ADD COLUMN OBI SMALLINT DEFAULT 0;
-	//OBI, an over bought indicator defined by query
-	//select a.DATEID, CDATE, COUNT(*)  FROM BBROCK a, DATES c  WHERE a.DATEID=c.DATEID 
-	// and PASS>3 AND CCX>0 AND CCX<=14 
-	//group by a.DATEID, CDATE order by a.DATEID DeSC limit 320;
-	// ALTER TABLE DATES ADD COLUMN F1 SMALLINT DEFAULT 0; //FUC>0 NUMBER COUNT OF THE DAY
-	// ALTER TABLE DATES ADD COLUMN F8 SMALLINT DEFAULT 0; //FUC=8 NUMBER COUNT OF THE DAY
-	
+	// OBI, an over bought indicator defined by query
+	// select a.DATEID, CDATE, COUNT(*) FROM BBROCK a, DATES c WHERE
+	// a.DATEID=c.DATEID
+	// and PASS>3 AND CCX>0 AND CCX<=14
+	// group by a.DATEID, CDATE order by a.DATEID DeSC limit 320;
+	// ALTER TABLE DATES ADD COLUMN F1 SMALLINT DEFAULT 0; //FUC>0 NUMBER COUNT OF
+	// THE DAY
+	// ALTER TABLE DATES ADD COLUMN F8 SMALLINT DEFAULT 0; //FUC=8 NUMBER COUNT OF
+	// THE DAY
+
 	// 3. CREATE TABLE BBROCK(STOCKID SMALLINT, DATEID SMALLINT, PERCENT FLOAT
 	// DEFAULT 0.0, CLOSE FLOAT DEFAULT 0.0,NETCHANGE FLOAT DEFAULT 0.0, ATR FLOAT
 	// DEFAULT 0.0, OPEN FLOAT DEFAULT 0.0,HIGH FLOAT DEFAULT 0.0, LOW FLOAT DEFAULT
@@ -66,10 +69,19 @@ public class DB {
 	// ALTER TABLE BBROCK ADD COLUMN BPY SMALLINT DEFAULT 0;
 	// SYPT INT DEFAULT 0, FOREIGN KEY (STOCKID) REFERENCES SYMBOLS(STOCKID) ON
 	// DELETE CASCADE, FOREIGN KEY (DATEID) REFERENCES DATES(DATEID));
-	// ALTER TABLE BBROCK ADD COLUMN IAY FLOAT DEFAULT 0.0; //Industry sector avg BDY
-	// ALTER TABLE BBROCK ADD COLUMN IPY FLOAT DEFAULT 0.0; //Industry sector avg PDY
-	// ALTER TABLE BBROCK ADD COLUMN SAY FLOAT DEFAULT 0.0; //Industry sub sector sector avg BDY
-	// ALTER TABLE BBROCK ADD COLUMN SPY FLOAT DEFAULT 0.0; //Industry sub sector avg PDY
+	// ALTER TABLE BBROCK ADD COLUMN IAY FLOAT DEFAULT 0.0; //Industry sector avg
+	// BDY
+	// ALTER TABLE BBROCK ADD COLUMN IPY FLOAT DEFAULT 0.0; //Industry sector avg
+	// PDY
+	// ALTER TABLE BBROCK ADD COLUMN SAY FLOAT DEFAULT 0.0; //Industry sub sector
+	// sector avg BDY
+	// ALTER TABLE BBROCK ADD COLUMN SPY FLOAT DEFAULT 0.0; //Industry sub sector
+	// avg PDY
+	// ALTER TABLE BBROCK ADD COLUMN DD FLOAT DEFAULT 0.0; //Days to deplete the
+	// stock shares, markcap/(vol*close);
+	// ALTER TABLE BBROCK ADD COLUMN D9 FLOAT DEFAULT 0.0; //AVG of last 10 days of
+	// D2 to avoid 1 day volume spike
+
 	/*
 	 * ALTER TABLE BBROCK ADD COLUMN TSM SMALLINT DEFAULT 0; //Teal color total
 	 * summary between two days ALTER TABLE BBROCK ADD COLUMN TOM TINYINT DEFAULT 0;
@@ -189,8 +201,8 @@ public class DB {
 	private static PreparedStatement UMACUpdate = null;
 	private static PreparedStatement updateBDYPDY = null;
 	private static PreparedStatement UTurnStmnt = null;
-	private static PreparedStatement insertIndStmnt=null;
-	private static PreparedStatement IndStmnt=null;
+	private static PreparedStatement insertIndStmnt = null;
+	private static PreparedStatement IndStmnt = null;
 	private static PreparedStatement insertSubIndStmnt = null;
 	private static PreparedStatement subIndStmnt = null;
 	private static PreparedStatement subUnderIndStmnt = null;
@@ -215,113 +227,128 @@ public class DB {
 	private static PreparedStatement minDPC = null;
 	private static PreparedStatement updatePDYToOne = null;
 	private static PreparedStatement StockDateIDAsc = null;
-	//f1UpdateStmnt , fucStmnt
-	//,,
+	private static PreparedStatement updateD2 = null;
+	private static PreparedStatement updateD9 = null;
+	private static PreparedStatement avgD2 = null;
+	// f1UpdateStmnt , fucStmnt
+	// ,,
 	// fucf, fud, updateFUC
 
 	public static void closeConnection() {
 		try {
-			if(StockDateIDAsc != null) {
+			if(avgD2 != null) {
+				avgD2.close();
+				avgD2 = null;
+			}
+			if (updateD2 != null) {
+				updateD2.close();
+				updateD2 = null;
+			}
+			if (updateD9 != null) {
+				updateD9.close();
+				updateD9 = null;
+			}
+			if (StockDateIDAsc != null) {
 				StockDateIDAsc.close();
 				StockDateIDAsc = null;
 			}
-			if( updatePDYToOne != null) {
+			if (updatePDYToOne != null) {
 				updatePDYToOne.close();
 				updatePDYToOne = null;
 			}
-			if( minDPC != null) {
+			if (minDPC != null) {
 				minDPC.close();
 				minDPC = null;
 			}
-			if(fucTodayStmnt != null) {
+			if (fucTodayStmnt != null) {
 				fucTodayStmnt.close();
 				fucTodayStmnt = null;
 			}
-			if( todayOBIStmnt != null) {
+			if (todayOBIStmnt != null) {
 				todayOBIStmnt.close();
 				todayOBIStmnt = null;
 			}
-			if( deleteStockRecord != null) {
+			if (deleteStockRecord != null) {
 				deleteStockRecord.close();
 				deleteStockRecord = null;
 			}
-			if( stockSymbol  != null) {
+			if (stockSymbol != null) {
 				stockSymbol.close();
 				stockSymbol = null;
 			}
-			if(insertDataStmnt != null) {
+			if (insertDataStmnt != null) {
 				insertDataStmnt.close();
 				insertDataStmnt = null;
 			}
-			if(originalDataStmnt != null) {
+			if (originalDataStmnt != null) {
 				originalDataStmnt.close();
 				originalDataStmnt = null;
 			}
-			if(fucStmnt != null ) {
+			if (fucStmnt != null) {
 				fucStmnt.close();
 				fucStmnt = null;
 			}
-			if( f1UpdateStmnt != null ) {
+			if (f1UpdateStmnt != null) {
 				f1UpdateStmnt.close();
 				f1UpdateStmnt = null;
 			}
-			if( f8UpdateStmnt != null ) {
+			if (f8UpdateStmnt != null) {
 				f8UpdateStmnt.close();
 				f8UpdateStmnt = null;
 			}
-			if(OBIHistoryStmnt != null) {
+			if (OBIHistoryStmnt != null) {
 				OBIHistoryStmnt.close();
 				OBIHistoryStmnt = null;
 			}
-			if(UpdateOBIStmnt != null) {
+			if (UpdateOBIStmnt != null) {
 				UpdateOBIStmnt.close();
 				UpdateOBIStmnt = null;
 			}
-			if(updateStockSectorStmnt != null) {
+			if (updateStockSectorStmnt != null) {
 				updateStockSectorStmnt.close();
 				updateStockSectorStmnt = null;
 			}
-			if(subIndStockInfo != null) {
+			if (subIndStockInfo != null) {
 				subIndStockInfo.close();
 				subIndStockInfo = null;
 			}
-			if(subIndAvgYieldUpdate != null) {
+			if (subIndAvgYieldUpdate != null) {
 				subIndAvgYieldUpdate.close();
 				subIndAvgYieldUpdate = null;
 			}
-			if(indAvgYieldUpdate != null) {
+			if (indAvgYieldUpdate != null) {
 				indAvgYieldUpdate.close();
 				indAvgYieldUpdate = null;
 			}
-			if(indIdStmnt != null) {
+			if (indIdStmnt != null) {
 				indIdStmnt.close();
 				indIdStmnt = null;
 			}
-			if(IndCodeStmnt != null) {
+			if (IndCodeStmnt != null) {
 				IndCodeStmnt.close();
 				IndCodeStmnt = null;
 			}
-			if( updateStockIndustryCode != null) {
+			if (updateStockIndustryCode != null) {
 				updateStockIndustryCode.close();
 				updateStockIndustryCode = null;
 			}
-			if(subUnderIndStmnt != null) {
+			if (subUnderIndStmnt != null) {
 				subUnderIndStmnt.close();
 				subUnderIndStmnt = null;
 			}
-			if(insertSubIndStmnt != null) {
+			if (insertSubIndStmnt != null) {
 				insertSubIndStmnt.close();
 				insertSubIndStmnt = null;
 			}
-			if( subIndStmnt != null) {
+			if (subIndStmnt != null) {
 				subIndStmnt.close();
 				subIndStmnt = null;
 			}
-			if(insertIndStmnt != null) {
+			if (insertIndStmnt != null) {
 				insertIndStmnt.close();
 				insertIndStmnt = null;
 			}
-			if( IndStmnt != null) {
+			if (IndStmnt != null) {
 				IndStmnt.close();
 				IndStmnt = null;
 			}
@@ -670,6 +697,7 @@ public class DB {
 
 		return stockIds;
 	}
+
 	public static PreparedStatement getAllStocks() {
 		if (stocks == null) {
 			try {
@@ -683,7 +711,7 @@ public class DB {
 
 		return stocks;
 	}
-	
+
 	public static PreparedStatement getStockSymbol() {
 		if (stockSymbol == null) {
 			try {
@@ -947,10 +975,25 @@ public class DB {
 		return startDateIdStmnt;
 	}
 
+	public static PreparedStatement getAvgD2() {
+		if (avgD2 == null) {
+			try {
+				String query = "select AVG(DD) from BBROCK WHERE STOCKID=? and DATEID>=? and DATEID<=?";
+
+				avgD2 = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return avgD2;
+	}
+
 	public static PreparedStatement getDailyPrice() {
 		if (dailyPriceStmnt == null) {
 			try {
-				String query = "select CLOSE, DATEID from BBROCK WHERE STOCKID=? and DATEID>=? and DATEID<=? ORDER BY DATEID ASC";
+				String query = "select CLOSE, DATEID, VOLUME,MARKCAP, DD from BBROCK WHERE STOCKID=? and DATEID>=? and DATEID<=? ORDER BY DATEID ASC";
 
 				dailyPriceStmnt = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
@@ -960,6 +1003,36 @@ public class DB {
 		}
 
 		return dailyPriceStmnt;
+	}
+
+	public static PreparedStatement updateD2() {
+		if (updateD2 == null) {
+			try {
+				String query = "UPDATE BBROCK SET DD=?  WHERE STOCKID=? and DATEID=?";
+
+				updateD2 = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return updateD2;
+	}
+
+	public static PreparedStatement updateD9() {
+		if (updateD9 == null) {
+			try {
+				String query = "UPDATE BBROCK SET D9=?  WHERE STOCKID=? and DATEID=?";
+
+				updateD9 = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return updateD9;
 	}
 
 	public static PreparedStatement getSumTeal() {
@@ -1052,9 +1125,9 @@ public class DB {
 
 		}
 
-		return subIndStmnt ;
+		return subIndStmnt;
 	}
-	
+
 	public static PreparedStatement getAllSubUnderIndustryStmnt() {
 		if (subUnderIndStmnt == null) {
 			try {
@@ -1068,6 +1141,7 @@ public class DB {
 
 		return subUnderIndStmnt;
 	}
+
 	public static PreparedStatement getSubIndInsertStatement() {
 		getConnection();
 
@@ -1075,15 +1149,14 @@ public class DB {
 			try {
 				String query = "insert into SUBINDUSTRY (INDID ,SUBID, SUBINDUSTRY) values (?, ?, ?)";
 
-				insertSubIndStmnt  = dbcon.prepareStatement(query);
+				insertSubIndStmnt = dbcon.prepareStatement(query);
 			} catch (SQLException e) {
 				e.printStackTrace(System.out);
 			}
 		}
 
-		return insertSubIndStmnt ;
+		return insertSubIndStmnt;
 	}
-	
 
 	public static PreparedStatement getIndustryCodeStmnt() {
 		if (IndCodeStmnt == null) {
@@ -1096,10 +1169,9 @@ public class DB {
 
 		}
 
-		return IndCodeStmnt ;
+		return IndCodeStmnt;
 	}
-	
-	
+
 	public static PreparedStatement updateStockIndustryCode() {
 		if (updateStockIndustryCode == null) {
 			try {
@@ -1113,8 +1185,8 @@ public class DB {
 
 		return updateStockIndustryCode;
 	}
-	
-	//select INDID , INDUSTRY FROM INDUSTRY;
+
+	// select INDID , INDUSTRY FROM INDUSTRY;
 	public static PreparedStatement getIndustryStmnt() {
 		if (IndStmnt == null) {
 			try {
@@ -1126,9 +1198,9 @@ public class DB {
 
 		}
 
-		return IndStmnt ;
+		return IndStmnt;
 	}
-	
+
 	public static PreparedStatement getIndInsertStatement() {
 		getConnection();
 
@@ -1136,45 +1208,43 @@ public class DB {
 			try {
 				String query = "insert into INDUSTRY (INDID , INDUSTRY) values (?, ?)";
 
-				insertIndStmnt  = dbcon.prepareStatement(query);
+				insertIndStmnt = dbcon.prepareStatement(query);
 			} catch (SQLException e) {
 				e.printStackTrace(System.out);
 			}
 		}
 
-		return insertIndStmnt ;
+		return insertIndStmnt;
 	}
-	
-	
+
 	public static PreparedStatement getOriginalData() {
 		if (originalDataStmnt == null) {
 			try {
 				String query = "SELECT STOCKID,DATEID,PERCENT,CLOSE,NETCHANGE,ATR,OPEN,HIGH,LOW,LOW52,HIGH52,MARKCAP,VOLUME,YELLOW,TEAL,PINK,CX520 FROM BBROCK WHERE STOCKID=? ORDER BY DATEID DESC";
-				originalDataStmnt  = getConnection().prepareStatement(query);
+				originalDataStmnt = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
 			}
 
 		}
 
-		return originalDataStmnt ;
-	}	
-	
-	
+		return originalDataStmnt;
+	}
+
 	public static PreparedStatement insertOriginalData() {
 		if (insertDataStmnt == null) {
 			try {
 				String query = "INSERT INTO BBROCK (STOCKID,DATEID,PERCENT,CLOSE,NETCHANGE,ATR,OPEN,HIGH,LOW,LOW52,HIGH52,MARKCAP,VOLUME,YELLOW,TEAL,PINK,CX520) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-				insertDataStmnt   = getConnection().prepareStatement(query);
+				insertDataStmnt = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
 			}
 
 		}
 
-		return insertDataStmnt  ;
-	}	
-	
+		return insertDataStmnt;
+	}
+
 	public static PreparedStatement getBOYSStmnt() {
 		if (BOYSStmnt == null) {
 			try {
@@ -1283,7 +1353,7 @@ public class DB {
 
 		return updatePDYToOne;
 	}
-	
+
 	public static PreparedStatement getUMACUpdate() {
 		if (UMACUpdate == null) {
 			try {
@@ -1685,7 +1755,7 @@ public class DB {
 
 		return upcStmnt;
 	}
-	
+
 	public static PreparedStatement getFUCHistoryStmnt() {
 		getConnection();
 
@@ -1694,7 +1764,7 @@ public class DB {
 
 				String query = "select a.DATEID,b.CDATE,  COUNT(*) FROM BBROCK a, DATES b WHERE a.DATEID=b.DATEID and FUC>? GROUP BY DATEID ORDER BY DATEID DESC limit ?;";
 
-				fucStmnt  = dbcon.prepareStatement(query);
+				fucStmnt = dbcon.prepareStatement(query);
 			} catch (SQLException e) {
 				e.printStackTrace(System.out);
 			}
@@ -1702,7 +1772,6 @@ public class DB {
 
 		return fucStmnt;
 	}
-	
 
 	public static PreparedStatement getFUCTodayStmnt() {
 		getConnection();
@@ -1712,7 +1781,7 @@ public class DB {
 
 				String query = "select a.DATEID,b.CDATE,  COUNT(*) FROM BBROCK a, DATES b WHERE a.DATEID=b.DATEID and FUC>? AND a.DATEID=? GROUP BY DATEID";
 
-				fucTodayStmnt  = dbcon.prepareStatement(query);
+				fucTodayStmnt = dbcon.prepareStatement(query);
 			} catch (SQLException e) {
 				e.printStackTrace(System.out);
 			}
@@ -1720,9 +1789,7 @@ public class DB {
 
 		return fucTodayStmnt;
 	}
-	
 
-	
 	public static PreparedStatement f1UpdateStmnt() {
 		getConnection();
 
@@ -1739,7 +1806,7 @@ public class DB {
 
 		return f1UpdateStmnt;
 	}
-	
+
 	public static PreparedStatement f8UpdateStmnt() {
 		getConnection();
 
@@ -1756,8 +1823,7 @@ public class DB {
 
 		return f8UpdateStmnt;
 	}
-	
-	
+
 	public static PreparedStatement getAllSubIndStockInfo() {
 		if (subIndStockInfo == null) {
 			try {
@@ -1771,9 +1837,12 @@ public class DB {
 
 		return subIndStockInfo;
 	}
-	
-	//select COUNT(*),b.INDID, INDUSTRY,b.SUBID, SUBINDUSTRY FROM BBROCK a, SYMBOLS b,DATES c, INDUSTRY d, SUBINDUSTRY e  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.INDID=d.INDID and b.INDID=e.INDID and b.SUBID=e.SUBID and a.DATEID =9026 
-	//GROUP BY b.INDID,b.SUBID ORDER BY  b.INDID ASC,b.SUBID ASC;
+
+	// select COUNT(*),b.INDID, INDUSTRY,b.SUBID, SUBINDUSTRY FROM BBROCK a, SYMBOLS
+	// b,DATES c, INDUSTRY d, SUBINDUSTRY e WHERE a.STOCKID = b.STOCKID and
+	// a.DATEID=c.DATEID and b.INDID=d.INDID and b.INDID=e.INDID and b.SUBID=e.SUBID
+	// and a.DATEID =9026
+	// GROUP BY b.INDID,b.SUBID ORDER BY b.INDID ASC,b.SUBID ASC;
 	public static PreparedStatement getIndIDStmnt() {
 		getConnection();
 
@@ -1790,8 +1859,7 @@ public class DB {
 
 		return indIdStmnt;
 	}
-	
-	
+
 	public static PreparedStatement getIndAvgYieldUpdateStmnt() {
 		getConnection();
 
@@ -1825,8 +1893,7 @@ public class DB {
 
 		return subIndAvgYieldUpdate;
 	}
-	
-	
+
 	public static PreparedStatement updateStockSectorStmnt() {
 		getConnection();
 
@@ -1842,7 +1909,7 @@ public class DB {
 
 		return updateStockSectorStmnt;
 	}
-	
+
 	public static PreparedStatement getCX520Stmnt() {
 		getConnection();
 
@@ -2042,7 +2109,7 @@ public class DB {
 
 //	select a.DATEID, CDATE, COUNT(*)  FROM BBROCK a, DATES c  WHERE a.DATEID=c.DATEID and PASS>3 AND CCX>0 AND CCX<=14 
 //			group by a.DATEID, CDATE order by a.DATEID DeSC limit 320;
-	
+
 	public static PreparedStatement getOBIHistoryStmnt() {
 		getConnection();
 
@@ -2058,7 +2125,7 @@ public class DB {
 
 		return OBIHistoryStmnt;
 	}
-	
+
 	public static PreparedStatement getTodayOBIStmnt() {
 		getConnection();
 
@@ -2074,6 +2141,7 @@ public class DB {
 
 		return todayOBIStmnt;
 	}
+
 	public static PreparedStatement getUpdateOBIStmnt() {
 		getConnection();
 
@@ -2092,7 +2160,7 @@ public class DB {
 
 		return UpdateOBIStmnt;
 	}
-	
+
 	public static PreparedStatement getAvgDMStmnt() {
 		getConnection();
 
@@ -2140,7 +2208,7 @@ public class DB {
 
 		return deleteStockRecord;
 	}
-	
+
 	public static PreparedStatement getStockDateIDAsc() {
 		getConnection();
 
@@ -2157,7 +2225,6 @@ public class DB {
 		return StockDateIDAsc;
 	}
 
-	
 	public static PreparedStatement getDateIDStmnt() {
 		getConnection();
 

@@ -19,7 +19,7 @@ select a.DATEID AS ID, CDATE, b.SYMBOL AS SYM, CLOSE,OBI,F1,F8,ROUND(AMC,1) AS A
 //2. Industry sector average yield since the buy signal of short term wave (weeks to months)
 // Thus we could focus on selecting stocks within the strong sector(s)
 
-SET @DATE_ID :=9029;
+SET @DATE_ID :=9039;
 select COUNT(*),INDUSTRY,b.INDID,AVG(IAY), AVG(IPY) FROM BBROCK a, SYMBOLS b,DATES c, INDUSTRY d  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.INDID=d.INDID  and a.DATEID =@DATE_ID GROUP BY INDUSTRY, INDID ORDER BY AVG(IAY) DESC;
 
 *********************************
@@ -40,7 +40,7 @@ SET @DATE_ID := 9028;
 select a.DATEID, CDATE,a.STOCKID, b.SYMBOL, a.MARKCAP, CLOSE, BDY,PDY,DPC, UPC, FUC,SUBSTRING(SUBINDUSTRY,1,15) as SUB, b.SUBID,SUBSTRING(INDUSTRY,1,15) as IND,b.INDID FROM BBROCK a, SYMBOLS b,DATES c, INDUSTRY d, SUBINDUSTRY e  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.INDID=d.INDID and b.INDID=e.INDID and b.SUBID=e.SUBID and a.DATEID =@DATE_ID order by BDY DESC limit 500;
 
 SET @DATE_ID := 9033;
-SET @IND_ID :=20;
+SET @IND_ID :=46;
 select a.DATEID, CDATE,a.STOCKID, b.SYMBOL,a.MARKCAP, CLOSE, BDY,PDY,DPC, UPC, FUC,SUBSTRING(SUBINDUSTRY,1,15) as SUB, b.SUBID,SUBSTRING(INDUSTRY,1,10) AS IND,b.INDID FROM BBROCK a, SYMBOLS b,DATES c, INDUSTRY d, SUBINDUSTRY e  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.INDID=d.INDID and b.INDID=e.INDID and b.SUBID=e.SUBID and b.INDID=@IND_ID AND a.DATEID =@DATE_ID order by BDY DESC limit 500;
 
 //with sub industry only
@@ -56,8 +56,8 @@ select a.DATEID, CDATE,a.STOCKID, b.SYMBOL, a.MARKCAP, CLOSE, BDY,PDY,DPC, UPC, 
 ******************************
 //5. Single stock UTURN, Wave yield query
 
-SET @SYMB := 'NIO';
-select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, CLOSE, FUC, BDY,PDY,DPC, DDS, UDS, UPC, DM, DA FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and ( b.SYMBOL=@SYMB)  order by a.DATEID DeSC limit 550;
+SET @SYMB := 'MSFT';
+select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, CLOSE, VOLUME, MARKCAP,FUC, BDY,PDY,DPC, DDS, UDS, UPC, DM, DA FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and ( b.SYMBOL=@SYMB)  order by a.DATEID DeSC limit 550;
 
 *********************************
 //6. FUC=8, explosive stocks of the day
@@ -66,5 +66,18 @@ SET @DATE_ID := 9008;
 select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, MARKCAP,CLOSE,FUC, MOR, YOR, BT9,SUBSTRING(INDUSTRY,1,10), b.INDID,SUBSTRING(SUBINDUSTRY,1,15), b.SUBID FROM BBROCK a, SYMBOLS b,DATES c,INDUSTRY d, SUBINDUSTRY e   WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.INDID=d.INDID and b.INDID=e.INDID and b.SUBID=e.SUBID and ( a.DATEID=@DATE_ID)  AND a.FUC>3 ORDER BY MARKCAP DESC;
 
 *************************
-//FUC>=1 STOCK COUNT VS. DATE, good reference of big trend and market top/bottom, ><500 seems important
+//7. FUC>=1 STOCK COUNT VS. processD2D9History(DATE, good reference of big trend and market top/bottom, ><500 seems important
 select a.DATEID,b.CDATE,  COUNT(*) FROM BBROCK a, DATES b WHERE a.DATEID=b.DATEID and FUC>0 GROUP BY DATEID ORDER BY DATEID DESC limit 200;
+
+***********************
+//8. DD and D9
+//DD reduce 2/3 (or 50% drop?)going forward within 3 days, same time D9 less than +-10%
+//prefer -20%, otherwise, maybe a drop first, maybe should wait the drop
+//then upswing break that price again, like XPEV
+//then immediate short term gain -- weeks
+SET @SYMB := 'FSLR';
+SELECT a.DATEID, a.STOCKID, CDATE, b.SYMBOL, MARKCAP,VOLUME,CLOSE,FUC, ROUND(DD,2) AS DD, ROUND(D9,2) AS D9,ROUND(MOR,2) AS MOR, ROUND(YOR,2) AS YOR, ROUND(TRK,2) AS TRK, BT9, ROUND(DPC,2) AS DPC, DDS, UDS, ROUND(UPC,2) AS UPC, ROUND(DM,2) AS DM, DA FROM BBROCK a, SYMBOLS b, DATES c WHERE a.STOCKID=b.STOCKID and a.DATEID = c.DATEID and  b.SYMBOL=@SYMB
+order by a.DATEID DESC limit 200;
+//most heavily traded
+SET @DATE_ID := 9039;
+SELECT a.DATEID, a.STOCKID, CDATE, b.SYMBOL, MARKCAP,VOLUME,CLOSE, ROUND(DD,2) AS DD, ROUND(D9,2) AS D9,ROUND(MOR,2) AS MOR, ROUND(YOR,2) AS YOR, ROUND(TRK,2) AS TRK, BT9, ROUND(DPC,2) AS DPC, DDS, UDS, ROUND(UPC,2) AS UPC, ROUND(DM,2) AS DM, DA, FUC FROM BBROCK a, SYMBOLS b, DATES c WHERE DD>1 AND a.STOCKID=b.STOCKID and a.DATEID = c.DATEID and MARKCAP>1000 AND  a.DATEID =@DATE_ID ORDER BY DD ASC limit 50;

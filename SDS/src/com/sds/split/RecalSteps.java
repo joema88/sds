@@ -18,9 +18,10 @@ public class RecalSteps {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		// int stockID = 24651;
-		int stockID = 20103;
+		int stockID = 20545;
 		// step 1, copy over basic data, works!
-		copyData(stockID - 20000);
+		// false is 1:5 split, true is 5:1 split
+		copyData(stockID - 20000, 9012, 5, false);
 
 		try {
 			String symbol = "BIIB2";
@@ -41,7 +42,7 @@ public class RecalSteps {
 			ALTBT9.markPassPoints(symbol, -1);
 			System.out.println("After Process marking pass points");
 			TwoBullPattern.updatePTCP2History(symbol, -1, false);
-			
+
 			PreparedStatement dateIdRange = DB.getStockDateIDRange();
 			PreparedStatement dateIDExistStmnt = DB.checkDateIDExistsStmnt();
 
@@ -152,9 +153,9 @@ public class RecalSteps {
 						index++;
 					}
 
-					 UpDownMeasure.processTodayIndustryAVGPDY(k, stockID);
-				     UpDownMeasure.processTodayOBI(k);
-					 UpDownMeasure.processF18Today(k);
+					UpDownMeasure.processTodayIndustryAVGPDY(k, stockID);
+					UpDownMeasure.processTodayOBI(k);
+					UpDownMeasure.processF18Today(k);
 				}
 
 			}
@@ -163,7 +164,7 @@ public class RecalSteps {
 		}
 	}
 
-	public static void copyData(int stockID) {
+	public static void copyData(int stockID, int splitDateId, int splitRatio, boolean reverse) {
 		try {
 			// TODO Auto-generated method stub, 4651 HPR
 			PreparedStatement originalDataStmnt = DB.getOriginalData();
@@ -195,6 +196,7 @@ public class RecalSteps {
 
 				// STOCKID,DATEID,PERCENT,CLOSE,NETCHANGE,ATR,OPEN,HIGH,
 				// LOW,LOW52,HIGH52,MARKCAP,VOLUME,YELLOW,TEAL,PINK,
+				float previousClose = 0.0f;
 				while (rs2.next()) {
 					int stockId = rs2.getInt(1) + 20000;
 					int dateId = rs2.getInt(2);
@@ -214,25 +216,95 @@ public class RecalSteps {
 					int pink = rs2.getInt(16);
 					int cx520 = rs2.getInt(17);
 
-					insertDataStmnt.setInt(1, newStockID);
-					insertDataStmnt.setInt(2, dateId);
-					insertDataStmnt.setFloat(3, percent);
-					insertDataStmnt.setFloat(4, close);
-					insertDataStmnt.setFloat(5, netChange);
-					insertDataStmnt.setFloat(6, atr);
-					insertDataStmnt.setFloat(7, open);
-					insertDataStmnt.setFloat(8, high);
-					insertDataStmnt.setFloat(9, low);
-					insertDataStmnt.setFloat(10, low52);
-					insertDataStmnt.setFloat(11, high52);
-					insertDataStmnt.setFloat(12, markcap);
-					insertDataStmnt.setFloat(13, volume);
-					insertDataStmnt.setInt(14, yellow);
-					insertDataStmnt.setInt(15, teal);
-					insertDataStmnt.setInt(16, pink);
-					insertDataStmnt.setInt(17, cx520);
-					insertDataStmnt.execute();
-
+					if (dateId < splitDateId && reverse) {
+						insertDataStmnt.setInt(1, newStockID);
+						insertDataStmnt.setInt(2, dateId);
+						insertDataStmnt.setFloat(3, percent);
+						insertDataStmnt.setFloat(4, close * splitRatio);
+						insertDataStmnt.setFloat(5, netChange * splitRatio);
+						insertDataStmnt.setFloat(6, atr * splitRatio);
+						insertDataStmnt.setFloat(7, open * splitRatio);
+						insertDataStmnt.setFloat(8, high * splitRatio);
+						insertDataStmnt.setFloat(9, low * splitRatio);
+						insertDataStmnt.setFloat(10, low52 * splitRatio);
+						insertDataStmnt.setFloat(11, high52 * splitRatio);
+						insertDataStmnt.setFloat(12, markcap);
+						insertDataStmnt.setFloat(13, volume);
+						insertDataStmnt.setInt(14, yellow);
+						insertDataStmnt.setInt(15, teal);
+						insertDataStmnt.setInt(16, pink);
+						insertDataStmnt.setInt(17, cx520);
+						insertDataStmnt.execute();
+						previousClose = close * splitRatio;
+					} else if (dateId >= splitDateId && reverse) {
+						insertDataStmnt.setInt(1, newStockID);
+						insertDataStmnt.setInt(2, dateId);
+						if (dateId == splitDateId) {
+							 percent = 100.0f*(close - previousClose)/previousClose;
+							 netChange = previousClose - close;
+						}
+						insertDataStmnt.setFloat(3, percent);
+						insertDataStmnt.setFloat(4, close);
+						insertDataStmnt.setFloat(5, netChange);
+						insertDataStmnt.setFloat(6, atr);
+						insertDataStmnt.setFloat(7, open);
+						insertDataStmnt.setFloat(8, high);
+						insertDataStmnt.setFloat(9, low);
+						insertDataStmnt.setFloat(10, low52);
+						insertDataStmnt.setFloat(11, high52);
+						insertDataStmnt.setFloat(12, markcap);
+						insertDataStmnt.setFloat(13, volume);
+						insertDataStmnt.setInt(14, yellow);
+						insertDataStmnt.setInt(15, teal);
+						insertDataStmnt.setInt(16, pink);
+						insertDataStmnt.setInt(17, cx520);
+						insertDataStmnt.execute();
+						previousClose = close;
+					} else if (dateId < splitDateId && !reverse) {
+						insertDataStmnt.setInt(1, newStockID);
+						insertDataStmnt.setInt(2, dateId);
+						insertDataStmnt.setFloat(3, percent);
+						insertDataStmnt.setFloat(4, close / splitRatio);
+						insertDataStmnt.setFloat(5, netChange / splitRatio);
+						insertDataStmnt.setFloat(6, atr / splitRatio);
+						insertDataStmnt.setFloat(7, open / splitRatio);
+						insertDataStmnt.setFloat(8, high / splitRatio);
+						insertDataStmnt.setFloat(9, low / splitRatio);
+						insertDataStmnt.setFloat(10, low52 / splitRatio);
+						insertDataStmnt.setFloat(11, high52 / splitRatio);
+						insertDataStmnt.setFloat(12, markcap);
+						insertDataStmnt.setFloat(13, volume);
+						insertDataStmnt.setInt(14, yellow);
+						insertDataStmnt.setInt(15, teal);
+						insertDataStmnt.setInt(16, pink);
+						insertDataStmnt.setInt(17, cx520);
+						insertDataStmnt.execute();
+						previousClose = close / splitRatio;
+					}else if (dateId >= splitDateId && !reverse) {
+						insertDataStmnt.setInt(1, newStockID);
+						insertDataStmnt.setInt(2, dateId);
+						if (dateId == splitDateId) {
+							 percent = 100.0f*(close - previousClose)/previousClose;
+							 netChange = previousClose - close;
+						}
+						insertDataStmnt.setFloat(3, percent);
+						insertDataStmnt.setFloat(4, close);
+						insertDataStmnt.setFloat(5, netChange);
+						insertDataStmnt.setFloat(6, atr);
+						insertDataStmnt.setFloat(7, open);
+						insertDataStmnt.setFloat(8, high);
+						insertDataStmnt.setFloat(9, low);
+						insertDataStmnt.setFloat(10, low52);
+						insertDataStmnt.setFloat(11, high52);
+						insertDataStmnt.setFloat(12, markcap);
+						insertDataStmnt.setFloat(13, volume);
+						insertDataStmnt.setInt(14, yellow);
+						insertDataStmnt.setInt(15, teal);
+						insertDataStmnt.setInt(16, pink);
+						insertDataStmnt.setInt(17, cx520);
+						insertDataStmnt.execute();
+						previousClose = close;
+					}
 				}
 			}
 
