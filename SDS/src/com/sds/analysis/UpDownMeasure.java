@@ -66,7 +66,7 @@ public class UpDownMeasure {
 		// int buyDateId = 9007; //buy date
 
 		// daily step 5
-		//processTodayAllPDY(currentDateID, buyDateId,-1);
+		// processTodayAllPDY(currentDateID, buyDateId,-1);
 		// daily step 6
 		// processTodayIndustryAVGPDY(currentDateID,-1);
 		// daily step 7, update daily OBI (Over bought indicator)
@@ -75,8 +75,12 @@ public class UpDownMeasure {
 		// processF18History(1);
 		// daily step 8, process D2, D9 for each stock
 		// processD2D9History(true);
+		// daily step 9, process today's VBI
+		// processVBIHistory(true);
 
-		//processD2D9History(false);
+		//processStockVBIHistory(963);
+		processVBIHistory(false);
+		// processD2D9History(false);
 		// processPDYHistory(buyDateId);
 		// processIndustryAVGPDYHistory(buyDateId);
 		// processOBIHistory(320) ;
@@ -1372,7 +1376,7 @@ public class UpDownMeasure {
 				float vol = rs.getFloat(3);
 				float markcap = rs.getFloat(4);
 				if (markcap > 0.0001 && vol > 1.0f && close > 0.01f) {
-					float d2 = 1000000.0f*markcap / (vol * close);
+					float d2 = 1000000.0f * markcap / (vol * close);
 					updateD2.setFloat(1, d2);
 					updateD2.setInt(2, stockID);
 					updateD2.setInt(3, dateId);
@@ -1411,6 +1415,215 @@ public class UpDownMeasure {
 				updateD9.executeUpdate();
 
 			}
+
+		} catch (Exception ex) {
+
+		}
+	}
+
+	public static void processStockVBIHistory(int stockID) {
+		try {
+
+			long t1 = System.currentTimeMillis();
+			PreparedStatement dateIDStmnt = DB.getDateIDStmnt();
+
+			PreparedStatement dateIdRange = DB.getStockDateIDRange();
+			PreparedStatement dateIDExistStmnt = DB.checkDateIDExistsStmnt();
+
+			dateIdRange.setInt(1, stockID);
+
+			ResultSet dateRS = dateIdRange.executeQuery();
+
+			dateRS.next();
+
+			int strtDateId = dateRS.getInt(1);
+			int endDateId = dateRS.getInt(2);
+
+			// 8923 is the starting date with volume and marketcap
+			// need 12 bottom to avoid end error
+			for (int k = endDateId; k >= 8935; k--) {
+				// for (int k = currentDateID; k >= currentDateID; k--) {
+				boolean exist = false;
+				int adjustment = 0;
+				int lcMax = 10;
+				int lc = 0;
+				do {
+					dateIDExistStmnt.setInt(1, stockID);
+					dateIDExistStmnt.setInt(2, k);
+
+					ResultSet dateIDExist = dateIDExistStmnt.executeQuery();
+
+					dateIDExist.next();
+
+					int count = dateIDExist.getInt(1);
+
+					if (count > 0) {
+						exist = true;
+					} else {
+						k--;
+						adjustment++;
+					}
+					lc++;
+
+				} while (!exist && lc < lcMax);
+
+				if (exist) {
+					if (k == 8986) {
+						System.out.println("K is " + k);
+					}
+					processVBIToday(stockID, k);
+				}
+			}
+
+			System.out.println("VBI process done for " + stockID);
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
+
+	public static void processVBIHistory(boolean lastOnly) {
+		try {
+
+			long t1 = System.currentTimeMillis();
+			PreparedStatement dateIDStmnt = DB.getDateIDStmnt();
+
+			PreparedStatement allStocks = DB.getAllStockIDs();
+			PreparedStatement dateIdRange = DB.getStockDateIDRange();
+			PreparedStatement dateIDExistStmnt = DB.checkDateIDExistsStmnt();
+			allStocks.setInt(1, 1);
+
+			ResultSet rs = allStocks.executeQuery();
+			int sc = 0;
+			System.out.println("-----------Begin---------");
+			while (rs.next()) {
+				sc++;
+				int stockID = rs.getInt(1);
+
+				if (stockID == 48) {
+					System.out.println("AMZN");
+				}
+
+				dateIdRange.setInt(1, stockID);
+
+				ResultSet dateRS = dateIdRange.executeQuery();
+
+				dateRS.next();
+
+				int strtDateId = dateRS.getInt(1);
+				int endDateId = dateRS.getInt(2);
+
+				// 8923 is the starting date with volume and marketcap
+				// need 12 bottom to avoid end error
+				for (int k = endDateId; k >= 8935; k--) {
+					boolean exist = false;
+					int adjustment = 0;
+					int lcMax = 10;
+					int lc = 0;
+					do {
+						dateIDExistStmnt.setInt(1, stockID);
+						dateIDExistStmnt.setInt(2, k);
+
+						ResultSet dateIDExist = dateIDExistStmnt.executeQuery();
+
+						dateIDExist.next();
+
+						int count = dateIDExist.getInt(1);
+
+						if (count > 0) {
+							exist = true;
+						} else {
+							k--;
+							adjustment++;
+						}
+						lc++;
+
+					} while (!exist && lc < lcMax);
+
+					if (exist) {
+						processVBIToday(stockID, k);
+						if (lastOnly)
+							break;
+					}
+				}
+
+				System.out.println("VBI process done for " + stockID);
+			}
+
+		} catch (
+
+		Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
+
+	public static void processVBIToday(int stockID, int dateId) {
+		try {
+
+			// String query = "select DD, D9 FROM BBROCK
+			// WHERE STOCKID =? and DATEID<=? AND DATEID>=? order by DATEID DESC";
+
+			PreparedStatement ddd9Stmnt = DB.getDDD9Stmnt();
+			// String query = "UPDATE BBROCK SET VBI=?
+			// WHERE STOCKID =? and DATEID=?";
+
+			PreparedStatement updateVBI = DB.updateVBIStmnt();
+
+			ddd9Stmnt.setInt(1, stockID);
+			ddd9Stmnt.setInt(2, dateId);
+			ddd9Stmnt.setInt(3, dateId - 5);
+
+			ResultSet rs = ddd9Stmnt.executeQuery();
+
+			int VBI = 0;
+			int VB1 = 0;
+			int VB2 = 0;
+			float d20 = 0.0f;
+			float d90 = 0.0f;
+			int count = 0;
+			while (rs.next()) {
+				float d2 = rs.getFloat(1);
+				float d9 = rs.getFloat(2);
+				if (d20 < 0.01f && d90 < 0.01f) {
+					d20 = d2;
+					d90 = d9;
+				} else {
+					if (3 * d20 < d2) { // DD must be reduced more than 2/3
+						if (d90 < d9 && d90 >= 0.9f * d9) { // D9 reduced but not more than 10%
+							VBI = 118;
+						} else if (d90 < d9 && d90 < 0.9f * d9 && d90 > 0.8f * d9) {
+							VBI = 108;
+						} else if (d90 > d9 && d90 <= 1.1f * d9) { // not sure if details matters
+							VBI = 28;
+						} else if (d90 > d9 && d90 > 1.1f * d9 && d90 < 1.2f * d9) { // not sure if details matters
+							VBI = 18;
+						}
+
+						if (VB1 == 0) {
+							VB1 = VBI;
+							VBI = 0;
+						} else {
+							VB2 = VBI;
+							VBI = 0;
+						}
+					}
+				}
+				count++;
+				if (count >= 3)
+					break;
+
+			}
+
+			if (VB1 >= VB2) {
+				VBI = VB1;
+			} else {
+				VBI = VB2;
+			}
+
+			updateVBI.setInt(1, VBI);
+			updateVBI.setInt(2, stockID);
+			updateVBI.setInt(3, dateId);
+			updateVBI.executeUpdate();
 
 		} catch (Exception ex) {
 

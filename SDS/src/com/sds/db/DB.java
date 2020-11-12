@@ -81,6 +81,10 @@ public class DB {
 	// stock shares, markcap/(vol*close);
 	// ALTER TABLE BBROCK ADD COLUMN D9 FLOAT DEFAULT 0.0; //AVG of last 10 days of
 	// D2 to avoid 1 day volume spike
+	// TRACK DD WITHIN 3 DAYS REDUCE 2/3 OR MORE WHILE D9 REDUCED LESS THAN 10%
+	// BASED ON D9 UP/DOWN AND SCALE, WE MAY ASSIGN MINOR VALUE
+	// THIS IS IS AN EXTREMELY SHORT TERM BULLISH SIGNAL WEEKS TO ONE MONTH
+	// ALTER TABLE BBROCK ADD COLUMN VBI TINYINT DEFAULT 0;
 
 	/*
 	 * ALTER TABLE BBROCK ADD COLUMN TSM SMALLINT DEFAULT 0; //Teal color total
@@ -230,13 +234,23 @@ public class DB {
 	private static PreparedStatement updateD2 = null;
 	private static PreparedStatement updateD9 = null;
 	private static PreparedStatement avgD2 = null;
+	private static PreparedStatement updateVBIStmnt= null;
+	private static PreparedStatement DDD9Stmnt = null;
 	// f1UpdateStmnt , fucStmnt
 	// ,,
 	// fucf, fud, updateFUC
 
 	public static void closeConnection() {
 		try {
-			if(avgD2 != null) {
+			if(DDD9Stmnt != null) {
+				DDD9Stmnt.close();
+				DDD9Stmnt = null;
+			}
+			if( updateVBIStmnt != null ) {
+				updateVBIStmnt.close();
+				updateVBIStmnt = null;
+			}
+			if (avgD2 != null) {
 				avgD2.close();
 				avgD2 = null;
 			}
@@ -2382,6 +2396,39 @@ public class DB {
 		return BuySellStmnt;
 	}
 
+	public static PreparedStatement getDDD9Stmnt() {
+		getConnection();
+
+		if (DDD9Stmnt == null) {
+			try {
+				String query = "select DD, D9 FROM BBROCK   WHERE STOCKID =? and DATEID<=? AND DATEID>=? order by DATEID DESC";
+
+				DDD9Stmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return DDD9Stmnt;
+	}
+
+	
+	public static PreparedStatement updateVBIStmnt() {
+		getConnection();
+
+		if (updateVBIStmnt == null) {
+			try {
+				String query = "UPDATE BBROCK SET VBI=?   WHERE STOCKID =? and DATEID=?";
+
+				updateVBIStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return updateVBIStmnt;
+	}
+	
 	public static PreparedStatement getTYPDSumByStockIDStmnt() {
 		getConnection();
 
