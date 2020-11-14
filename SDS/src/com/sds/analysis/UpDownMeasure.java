@@ -53,7 +53,7 @@ public class UpDownMeasure {
 	public static void main(String[] args) {
 
 		// DAILY ROUTINE
-		currentDateID = 9040;
+		currentDateID = 9042;
 		// processUpDownHistory();//no longer do DM update
 		// daily step 1
 		// processDMAHistory(); //DM update here
@@ -79,7 +79,7 @@ public class UpDownMeasure {
 		// processVBIHistory(true);
 
 		//processStockVBIHistory(963);
-		processVBIHistory(false);
+		//processVBIHistory(false);
 		// processD2D9History(false);
 		// processPDYHistory(buyDateId);
 		// processIndustryAVGPDYHistory(buyDateId);
@@ -1288,9 +1288,10 @@ public class UpDownMeasure {
 			int strtDateId = dateRS.getInt(1);
 			int endDateId = dateRS.getInt(2);
 
+			// 8923)
 			// for (int k = endDateId; k >= strtDateId; k--) {
-			for (int k = endDateId; k >= strtDateId; k--) {
-				// for (int k = currentDateID; k >= currentDateID; k--) {
+			//for (int k = endDateId; k >= strtDateId; k--) {
+			for (int k = endDateId; k >= 8923; k--) { //we only have info after 8923
 				boolean exist = false;
 				int adjustment = 0;
 				int lcMax = 10;
@@ -1774,7 +1775,7 @@ public class UpDownMeasure {
 							break;
 					}
 				}
-				System.out.println("process done for " + stockID);
+				System.out.println("process D2D9 done for " + stockID);
 			}
 
 		} catch (Exception ex) {

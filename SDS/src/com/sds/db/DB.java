@@ -236,12 +236,22 @@ public class DB {
 	private static PreparedStatement avgD2 = null;
 	private static PreparedStatement updateVBIStmnt= null;
 	private static PreparedStatement DDD9Stmnt = null;
+	private static PreparedStatement deleteSymb = null;
+	private static PreparedStatement updateStockID = null;
 	// f1UpdateStmnt , fucStmnt
 	// ,,
 	// fucf, fud, updateFUC
 
 	public static void closeConnection() {
 		try {
+			if(updateStockID != null) {
+				updateStockID.close();
+				updateStockID = null;
+			}
+			if(deleteSymb !=  null) {
+				deleteSymb.close();
+				deleteSymb = null;
+			}
 			if(DDD9Stmnt != null) {
 				DDD9Stmnt.close();
 				DDD9Stmnt = null;
@@ -1019,6 +1029,21 @@ public class DB {
 		return dailyPriceStmnt;
 	}
 
+	public static PreparedStatement updateAliasStockID() {
+		if (updateStockID == null) {
+			try {
+				String query = "UPDATE BBROCK SET STOCKID=? WHERE STOCKID=?";
+
+				updateStockID  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return updateStockID ;
+	}
+	
 	public static PreparedStatement updateD2() {
 		if (updateD2 == null) {
 			try {
@@ -2625,6 +2650,22 @@ public class DB {
 		return symbolStmnt;
 	}
 
+	public static PreparedStatement deleteSymbol() {
+		getConnection();
+
+		if (deleteSymb == null) {
+			try {
+				String query = " DELETE FROM SYMBOLS WHERE STOCKID = ?";
+
+				deleteSymb = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return deleteSymb;
+	}
+	
 	public static PreparedStatement getRockInsertStatement() {
 		getConnection();
 

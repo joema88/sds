@@ -18,13 +18,74 @@ public class RecalSteps {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		// int stockID = 24651;
-		int stockID = 20545;
+		int stockID = 4737;
+		String symbol = "NTEC";
+		int splitDateId = 9032; //THE DATEID THAT CLOSE PRICE JUMPED OR DROPPED
+		int endDateId = 9042;
+		int splitRatio = 20;
+		boolean reseveSplit = true;
 		// step 1, copy over basic data, works!
-		// false is 1:5 split, true is 5:1 split
-		copyData(stockID - 20000, 9012, 5, false);
+		// e.g. false is 1:5 split, true is 5:1 reverse split
+		copyData(stockID, splitDateId, splitRatio, reseveSplit);
 
+		// do the recaculation on alias stock
+		// basically do the calculation on the alias stock
+		// with stockID = 20000+originalStockID;
+		// symbol=originalStockSymbol+"2";
+		recalculateAliasStock(stockID + 20000, symbol + "2");
+
+		// clean up, delete the original stocks, update the copy over stock to real
+		// stockid
+		// delete inserted stock alias record
+		cleanUp(stockID);
+
+		// recalculate industry, sub-industry, and whole aggregate information
+		// going forward from that point
+		recalculateAggregates(splitDateId, endDateId);
+	}
+
+	public static void cleanUp(int stockID) {
+		// clean up, delete the original stocks, update the copy over stock to real
+		// stockid
+		// delete inserted stock alias record
 		try {
-			String symbol = "BIIB2";
+			//delete the original stock record
+			PreparedStatement del = DB.deleteStockRecord();
+			del.setInt(1, stockID);
+			del.execute();
+			
+			//update the alias stockid to the real one
+			PreparedStatement updateStockID = DB.updateAliasStockID();
+			updateStockID.setInt(1, stockID);
+			updateStockID.setInt(2, stockID+20000);
+			updateStockID.execute();
+			
+			//delete the stock alias symbol
+			PreparedStatement delSymb = DB.deleteSymbol();
+			delSymb.setInt(1, stockID+20000);
+			delSymb.execute();
+		} catch (Exception ex) {
+
+		}
+
+	}
+
+	public static void recalculateAggregates(int splitDateId, int endDateId) {
+		// recalculate industry, sub-industry, and whole aggregate information
+		// going forward from that point
+		int dateId = 0;
+		for (dateId = splitDateId; dateId <= endDateId; dateId++) {
+			Summary.processDailyUTurnSummary(dateId);
+			UpDownMeasure.processTodayIndustryAVGPDY(dateId, -1);
+		}
+		UpDownMeasure.processOBIHistory(endDateId - splitDateId + 1);
+		UpDownMeasure.processF18History(endDateId - splitDateId + 1);
+
+	}
+
+	public static void recalculateAliasStock(int stockID, String symbol) {
+		try {
+
 			System.out.println("Processing summary...");
 			Summary.processStock(symbol, 0);
 			System.out.println("Processing CCX History...");
@@ -42,6 +103,8 @@ public class RecalSteps {
 			ALTBT9.markPassPoints(symbol, -1);
 			System.out.println("After Process marking pass points");
 			TwoBullPattern.updatePTCP2History(symbol, -1, false);
+
+			UpDownMeasure.processD2D9History(stockID);
 
 			PreparedStatement dateIdRange = DB.getStockDateIDRange();
 			PreparedStatement dateIDExistStmnt = DB.checkDateIDExistsStmnt();
@@ -95,6 +158,9 @@ public class RecalSteps {
 					UpDownMeasure.processTodayDMRankAvgDM(stockID, k);
 					UpDownMeasure.processTodayFUC(stockID, k);
 					Summary.processDailyUTurnSummary(k);
+					if (k >= 8923) { // we only have D2, D9 info after this date
+						UpDownMeasure.processVBIToday(stockID, k);
+					}
 				}
 			}
 
@@ -229,7 +295,7 @@ public class RecalSteps {
 						insertDataStmnt.setFloat(10, low52 * splitRatio);
 						insertDataStmnt.setFloat(11, high52 * splitRatio);
 						insertDataStmnt.setFloat(12, markcap);
-						insertDataStmnt.setFloat(13, volume);
+						insertDataStmnt.setFloat(13, volume / splitRatio);
 						insertDataStmnt.setInt(14, yellow);
 						insertDataStmnt.setInt(15, teal);
 						insertDataStmnt.setInt(16, pink);
@@ -240,8 +306,8 @@ public class RecalSteps {
 						insertDataStmnt.setInt(1, newStockID);
 						insertDataStmnt.setInt(2, dateId);
 						if (dateId == splitDateId) {
-							 percent = 100.0f*(close - previousClose)/previousClose;
-							 netChange = previousClose - close;
+							percent = 100.0f * (close - previousClose) / previousClose;
+							netChange = previousClose - close;
 						}
 						insertDataStmnt.setFloat(3, percent);
 						insertDataStmnt.setFloat(4, close);
@@ -273,19 +339,19 @@ public class RecalSteps {
 						insertDataStmnt.setFloat(10, low52 / splitRatio);
 						insertDataStmnt.setFloat(11, high52 / splitRatio);
 						insertDataStmnt.setFloat(12, markcap);
-						insertDataStmnt.setFloat(13, volume);
+						insertDataStmnt.setFloat(13, volume * splitRatio);
 						insertDataStmnt.setInt(14, yellow);
 						insertDataStmnt.setInt(15, teal);
 						insertDataStmnt.setInt(16, pink);
 						insertDataStmnt.setInt(17, cx520);
 						insertDataStmnt.execute();
 						previousClose = close / splitRatio;
-					}else if (dateId >= splitDateId && !reverse) {
+					} else if (dateId >= splitDateId && !reverse) {
 						insertDataStmnt.setInt(1, newStockID);
 						insertDataStmnt.setInt(2, dateId);
 						if (dateId == splitDateId) {
-							 percent = 100.0f*(close - previousClose)/previousClose;
-							 netChange = previousClose - close;
+							percent = 100.0f * (close - previousClose) / previousClose;
+							netChange = previousClose - close;
 						}
 						insertDataStmnt.setFloat(3, percent);
 						insertDataStmnt.setFloat(4, close);
