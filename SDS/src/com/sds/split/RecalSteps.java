@@ -14,34 +14,38 @@ import com.sds.analysis.UpDownMeasure;
 import com.sds.db.DB;
 
 public class RecalSteps {
+	private static boolean copySuccess = true;
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		// int stockID = 24651;
-		int stockID = 4737;
-		String symbol = "NTEC";
-		int splitDateId = 9032; //THE DATEID THAT CLOSE PRICE JUMPED OR DROPPED
-		int endDateId = 9042;
-		int splitRatio = 20;
+		int stockID = 5002;
+		String symbol = "MGEN";// PDS
+		int splitDateId = 9042; // THE DATEID THAT CLOSE PRICE JUMPED OR DROPPED
+		int endDateId = 9044;
+		int splitRatio = 15;
 		boolean reseveSplit = true;
 		// step 1, copy over basic data, works!
 		// e.g. false is 1:5 split, true is 5:1 reverse split
+
 		copyData(stockID, splitDateId, splitRatio, reseveSplit);
 
-		// do the recaculation on alias stock
-		// basically do the calculation on the alias stock
-		// with stockID = 20000+originalStockID;
-		// symbol=originalStockSymbol+"2";
-		recalculateAliasStock(stockID + 20000, symbol + "2");
+		if (copySuccess) {
+			// do the recaculation on alias stock
+			// basically do the calculation on the alias stock
+			// with stockID = 20000+originalStockID;
+			// symbol=originalStockSymbol+"2";
+			recalculateAliasStock(stockID + 20000, symbol + "2");
 
-		// clean up, delete the original stocks, update the copy over stock to real
-		// stockid
-		// delete inserted stock alias record
-		cleanUp(stockID);
+			// clean up, delete the original stocks, update the copy over stock to real
+			// stockid
+			// delete inserted stock alias record
+			cleanUp(stockID);
 
-		// recalculate industry, sub-industry, and whole aggregate information
-		// going forward from that point
-		recalculateAggregates(splitDateId, endDateId);
+			// recalculate industry, sub-industry, and whole aggregate information
+			// going forward from that point
+			recalculateAggregates(splitDateId, endDateId);
+		}
 	}
 
 	public static void cleanUp(int stockID) {
@@ -49,20 +53,20 @@ public class RecalSteps {
 		// stockid
 		// delete inserted stock alias record
 		try {
-			//delete the original stock record
+			// delete the original stock record
 			PreparedStatement del = DB.deleteStockRecord();
 			del.setInt(1, stockID);
 			del.execute();
-			
-			//update the alias stockid to the real one
+
+			// update the alias stockid to the real one
 			PreparedStatement updateStockID = DB.updateAliasStockID();
 			updateStockID.setInt(1, stockID);
-			updateStockID.setInt(2, stockID+20000);
+			updateStockID.setInt(2, stockID + 20000);
 			updateStockID.execute();
-			
-			//delete the stock alias symbol
+
+			// delete the stock alias symbol
 			PreparedStatement delSymb = DB.deleteSymbol();
-			delSymb.setInt(1, stockID+20000);
+			delSymb.setInt(1, stockID + 20000);
 			delSymb.execute();
 		} catch (Exception ex) {
 
@@ -376,6 +380,7 @@ public class RecalSteps {
 
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
+			copySuccess = false;
 		}
 	}
 }
