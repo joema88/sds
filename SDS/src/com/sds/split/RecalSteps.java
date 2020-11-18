@@ -19,12 +19,12 @@ public class RecalSteps {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		// int stockID = 24651;
-		int stockID = 4508;
-		String symbol = "JT";// PDS
-		int splitDateId = 9032; // THE DATEID THAT CLOSE PRICE JUMPED OR DROPPED
+		int stockID = 527;
+		String symbol = "NEE";// PDS
+		int splitDateId = 9029; // THE DATEID THAT CLOSE PRICE JUMPED OR DROPPED
 		int endDateId = 9044;
-		int splitRatio = 8;
-		boolean reseveSplit = true;
+		float splitRatio = 4;
+		boolean reseveSplit = false;
 		// step 1, copy over basic data, works!
 		// e.g. false is 1:5 split, true is 5:1 reverse split
 
@@ -234,7 +234,7 @@ public class RecalSteps {
 		}
 	}
 
-	public static void copyData(int stockID, int splitDateId, int splitRatio, boolean reverse) {
+	public static void copyData(int stockID, int splitDateId, float splitRatio, boolean reverse) {
 		try {
 			// TODO Auto-generated method stub, 4651 HPR
 			PreparedStatement originalDataStmnt = DB.getOriginalData();
@@ -288,6 +288,25 @@ public class RecalSteps {
 					int cx520 = rs2.getInt(17);
 
 					if (dateId < splitDateId && reverse) {
+
+						if (previousClose > 0.01f) {
+							float percent1 = 100.0f * (close * splitRatio - previousClose) / previousClose;
+
+							float markcap1 = previousCap * (1.0f + percent1 / 100.f);
+
+							if (markcap1 < 0.01f) {
+								previousCap = markcap;
+							} else if (markcap > 1.25f * markcap1 || markcap < 0.8f * markcap1) {
+								previousCap = markcap1;
+								markcap = markcap1;
+							} else {
+								previousCap = markcap;
+							}
+						} else {
+							previousCap = markcap;
+
+						}
+
 						insertDataStmnt.setInt(1, newStockID);
 						insertDataStmnt.setInt(2, dateId);
 						insertDataStmnt.setFloat(3, percent);
@@ -306,16 +325,30 @@ public class RecalSteps {
 						insertDataStmnt.setInt(16, pink);
 						insertDataStmnt.setInt(17, cx520);
 						insertDataStmnt.execute();
+
 						previousClose = close * splitRatio;
-						 previousCap = markcap;
+
 					} else if (dateId >= splitDateId && reverse) {
 						insertDataStmnt.setInt(1, newStockID);
 						insertDataStmnt.setInt(2, dateId);
 						if (dateId == splitDateId) {
 							percent = 100.0f * (close - previousClose) / previousClose;
 							netChange = previousClose - close;
-							
-							markcap=markcap*(1.0f+percent/100.f);
+
+							markcap = markcap * (1.0f + percent / 100.f);
+						} else {
+							float percent1 = 100.0f * (close - previousClose) / previousClose;
+
+							float markcap1 = previousCap * (1.0f + percent1 / 100.f);
+
+							if (markcap1 < 0.01f) {
+								previousCap = markcap;
+							} else if (markcap > 1.25f * markcap1 || markcap < 0.8f * markcap1) {
+								previousCap = markcap1;
+								markcap = markcap1;
+							} else {
+								previousCap = markcap;
+							}
 						}
 						insertDataStmnt.setFloat(3, percent);
 						insertDataStmnt.setFloat(4, close);
@@ -335,6 +368,25 @@ public class RecalSteps {
 						insertDataStmnt.execute();
 						previousClose = close;
 					} else if (dateId < splitDateId && !reverse) {
+
+						if (previousClose > 0.01f) {
+							float percent1 = 100.0f * (close/splitRatio - previousClose) / previousClose;
+
+							float markcap1 = previousCap * (1.0f + percent1 / 100.f);
+
+							if (markcap1 < 0.01f) {
+								previousCap = markcap;
+							} else if (markcap > 1.25f * markcap1 || markcap < 0.8f * markcap1) {
+								previousCap = markcap1;
+								markcap = markcap1;
+							} else {
+								previousCap = markcap;
+							}
+						} else {
+							previousCap = markcap;
+
+						}
+
 						insertDataStmnt.setInt(1, newStockID);
 						insertDataStmnt.setInt(2, dateId);
 						insertDataStmnt.setFloat(3, percent);
@@ -353,15 +405,31 @@ public class RecalSteps {
 						insertDataStmnt.setInt(16, pink);
 						insertDataStmnt.setInt(17, cx520);
 						insertDataStmnt.execute();
+
 						previousClose = close / splitRatio;
 					} else if (dateId >= splitDateId && !reverse) {
+
 						insertDataStmnt.setInt(1, newStockID);
 						insertDataStmnt.setInt(2, dateId);
 						if (dateId == splitDateId) {
 							percent = 100.0f * (close - previousClose) / previousClose;
 							netChange = previousClose - close;
-							markcap=markcap*(1.0f+percent/100.f);
+							markcap = markcap * (1.0f + percent / 100.f);
+						} else {
+							float percent1 = 100.0f * (close - previousClose) / previousClose;
+
+							float markcap1 = previousCap * (1.0f + percent1 / 100.f);
+
+							if (markcap1 < 0.01f) {
+								previousCap = markcap;
+							} else if (markcap > 1.25f * markcap1 || markcap < 0.8f * markcap1) {
+								previousCap = markcap1;
+								markcap = markcap1;
+							} else {
+								previousCap = markcap;
+							}
 						}
+
 						insertDataStmnt.setFloat(3, percent);
 						insertDataStmnt.setFloat(4, close);
 						insertDataStmnt.setFloat(5, netChange);
