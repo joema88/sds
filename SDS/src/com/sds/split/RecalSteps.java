@@ -19,11 +19,11 @@ public class RecalSteps {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		// int stockID = 24651;
-		int stockID = 5948;
-		String symbol = "HUSN";// PDS
-		int splitDateId = 9031; // THE DATEID THAT CLOSE PRICE JUMPED OR DROPPED
+		int stockID = 4508;
+		String symbol = "JT";// PDS
+		int splitDateId = 9032; // THE DATEID THAT CLOSE PRICE JUMPED OR DROPPED
 		int endDateId = 9044;
-		int splitRatio = 5;
+		int splitRatio = 8;
 		boolean reseveSplit = true;
 		// step 1, copy over basic data, works!
 		// e.g. false is 1:5 split, true is 5:1 reverse split
@@ -315,7 +315,7 @@ public class RecalSteps {
 							percent = 100.0f * (close - previousClose) / previousClose;
 							netChange = previousClose - close;
 							
-							markcap=markcap/splitRatio;
+							markcap=markcap*(1.0f+percent/100.f);
 						}
 						insertDataStmnt.setFloat(3, percent);
 						insertDataStmnt.setFloat(4, close);
@@ -360,7 +360,7 @@ public class RecalSteps {
 						if (dateId == splitDateId) {
 							percent = 100.0f * (close - previousClose) / previousClose;
 							netChange = previousClose - close;
-							markcap=markcap*splitRatio;
+							markcap=markcap*(1.0f+percent/100.f);
 						}
 						insertDataStmnt.setFloat(3, percent);
 						insertDataStmnt.setFloat(4, close);
