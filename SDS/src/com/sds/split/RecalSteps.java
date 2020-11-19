@@ -19,12 +19,12 @@ public class RecalSteps {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		// int stockID = 24651;
-		int stockID = 527;
-		String symbol = "NEE";// PDS
-		int splitDateId = 9029; // THE DATEID THAT CLOSE PRICE JUMPED OR DROPPED
+		int stockID = 4325;
+		String symbol = "EGLE";// PDS
+		int splitDateId = 8999; // THE DATEID THAT CLOSE PRICE JUMPED OR DROPPED
 		int endDateId = 9044;
-		float splitRatio = 4;
-		boolean reseveSplit = false;
+		float splitRatio = 1.0f;
+		boolean reseveSplit = true;
 		// step 1, copy over basic data, works!
 		// e.g. false is 1:5 split, true is 5:1 reverse split
 
@@ -229,6 +229,8 @@ public class RecalSteps {
 				}
 
 			}
+			//recalcaulte EE8 history for alias stock
+			UpDownMeasure.processStockEE8History(stockID);
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}

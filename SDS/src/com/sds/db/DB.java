@@ -85,6 +85,7 @@ public class DB {
 	// BASED ON D9 UP/DOWN AND SCALE, WE MAY ASSIGN MINOR VALUE
 	// THIS IS IS AN EXTREMELY SHORT TERM BULLISH SIGNAL WEEKS TO ONE MONTH
 	// ALTER TABLE BBROCK ADD COLUMN VBI TINYINT DEFAULT 0;
+	// ALTER TABLE BBROCK ADD COLUMN EE8 TINYINT DEFAULT 0; //VBI=118 and FUC=8 within 3 days, then EE8=8
 
 	/*
 	 * ALTER TABLE BBROCK ADD COLUMN TSM SMALLINT DEFAULT 0; //Teal color total
@@ -238,12 +239,29 @@ public class DB {
 	private static PreparedStatement DDD9Stmnt = null;
 	private static PreparedStatement deleteSymb = null;
 	private static PreparedStatement updateStockID = null;
-	// f1UpdateStmnt , fucStmnt
-	// ,,
-	// fucf, fud, updateFUC
-
+	private static PreparedStatement updateEE8 = null;
+	private static PreparedStatement stkvbifx = null;
+	private static PreparedStatement vbifx = null;
+	private static PreparedStatement cDateId= null;
+	
 	public static void closeConnection() {
 		try {
+			if(cDateId != null) {
+				cDateId.close();
+				cDateId = null;
+			}
+			if(vbifx != null) {
+				vbifx.close();
+				vbifx  = null;
+			}
+			if( stkvbifx != null) {
+				stkvbifx.close();
+				stkvbifx = null;
+			}
+			if( updateEE8 != null) {
+				updateEE8.close();
+				updateEE8 = null;
+			}
 			if(updateStockID != null) {
 				updateStockID.close();
 				updateStockID = null;
@@ -825,6 +843,20 @@ public class DB {
 		return currentUPC;
 	}
 
+	public static PreparedStatement getCurrentDateID() {
+		if (cDateId== null) {
+			try {
+				String query = "select MAX(DATEID) FROM BBROCK";
+				cDateId = getConnection().prepareStatement(query);
+				System.out.println(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return cDateId;
+	}
 	public static PreparedStatement getMinDPC() {
 		if (minDPC == null) {
 			try {
@@ -854,6 +886,50 @@ public class DB {
 		return fud;
 	}
 
+	public static PreparedStatement getTodayVBIFUCX() {
+		if (vbifx == null) {
+			try {
+				String query = "select FUC,VBI,STOCKID,CLOSE, DATEID FROM BBROCK WHERE DATEID=? AND ( FUC>? OR VBI>? ) ORDER BY STOCKID ASC";
+				vbifx  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return vbifx ;
+	}
+	
+	public static PreparedStatement getStockVBIFUCX() {
+		if (stkvbifx == null) {
+			try {
+				String query = "select FUC,VBI,STOCKID,CLOSE, DATEID FROM BBROCK WHERE STOCKID=? AND DATEID>=? AND DATEID<=? ORDER BY DATEID DESC";
+				stkvbifx  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return stkvbifx ;
+	}
+	
+	
+	public static PreparedStatement updateEE8() {
+		if (updateEE8 == null) {
+			try {
+				String query = "UPDATE BBROCK SET EE8=? WHERE STOCKID=? AND DATEID=?";
+				updateEE8  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return updateEE8;
+	}
+	
+	
 	public static PreparedStatement getFUCF() {
 		if (fucf == null) {
 			try {
