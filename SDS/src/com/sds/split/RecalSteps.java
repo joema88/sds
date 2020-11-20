@@ -22,7 +22,7 @@ public class RecalSteps {
 		int stockID = 4325;
 		String symbol = "EGLE";// PDS
 		int splitDateId = 8999; // THE DATEID THAT CLOSE PRICE JUMPED OR DROPPED
-		int endDateId = 9044;
+		int endDateId = 9046;
 		float splitRatio = 1.0f;
 		boolean reseveSplit = true;
 		// step 1, copy over basic data, works!
@@ -337,7 +337,7 @@ public class RecalSteps {
 							percent = 100.0f * (close - previousClose) / previousClose;
 							netChange = previousClose - close;
 
-							markcap = markcap * (1.0f + percent / 100.f);
+							markcap = previousCap * (1.0f + percent / 100.f);
 						} else {
 							float percent1 = 100.0f * (close - previousClose) / previousClose;
 
@@ -416,7 +416,7 @@ public class RecalSteps {
 						if (dateId == splitDateId) {
 							percent = 100.0f * (close - previousClose) / previousClose;
 							netChange = previousClose - close;
-							markcap = markcap * (1.0f + percent / 100.f);
+							markcap = previousCap * (1.0f + percent / 100.f);
 						} else {
 							float percent1 = 100.0f * (close - previousClose) / previousClose;
 
