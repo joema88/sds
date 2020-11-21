@@ -1335,7 +1335,7 @@ public class DB {
 	public static PreparedStatement getOriginalData() {
 		if (originalDataStmnt == null) {
 			try {
-				String query = "SELECT STOCKID,DATEID,PERCENT,CLOSE,NETCHANGE,ATR,OPEN,HIGH,LOW,LOW52,HIGH52,MARKCAP,VOLUME,YELLOW,TEAL,PINK,CX520 FROM BBROCK WHERE STOCKID=? ORDER BY DATEID DESC";
+				String query = "SELECT STOCKID,DATEID,PERCENT,CLOSE,NETCHANGE,ATR,OPEN,HIGH,LOW,LOW52,HIGH52,MARKCAP,VOLUME,YELLOW,TEAL,PINK,CX520 FROM BBROCK WHERE STOCKID=? ORDER BY DATEID ASC";
 				originalDataStmnt = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
