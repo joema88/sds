@@ -19,11 +19,11 @@ public class RecalSteps {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		// int stockID = 24651;
-		int stockID = 4325;
-		String symbol = "EGLE";// PDS
-		int splitDateId = 8999; // THE DATEID THAT CLOSE PRICE JUMPED OR DROPPED
-		int endDateId = 9046;
-		float splitRatio = 1.0f;
+		int stockID = 4951;
+		String symbol = "MDLY";// PDS
+		int splitDateId = 9033; // THE DATEID THAT CLOSE PRICE JUMPED OR DROPPED
+		int endDateId = 9047;
+		float splitRatio = 10.0f;
 		boolean reseveSplit = true;
 		// step 1, copy over basic data, works!
 		// e.g. false is 1:5 split, true is 5:1 reverse split
@@ -84,6 +84,7 @@ public class RecalSteps {
 		}
 		UpDownMeasure.processOBIHistory(endDateId - splitDateId + 1);
 		UpDownMeasure.processF18History(endDateId - splitDateId + 1);
+		UpDownMeasure.processIndustryAVGPDYDeltaHistory(-1);
 
 	}
 
@@ -362,6 +363,7 @@ public class RecalSteps {
 						insertDataStmnt.setFloat(10, low52);
 						insertDataStmnt.setFloat(11, high52);
 						insertDataStmnt.setFloat(12, markcap);
+						System.out.println(dateId+" "+markcap+": "+percent);
 						insertDataStmnt.setFloat(13, volume);
 						insertDataStmnt.setInt(14, yellow);
 						insertDataStmnt.setInt(15, teal);

@@ -53,7 +53,7 @@ public class DB {
 	// THE DAY
 	// ALTER TABLE DATES ADD COLUMN F8 SMALLINT DEFAULT 0; //FUC=8 NUMBER COUNT OF
 	// THE DAY
-
+	
 	// 3. CREATE TABLE BBROCK(STOCKID SMALLINT, DATEID SMALLINT, PERCENT FLOAT
 	// DEFAULT 0.0, CLOSE FLOAT DEFAULT 0.0,NETCHANGE FLOAT DEFAULT 0.0, ATR FLOAT
 	// DEFAULT 0.0, OPEN FLOAT DEFAULT 0.0,HIGH FLOAT DEFAULT 0.0, LOW FLOAT DEFAULT
@@ -77,6 +77,11 @@ public class DB {
 	// sector avg BDY
 	// ALTER TABLE BBROCK ADD COLUMN SPY FLOAT DEFAULT 0.0; //Industry sub sector
 	// avg PDY
+	// ALTER TABLE BBROCK ADD COLUMN IAYD FLOAT DEFAULT 0.0;
+		//-- INDUSTRY AVERAGE YIELD DELTA, EACH DAY, FOR A INDUSTRY/sub-industry GROUP ORDER BY MARKCAP ASC
+		//-- AVERAGE THE BDY (SUM/COUNT) THEN DELTA TWO VALUE (SMALL CAP AVERAGE - BIG CAP AVERAGE)
+		//-- THIS IS TO INDICATE IF AN INDUSTRY IS IN UPSWING AND COMPETITIVENESS RELATED TO MARKCAP
+
 	// ALTER TABLE BBROCK ADD COLUMN DD FLOAT DEFAULT 0.0; //Days to deplete the
 	// stock shares, markcap/(vol*close);
 	// ALTER TABLE BBROCK ADD COLUMN D9 FLOAT DEFAULT 0.0; //AVG of last 10 days of
@@ -243,9 +248,19 @@ public class DB {
 	private static PreparedStatement stkvbifx = null;
 	private static PreparedStatement vbifx = null;
 	private static PreparedStatement cDateId= null;
+	private static PreparedStatement subIndStockCount = null;
+	private static PreparedStatement updateIndAvgYieldDelta = null;
 	
 	public static void closeConnection() {
 		try {
+			if(updateIndAvgYieldDelta != null) {
+				updateIndAvgYieldDelta.close();
+				updateIndAvgYieldDelta = null;
+			}
+			if(subIndStockCount != null) {
+				subIndStockCount.close();
+				subIndStockCount = null;
+			}
 			if(cDateId != null) {
 				cDateId.close();
 				cDateId = null;
@@ -1939,10 +1954,24 @@ public class DB {
 		return f8UpdateStmnt;
 	}
 
+	public static PreparedStatement getSubIndStockCount() {
+		if (subIndStockCount== null) {
+			try {
+				String query = "SELECT count(*) FROM  BBROCK a, SYMBOLS b, DATES c WHERE a.DATEID=c.DATEID and a.DATEID=? and a.STOCKID=b.STOCKID and b.INDID=? and b.SUBID=?";
+				subIndStockCount = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return subIndStockCount;
+	}
+	
 	public static PreparedStatement getAllSubIndStockInfo() {
 		if (subIndStockInfo == null) {
 			try {
-				String query = "SELECT a.DATEID, CDATE, a.STOCKID,b.SYMBOL, close, BDY,PDY FROM  BBROCK a, SYMBOLS b, DATES c WHERE a.DATEID=c.DATEID and a.DATEID=? and a.STOCKID=b.STOCKID and b.INDID=? and b.SUBID=?;";
+				String query = "SELECT a.DATEID, CDATE, a.STOCKID,b.SYMBOL, close, BDY,PDY FROM  BBROCK a, SYMBOLS b, DATES c WHERE a.DATEID=c.DATEID and a.DATEID=? and a.STOCKID=b.STOCKID and b.INDID=? and b.SUBID=? ORDER BY MARKCAP ASC";
 				subIndStockInfo = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
@@ -2009,6 +2038,23 @@ public class DB {
 		return subIndAvgYieldUpdate;
 	}
 
+	public static PreparedStatement updateIndAvgYieldDelta() {
+		getConnection();
+
+		if (updateIndAvgYieldDelta == null) {
+			try {
+
+				String query = "UPDATE BBROCK SET IAYD=? WHERE STOCKID = ? AND DATEID =? ";
+
+				updateIndAvgYieldDelta = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return updateIndAvgYieldDelta;
+	}
+	
 	public static PreparedStatement updateStockSectorStmnt() {
 		getConnection();
 
