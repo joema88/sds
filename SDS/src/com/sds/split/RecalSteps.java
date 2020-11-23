@@ -45,6 +45,7 @@ public class RecalSteps {
 			// recalculate industry, sub-industry, and whole aggregate information
 			// going forward from that point
 			recalculateAggregates(splitDateId, endDateId);
+			
 		}
 	}
 
@@ -81,11 +82,13 @@ public class RecalSteps {
 		for (dateId = splitDateId; dateId <= endDateId; dateId++) {
 			Summary.processDailyUTurnSummary(dateId);
 			UpDownMeasure.processTodayIndustryAVGPDY(dateId, -1);
+			
 		}
 		UpDownMeasure.processOBIHistory(endDateId - splitDateId + 1);
 		UpDownMeasure.processF18History(endDateId - splitDateId + 1);
 		UpDownMeasure.processIndustryAVGPDYDeltaHistory(-1);
-
+		//this has to be done after AVGPDYDeltaHistory
+		UpDownMeasure.processBDAHistory();
 	}
 
 	public static void recalculateAliasStock(int stockID, String symbol) {
@@ -230,8 +233,10 @@ public class RecalSteps {
 				}
 
 			}
-			//recalcaulte EE8 history for alias stock
+			//recalculate EE8 history for alias stock
 			UpDownMeasure.processStockEE8History(stockID);
+			//recalculate DBA history for alias stock
+			UpDownMeasure.processStockBDAHistory(stockID);
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}

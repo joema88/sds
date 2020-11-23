@@ -82,9 +82,13 @@ public class UpDownMeasure {
 		// processTodayEE8(currentDateID);
 		// daily step 12, process IAYD
 		// processTodayIndustryAVGPDYDelta(currentDateID, -1);
+		// daily step 13, process BDA [(Delta of SAY)*100 + (Delta of IAYD)]
+		// processTodayBDA(currentDateID, -1);
 
+		// process entire BDA history
+		processBDAHistory();
 		// calculate entire history
-		processIndustryAVGPDYDeltaHistory(-1);
+		// processIndustryAVGPDYDeltaHistory(-1);
 		// processEE8History();
 		// processStockVBIHistory(963);
 		// processVBIHistory(false);
@@ -2099,6 +2103,153 @@ public class UpDownMeasure {
 		}
 	}
 
+	// process entire Boduang Delta (Delta of SAY*100+ Delta of IAYD) Alarm history
+	public static void processBDAHistory() {
+
+		long t1 = System.currentTimeMillis();
+
+		initCurrentDateID();// init currentDateID value based on DB
+		// need a for loop here for history
+
+		// from the 1st day that we have SAY data 9/25/2020
+		// as SAY
+		for (int w = 9007; w <= currentDateID; w++) {
+
+			processTodayBDA(w, -1);
+
+		}
+
+	}
+
+	public static void processStockBDAHistory(int stockID) {
+
+		long t1 = System.currentTimeMillis();
+
+		initCurrentDateID();// init currentDateID value based on DB
+		// need a for loop here for history
+
+		// from the 1st day that we have SAY data 9/25/2020
+		// as SAY
+		for (int w = 9007; w <= currentDateID; w++) {
+
+			processTodayBDA(w, stockID);
+
+		}
+
+	}
+
+	public static void processTodayBDA(int dateId, int stockID) {
+		try {
+			PreparedStatement indIdStmnt = DB.getIndIDStmnt();
+			PreparedStatement subIndStockInfo = DB.getAllSubIndStockInfo();
+
+			PreparedStatement stockInfoHistory = DB.getStockInfoHistory();
+			PreparedStatement DBAdUpdate = DB.updateBDAStmnt();
+
+			System.out.println("Processing BDA dateId--" + dateId);
+			indIdStmnt.setInt(1, dateId); // only after the buyPoint 1 day we have calculation
+
+			ResultSet rs = indIdStmnt.executeQuery();
+			int currentIndId = 0;
+			int currentSubIndId = 0;
+
+			Hashtable IndStocks = new Hashtable();
+			float indSumBDY = 0.0f;
+			int indSumPDY = 0;
+			while (rs.next()) {
+				// select COUNT(*),b.INDID, INDUSTRY,b.SUBID, SUBINDUSTRY FROM BBROCK a, SYMBOLS
+				// b,DATES c, INDUSTRY d, SUBINDUSTRY e
+				// WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and b.INDID=d.INDID and
+				// b.INDID=e.INDID and b.SUBID=e.SUBID and a.DATEID = ?
+				// GROUP BY b.INDID,b.SUBID ORDER BY b.INDID ASC,b.SUBID ASC
+
+				currentIndId = rs.getInt(2);
+				currentSubIndId = rs.getInt(4);
+
+				// String query = "SELECT a.DATEID, CDATE, a.STOCKID,
+				// b.SYMBOL, close, BDY,PDY FROM BBROCK a, SYMBOLS b,
+				// DATES c WHERE a.DATEID=c.DATEID and a.DATEID=?
+				// and a.STOCKID=b.STOCKID and b.INDID=? and b.SUBID=?
+				// ORDER BY MARKCAP ASC";
+
+				subIndStockInfo.setInt(1, dateId);
+				subIndStockInfo.setInt(2, currentIndId);
+				subIndStockInfo.setInt(3, currentSubIndId);
+
+				ResultSet rs0 = subIndStockInfo.executeQuery();
+
+				while (rs0.next()) {
+					// String query = "SELECT a.DATEID, CDATE, a.STOCKID,
+					// b.SYMBOL, close, BDY,PDY,SAY,IAYD FROM BBROCK a,
+					// SYMBOLS b, DATES c WHERE a.DATEID=c.DATEID and
+					// a.DATEID>=? and a.DATEID<=? and a.STOCKID=b.STOCKID
+					// and a.STOCKID=? ORDER BY a.DATEID DESC";
+
+					int stockId = rs0.getInt(3);
+					
+					stockInfoHistory.setInt(1, (dateId - 5));
+					stockInfoHistory.setInt(2, dateId);
+					stockInfoHistory.setInt(3, stockId);
+
+					ResultSet rs1 = stockInfoHistory.executeQuery();
+
+					float say1 = 0.0f;
+					float say2 = 0.0f;
+					float iayd1 = 0.0f;
+					float iayd2 = 0.0f;
+
+					int lcc = 0;
+					while (rs1.next()) {
+						String symb = rs1.getString(4);
+						if (lcc == 0) {
+							say1 = rs1.getFloat(8);
+							iayd1 = rs1.getFloat(9);
+						} else {
+							say2 = rs1.getFloat(8);
+							iayd2 = rs1.getFloat(9);
+
+							boolean update = false;
+
+							if (stockID > 0 && stockID == (20000 + stockId)) {
+								update = true;
+							} else if (stockID < 0) {
+								update = true;
+							}
+
+							if (update) {
+
+								// calculate BDA and update
+								float BDA = (say1 - say2) * 100 + (iayd1 - iayd2);
+								// String query = "UPDATE BBROCK SET BDA=?
+								// WHERE STOCKID =? and DATEID=?";
+
+								DBAdUpdate.setFloat(1, BDA);
+
+								if (stockID > 0) {
+									DBAdUpdate.setInt(2, stockID);
+								} else {
+									DBAdUpdate.setInt(2, stockId);
+								}
+								DBAdUpdate.setInt(3, dateId);
+								DBAdUpdate.executeUpdate();
+							}
+						}
+
+						lcc++;
+						if (lcc >= 2) {
+							lcc = 0;
+							break;
+						}
+
+					}
+				}
+
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
+
 	// Accumulated yield of stocks since each stage buying to selling
 	// the purpose of such calculation is to find sector rotation or sector
 	// advantage, this is done after individual stock calculation of such
@@ -2194,9 +2345,12 @@ public class UpDownMeasure {
 				currentIndId = rs.getInt(2);
 				currentSubIndId = rs.getInt(4);
 
-				// String query = "SELECT a.DATEID, CDATE, a.STOCKID,b.SYMBOL, close,
-//BDY,PDY FROM  BBROCK a, SYMBOLS b, DATES c WHERE a.DATEID=c.DATEID and a.DATEID=? 
-				// and a.STOCKID=b.STOCKID and b.INDID=? and b.SUBID=?;";
+				// String query = "SELECT a.DATEID, CDATE, a.STOCKID,
+				// b.SYMBOL, close, BDY,PDY FROM BBROCK a, SYMBOLS b,
+				// DATES c WHERE a.DATEID=c.DATEID and a.DATEID=?
+				// and a.STOCKID=b.STOCKID and b.INDID=? and b.SUBID=?
+				// ORDER BY MARKCAP ASC";
+
 				subIndStockInfo.setInt(1, dateId);
 				subIndStockInfo.setInt(2, currentIndId);
 				subIndStockInfo.setInt(3, currentSubIndId);
@@ -2317,9 +2471,10 @@ public class UpDownMeasure {
 				currentIndId = rs.getInt(2);
 				currentSubIndId = rs.getInt(4);
 
-				// String query = "SELECT count(*) FROM BBROCK a, SYMBOLS b,
-				// DATES c WHERE a.DATEID=c.DATEID and a.DATEID=?
-				// and a.STOCKID=b.STOCKID and b.INDID=? and b.SUBID=?";
+				// String query = "SELECT count(*) FROM BBROCK a,
+				// SYMBOLS b, DATES c WHERE a.DATEID=c.DATEID and
+				// a.DATEID=? and a.STOCKID=b.STOCKID and b.INDID=?
+				// and b.SUBID=?";
 
 				subStockCount.setInt(1, dateId);
 				subStockCount.setInt(2, currentIndId);
@@ -2333,9 +2488,11 @@ public class UpDownMeasure {
 
 				if (totalSubCount > 0) {
 					int halfCount = totalSubCount / 2 + totalSubCount % 2;
-					// String query = "SELECT a.DATEID, CDATE, a.STOCKID,b.SYMBOL, close,
-//BDY,PDY FROM  BBROCK a, SYMBOLS b, DATES c WHERE a.DATEID=c.DATEID and a.DATEID=? 
-					// and a.STOCKID=b.STOCKID and b.INDID=? and b.SUBID=? ORDER BY MARKCAP ASC";
+					// String query = "SELECT a.DATEID, CDATE, a.STOCKID,
+					// b.SYMBOL, close, BDY,PDY FROM BBROCK a, SYMBOLS b,
+					// DATES c WHERE a.DATEID=c.DATEID and a.DATEID=? and
+					// a.STOCKID=b.STOCKID and b.INDID=? and b.SUBID=?
+					// ORDER BY MARKCAP ASC";
 					subIndStockInfo.setInt(1, dateId);
 					subIndStockInfo.setInt(2, currentIndId);
 					subIndStockInfo.setInt(3, currentSubIndId);
@@ -2350,10 +2507,10 @@ public class UpDownMeasure {
 					float sumBDY2 = 0.0f;
 					int sumPDY2 = 0;
 
-					if (currentIndId == 20 && currentSubIndId == 1&& dateId==9047) {
+					if (currentIndId == 20 && currentSubIndId == 1 && dateId == 9047) {
 						System.out.println("debugging....");
 					}
-					
+
 					int lc = 0;
 					while (rs1.next()) {
 						lc++;

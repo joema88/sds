@@ -91,7 +91,10 @@ public class DB {
 	// THIS IS IS AN EXTREMELY SHORT TERM BULLISH SIGNAL WEEKS TO ONE MONTH
 	// ALTER TABLE BBROCK ADD COLUMN VBI TINYINT DEFAULT 0;
 	// ALTER TABLE BBROCK ADD COLUMN EE8 TINYINT DEFAULT 0; //VBI=118 and FUC=8 within 3 days, then EE8=8
-
+    // ALTER TABLE BBROCK ADD COLUMN BDA SMALLINT DEFAULT 0; //Boduang Delta (of SAY) Delta (of IAYD) Sum
+	//This field indicates the delta values of two fields SAY (sub-industry accumlated yield of mini-bull boduang)
+	//and delta of IAYD (Industry(sub) accumlated yield delta(bottom substract top half marketcap stocks yield)
+	//formula: [SAY at n+1 (dateid) - SAY at n (dateId)]*100+[IAYD at n+1 (dateid) - IAYD at n (dateid)]
 	/*
 	 * ALTER TABLE BBROCK ADD COLUMN TSM SMALLINT DEFAULT 0; //Teal color total
 	 * summary between two days ALTER TABLE BBROCK ADD COLUMN TOM TINYINT DEFAULT 0;
@@ -250,9 +253,19 @@ public class DB {
 	private static PreparedStatement cDateId= null;
 	private static PreparedStatement subIndStockCount = null;
 	private static PreparedStatement updateIndAvgYieldDelta = null;
+	private static PreparedStatement updateBDAStmnt = null;
+	private static PreparedStatement stockInfoHistory = null;
 	
 	public static void closeConnection() {
 		try {
+			if( stockInfoHistory != null) {
+				stockInfoHistory.close();
+				stockInfoHistory = null;
+			}
+			if( updateBDAStmnt != null) {
+				updateBDAStmnt.close();
+				updateBDAStmnt = null;
+			}
 			if(updateIndAvgYieldDelta != null) {
 				updateIndAvgYieldDelta.close();
 				updateIndAvgYieldDelta = null;
@@ -1971,7 +1984,7 @@ public class DB {
 	public static PreparedStatement getAllSubIndStockInfo() {
 		if (subIndStockInfo == null) {
 			try {
-				String query = "SELECT a.DATEID, CDATE, a.STOCKID,b.SYMBOL, close, BDY,PDY FROM  BBROCK a, SYMBOLS b, DATES c WHERE a.DATEID=c.DATEID and a.DATEID=? and a.STOCKID=b.STOCKID and b.INDID=? and b.SUBID=? ORDER BY MARKCAP ASC";
+				String query = "SELECT a.DATEID, CDATE, a.STOCKID,b.SYMBOL, close, BDY,PDY FROM  BBROCK a, SYMBOLS b, DATES c WHERE a.DATEID=c.DATEID and a.DATEID=?  and a.STOCKID=b.STOCKID and b.INDID=? and b.SUBID=? ORDER BY MARKCAP ASC";
 				subIndStockInfo = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
@@ -1980,6 +1993,20 @@ public class DB {
 		}
 
 		return subIndStockInfo;
+	}
+
+	public static PreparedStatement getStockInfoHistory() {
+		if (stockInfoHistory == null) {
+			try {
+				String query = "SELECT a.DATEID, CDATE, a.STOCKID,b.SYMBOL, close, BDY,PDY,SAY,IAYD FROM  BBROCK a, SYMBOLS b, DATES c WHERE a.DATEID=c.DATEID and a.DATEID>=? and a.DATEID<=? and a.STOCKID=b.STOCKID and a.STOCKID=?  ORDER BY a.DATEID DESC";
+				stockInfoHistory = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return stockInfoHistory;
 	}
 
 	// select COUNT(*),b.INDID, INDUSTRY,b.SUBID, SUBINDUSTRY FROM BBROCK a, SYMBOLS
@@ -2575,6 +2602,24 @@ public class DB {
 
 		return updateVBIStmnt;
 	}
+	
+	
+	public static PreparedStatement updateBDAStmnt() {
+		getConnection();
+
+		if (updateBDAStmnt == null) {
+			try {
+				String query = "UPDATE BBROCK SET BDA=?   WHERE STOCKID =? and DATEID=?";
+
+				updateBDAStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return updateBDAStmnt;
+	}
+	
 	
 	public static PreparedStatement getTYPDSumByStockIDStmnt() {
 		getConnection();
