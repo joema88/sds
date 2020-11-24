@@ -86,7 +86,7 @@ public class UpDownMeasure {
 		// processTodayBDA(currentDateID, -1);
 
 		// process entire BDA history
-		processBDAHistory();
+		//processBDAHistory();
 		// calculate entire history
 		// processIndustryAVGPDYDeltaHistory(-1);
 		// processEE8History();

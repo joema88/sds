@@ -1646,7 +1646,7 @@ public class DB {
 		int nextID = 1;
 		getStatement();
 		try {
-			String query = " SELECT COUNT(*) FROM SYMBOLS";
+			String query = " SELECT MAX(STOCKID) FROM SYMBOLS WHERE STOCKID<10000";
 
 			ResultSet rs = stmnt.executeQuery(query);
 

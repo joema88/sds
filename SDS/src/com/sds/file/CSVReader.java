@@ -200,7 +200,7 @@ public class CSVReader {
 
 				inserted = true;
 			} catch (Exception ex) {
-
+				ex.printStackTrace(System.out);
 			}
 		}
 		return inserted;
@@ -657,6 +657,10 @@ public class CSVReader {
 				if (start) {
 					String[] data = line.split(cvsSplitBy);
 					String symbol = data[0];
+
+					if (symbol.equalsIgnoreCase("ATNFW")) {
+						System.out.println("Debug started...");
+					}
 					// symbol must not have small cases or /
 					boolean validScopeSymbol = true;
 					if (symbol.indexOf("/") >= 0 || symbol.compareTo(symbol.toUpperCase()) != 0)
@@ -978,6 +982,8 @@ public class CSVReader {
 
 								rockStmnt.execute();
 							} catch (Exception ex) {
+								System.out.println("File " + fileName);
+								System.out.println(stockID + " stockID " + symbol);
 								ex.printStackTrace(System.out);
 							}
 							// insert records;
@@ -1180,11 +1186,11 @@ public class CSVReader {
 							if (rs4.next()) {
 								int indid = rs4.getInt(1);
 								int subid = rs4.getInt(2);
-								
-								//String query = "UPDATE SYMBOLS SET INDID = ?, SUBID = ? WHERE SYMBOL = ?";
+
+								// String query = "UPDATE SYMBOLS SET INDID = ?, SUBID = ? WHERE SYMBOL = ?";
 								updateStockIndustryCode.setInt(1, indid);
 								updateStockIndustryCode.setInt(2, subid);
-								updateStockIndustryCode.setString(3,symbol);
+								updateStockIndustryCode.setString(3, symbol);
 								updateStockIndustryCode.execute();
 								System.out.println(symbol + " -- " + industry + ": " + subIndustry);
 							}
