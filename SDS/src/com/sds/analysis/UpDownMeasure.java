@@ -57,25 +57,25 @@ public class UpDownMeasure {
 		initCurrentDateID();
 		// processUpDownHistory();//no longer do DM update
 		// daily step 1
-		// processDMAHistory(); //DM update here
+	   // processDMAHistory(); //DM update here
 		// daily step 2
 		// processDMRankAvgDMHistory();
 		// daily step 3
 		// processFUCHistory();
 		// daily step 4
-		// Summary.processDailyUTurnSummary(currentDateID);
+		//Summary.processDailyUTurnSummary(currentDateID);
 		// int buyDateId = 9007; //buy date
 
 		// daily step 5
 		// processTodayAllPDY(currentDateID, buyDateId,-1);
 		// daily step 6
-		// processTodayIndustryAVGPDY(currentDateID,-1);
+		//processTodayIndustryAVGPDY(currentDateID, -1);
 		// daily step 7, update daily OBI (Over bought indicator)
 		// processOBIHistory(1);
 		// daily step 8, update daily f1, f8 count
 		// processF18History(1);
 		// daily step 9, process D2, D9 for each stock
-		// processD2D9History(true);
+	    //  processD2D9History(true);
 		// daily step 10, process today's VBI
 		// processVBIHistory(true);
 		// daily step 11, process EE8
@@ -83,10 +83,10 @@ public class UpDownMeasure {
 		// daily step 12, process IAYD
 		// processTodayIndustryAVGPDYDelta(currentDateID, -1);
 		// daily step 13, process BDA [(Delta of SAY)*100 + (Delta of IAYD)]
-		// processTodayBDA(currentDateID, -1);
+		 processTodayBDA(currentDateID, -1);
 
 		// process entire BDA history
-		//processBDAHistory();
+		// processBDAHistory();
 		// calculate entire history
 		// processIndustryAVGPDYDeltaHistory(-1);
 		// processEE8History();
@@ -2186,7 +2186,7 @@ public class UpDownMeasure {
 					// and a.STOCKID=? ORDER BY a.DATEID DESC";
 
 					int stockId = rs0.getInt(3);
-					
+
 					stockInfoHistory.setInt(1, (dateId - 5));
 					stockInfoHistory.setInt(2, dateId);
 					stockInfoHistory.setInt(3, stockId);

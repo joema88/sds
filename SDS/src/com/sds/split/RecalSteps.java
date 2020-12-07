@@ -19,11 +19,11 @@ public class RecalSteps {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		// int stockID = 24651;
-		int stockID = 4707;
-		String symbol = "ENSV";// PDS
-		int splitDateId = 9048; // THE DATEID THAT CLOSE PRICE JUMPED OR DROPPED
-		int endDateId = 9048;
-		float splitRatio = 15.0f;
+		int stockID = 4897;
+		String symbol = "NCSM";// PDS
+		int splitDateId = 9053; // THE DATEID THAT CLOSE PRICE JUMPED OR DROPPED
+		int endDateId = 9056;
+		float splitRatio = 20.0f;
 		boolean reseveSplit = true;
 		// step 1, copy over basic data, works!
 		// e.g. false is 1:5 split, true is 5:1 reverse split
