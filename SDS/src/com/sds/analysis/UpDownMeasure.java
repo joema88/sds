@@ -57,25 +57,25 @@ public class UpDownMeasure {
 		initCurrentDateID();
 		// processUpDownHistory();//no longer do DM update
 		// daily step 1
-	   // processDMAHistory(); //DM update here
+		// processDMAHistory(); //DM update here
 		// daily step 2
 		// processDMRankAvgDMHistory();
 		// daily step 3
 		// processFUCHistory();
 		// daily step 4
-		//Summary.processDailyUTurnSummary(currentDateID);
+		// Summary.processDailyUTurnSummary(currentDateID);
 		// int buyDateId = 9007; //buy date
 
 		// daily step 5
 		// processTodayAllPDY(currentDateID, buyDateId,-1);
 		// daily step 6
-		//processTodayIndustryAVGPDY(currentDateID, -1);
+		// processTodayIndustryAVGPDY(currentDateID, -1);
 		// daily step 7, update daily OBI (Over bought indicator)
 		// processOBIHistory(1);
 		// daily step 8, update daily f1, f8 count
 		// processF18History(1);
 		// daily step 9, process D2, D9 for each stock
-	    //  processD2D9History(true);
+		// processD2D9History(true);
 		// daily step 10, process today's VBI
 		// processVBIHistory(true);
 		// daily step 11, process EE8
@@ -83,8 +83,12 @@ public class UpDownMeasure {
 		// daily step 12, process IAYD
 		// processTodayIndustryAVGPDYDelta(currentDateID, -1);
 		// daily step 13, process BDA [(Delta of SAY)*100 + (Delta of IAYD)]
-		 processTodayBDA(currentDateID, -1);
+		// processTodayBDA(currentDateID, -1);
+		// daily step 14, process last day TBK, last 30 days breakout bullish pattern
+		// processTBKHistory(true);
 
+		//// process entire TBK history
+		processTBKHistory(false);
 		// process entire BDA history
 		// processBDAHistory();
 		// calculate entire history
@@ -104,9 +108,9 @@ public class UpDownMeasure {
 		// processStockUpDownHistory(stockId);
 		// processStockDMAHistory(stockId);
 		// update DMRankAvg SET ADM = ?, RK = ?
-//processStockDMRankAvgDMHistory(stockId);
+        //processStockDMRankAvgDMHistory(stockId);
 		// update FUC history
-//	processStockFUCHistory(stockId);
+        //	processStockFUCHistory(stockId);
 		// transfer missing data
 
 	}
@@ -2101,6 +2105,158 @@ public class UpDownMeasure {
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}
+	}
+
+	public static void processTBKHistory(boolean lastOnly) {
+
+		long t1 = System.currentTimeMillis();
+
+		initCurrentDateID();// init currentDateID value based on DB
+		// need a for loop here for history
+
+		// process last 200 days for the moment 9058 to 8858
+		for (int w = currentDateID; w >= 8858; w--) {
+			System.out.println("Processing TBK at " + w);
+			processTodayTBK(w, -1);
+
+			if (lastOnly) {
+				break;
+			}
+
+		}
+
+	}
+
+	public static void processStockTBKHistory(int stockID) {
+		try {
+			initCurrentDateID();// init currentDateID value based on DB
+			PreparedStatement startStmnt = DB.getDateIDStarttmnt();
+			// String query = "SELECT DATEID FROM BBROCK WHERE STOCKID =?
+			// ORDER BY DATEID ASC limit 1";
+			startStmnt.setInt(1, stockID);
+			ResultSet rs1 = startStmnt.executeQuery();
+
+			if (rs1.next()) {
+				int startDate = rs1.getInt(1);
+				// 30 is the past days number
+				for (int w = currentDateID; w >= startDate + 30; w--) {
+					processTodayTBK(w, stockID);
+				}
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+
+	}
+
+	public static void processTodayTBK(int dateID, int stockId) {
+		PreparedStatement getPureTeal = DB.getPureTeal();
+		PreparedStatement updateTBK = DB.updateTBKStmnt();
+		PreparedStatement past30Stmnt = DB.getPast30Stmnt();
+		int pastDays = 30;
+		float tier1 = 0.7f;
+		float tier2 = 0.8f;
+		float tier3 = 0.9f;
+		float tier4 = 1.0f;
+		float priceMaxLow = 0.01f;
+
+		try {
+
+			// String query = "select STOCKID FROM BBROCK WHERE DATEID=?
+			// AND STOCKID>=? AND STOCKID<=? AND TEAL=1 AND YELLOW=0 AND
+			// PINK=0 ORDER BY STOCKID ASC";
+			getPureTeal.setInt(1, dateID);
+			if (stockId <= 0) {
+				getPureTeal.setInt(2, 0);
+				getPureTeal.setInt(3, 1000000);
+			} else {
+				getPureTeal.setInt(2, stockId);
+				getPureTeal.setInt(3, stockId);
+			}
+
+			ResultSet rs1 = getPureTeal.executeQuery();
+
+			while (rs1.next()) {
+				int nextStockID = rs1.getInt(1);
+				try {
+					System.out.println("Processing TBK at " + dateID + " for " + nextStockID);
+					
+					// String query = "SELECT MAX(CLOSE),SUM(YELLOW),SUM(PINK),
+					// AVG(VOLUME) FROM BBROCK WHERE STOCKID=? AND DATEID>=? AND DATEID<=?";
+
+					past30Stmnt.setInt(1, nextStockID);
+					past30Stmnt.setInt(2, dateID - pastDays);
+					past30Stmnt.setInt(3, dateID - 1);
+
+					ResultSet rs2 = past30Stmnt.executeQuery();
+					if (rs2.next()) {
+						float maxClose = rs2.getFloat(1);
+						int sumYellow = rs2.getInt(2);
+						int sumPink = rs2.getInt(3);
+						float avgVol = rs2.getFloat(4);
+						int totalBars = sumYellow + sumPink;
+						// at least Y+P bar number in past days meets low bar
+						if (totalBars >= tier1 * pastDays) {
+							// get today
+							past30Stmnt.setInt(1, nextStockID);
+							past30Stmnt.setInt(2, dateID);
+							past30Stmnt.setInt(3, dateID);
+							ResultSet rs3 = past30Stmnt.executeQuery();
+							if (rs3.next()) {
+								float close = rs3.getFloat(1);
+								float vol = rs3.getFloat(4);
+								// -->TBK(58)/18 (18 if price<>) or 80%(>=24)-->TBK=68/28 or
+								// 90%(>=27)-->TBK=78/38 or 100%(>=30)-->TBK=88/48, Teal number not considered
+								// the last bar close price>max(previous 30 days) or at least within 1% (then
+								// wait for new high)
+								int tbk = 0;
+								if (totalBars >= tier4 * pastDays) {// 100% Yellow
+									if (close > maxClose) {
+										tbk = 88;
+									} else if ((priceMaxLow + 1.0f) * close > maxClose) {
+										tbk = 48;
+									}
+								} else if (totalBars >= tier3 * pastDays) {// 90% Yellow
+									if (close > maxClose) {
+										tbk = 78;
+									} else if ((priceMaxLow + 1.0f) * close > maxClose) {
+										tbk = 38;
+									}
+								} else if (totalBars >= tier2 * pastDays) {// 80% Yellow
+									if (close > maxClose) {
+										tbk = 68;
+									} else if ((priceMaxLow + 1.0f) * close > maxClose) {
+										tbk = 28;
+									}
+								} else if (totalBars >= tier1 * pastDays) {// 70% Yellow
+									if (close > maxClose) {
+										tbk = 58;
+									} else if ((priceMaxLow + 1.0f) * close > maxClose) {
+										tbk = 18;
+									}
+								}
+
+								// then update TBK
+								// String query = "UPDATE BBROCK SET TBK=?
+								// WHERE STOCKID =? and DATEID=?";
+
+								updateTBK.setInt(1, tbk);
+								updateTBK.setInt(2, nextStockID);
+								updateTBK.setInt(3, dateID);
+								updateTBK.executeUpdate();
+							}
+						}
+
+					}
+				} catch (Exception ex) {
+
+				}
+			}
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+
 	}
 
 	// process entire Boduang Delta (Delta of SAY*100+ Delta of IAYD) Alarm history

@@ -113,6 +113,7 @@ public class RecalSteps {
 			TwoBullPattern.updatePTCP2History(symbol, -1, false);
 
 			UpDownMeasure.processD2D9History(stockID);
+			UpDownMeasure.processStockTBKHistory(stockID);
 
 			PreparedStatement dateIdRange = DB.getStockDateIDRange();
 			PreparedStatement dateIDExistStmnt = DB.checkDateIDExistsStmnt();

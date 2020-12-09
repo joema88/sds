@@ -139,6 +139,11 @@ public class DB {
 	 * occurence past 30 days 8, only UPC>40, then 4, otherwise, if not first
 	 * occurence, then assign value 1
 	 */
+	// ALTER TABLE BBROCK ADD COLUMN TBK TINYINT UNSIGNED DEFAULT 0;
+	// TBK means 30 days breakout bullish pattern based on Teal, Yellow, Pink color number
+	// The last bar must be pure Teal, and previous 30 days the sum of Yellow and Pink>=70%(21)
+	// -->TBK(58)/18 (18 if price<>) or 80%(>=24)-->TBK=68/28 or 90%(>=27)-->TBK=78/38 or 100%(>=30)-->TBK=88/48, Teal number not considered
+	//the last bar close price>max(previous 30 days) or at least within 1% (then wait for new high)
 	private static Connection dbcon = null;
 	private static PreparedStatement symbolStmnt = null;
 	private static PreparedStatement symbolDateIDQuery = null;
@@ -255,9 +260,25 @@ public class DB {
 	private static PreparedStatement updateIndAvgYieldDelta = null;
 	private static PreparedStatement updateBDAStmnt = null;
 	private static PreparedStatement stockInfoHistory = null;
+	private static PreparedStatement pureTeal = null;
+	private static PreparedStatement past30Stmnt = null;
+	private static PreparedStatement updateTBKStmnt = null;
+	////, , 
 	
 	public static void closeConnection() {
 		try {
+			if( updateTBKStmnt != null) {
+				updateTBKStmnt.close();
+				updateTBKStmnt = null;
+			}
+			if( past30Stmnt != null) {
+				past30Stmnt.close();
+				past30Stmnt = null;
+			}
+			if(pureTeal != null) {
+				pureTeal.close();
+				pureTeal = null;
+			}
 			if( stockInfoHistory != null) {
 				stockInfoHistory.close();
 				stockInfoHistory = null;
@@ -2570,6 +2591,58 @@ public class DB {
 		return BuySellStmnt;
 	}
 
+	//
+	public static PreparedStatement getPast30Stmnt() {
+		getConnection();
+
+		if (past30Stmnt == null) {
+			try {
+				String query = "SELECT MAX(CLOSE),SUM(YELLOW),SUM(PINK), AVG(VOLUME) FROM BBROCK WHERE STOCKID=? AND DATEID>=? AND DATEID<=?";
+
+				past30Stmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return past30Stmnt;
+	}
+	
+	
+	
+	public static PreparedStatement updateTBKStmnt() {
+		getConnection();
+
+		if (updateTBKStmnt == null) {
+			try {
+				String query = "UPDATE BBROCK SET TBK=?   WHERE STOCKID =? and DATEID=?";
+
+				updateTBKStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return updateTBKStmnt;
+	}
+	
+	public static PreparedStatement getPureTeal() {
+		getConnection();
+
+		if (pureTeal == null) {
+			try {
+				String query = "select STOCKID FROM BBROCK   WHERE DATEID=? AND STOCKID>=? AND STOCKID<=? AND TEAL=1 AND YELLOW=0 AND PINK=0 ORDER BY STOCKID ASC";
+
+				pureTeal = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return pureTeal;
+	}
+
+	
 	public static PreparedStatement getDDD9Stmnt() {
 		getConnection();
 
