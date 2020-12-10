@@ -144,6 +144,11 @@ public class DB {
 	// The last bar must be pure Teal, and previous 30 days the sum of Yellow and Pink>=70%(21)
 	// -->TBK(58)/18 (18 if price<>) or 80%(>=24)-->TBK=68/28 or 90%(>=27)-->TBK=78/38 or 100%(>=30)-->TBK=88/48, Teal number not considered
 	//the last bar close price>max(previous 30 days) or at least within 1% (then wait for new high)
+	//Currently it is implemented as immediately 30 days before, but in reality there may be a gap
+	//between qualified Yellow concentrated area and breakout like NKE, so a better
+	//implementation would be keep track 30 Y+P saturation, then find breakout between>=95% saturation
+	//and breakout point, regardless the gap in between situation.
+	//basically --consolidation peroid + plus gap with no breakout and no clear pattern --> breakout
 	private static Connection dbcon = null;
 	private static PreparedStatement symbolStmnt = null;
 	private static PreparedStatement symbolDateIDQuery = null;
@@ -1937,6 +1942,8 @@ public class DB {
 		return fucStmnt;
 	}
 
+	
+	
 	public static PreparedStatement getFUCTodayStmnt() {
 		getConnection();
 
