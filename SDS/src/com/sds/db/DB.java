@@ -149,6 +149,20 @@ public class DB {
 	//implementation would be keep track 30 Y+P saturation, then find breakout between>=95% saturation
 	//and breakout point, regardless the gap in between situation.
 	//basically --consolidation peroid + plus gap with no breakout and no clear pattern --> breakout
+	
+	//TBK is a special case of a more general 30 breakout pattern: any previous 30 days
+	// if SUM(Yellow+Pink)>=27 (90%), then it is a consolidating phase, if a later day
+	//breakout the highest of that 30 days' highest, then it is likely a bull buy entry point
+	// In this scenario, the gap between the breakout and consolidation 30 days doesn't have to be
+	//fixed (immediately previous as last case). However, the breakout day must be pure Teal color
+	// Also, the breakout must only check the immediately closest consolidation and its max price.
+	//To avoid data duplication, no new breakout signal in the next 30 days after given first
+	//Also no more new signal at least new consolidation phase appears or certain number of sum (Y+P) of rolling 30 days (>=15??? example, to be determined).
+	//Calculation method, rolling 30 days from old to new, sum(Y+P), if sum>=27(90%), recording max(Close) along with it
+	//Otherwise just take the sum. RTS (Rolling 30 days' sum), MCP (max close price)
+	//Based on RTS, MCP and current day close price, pure Teal, we decide TBK (We need to get rid of old implementation logic)
+	//ALTER TABLE BBROCK ADD COLUMN RTS TINYINT UNSIGNED DEFAULT 0;
+	//ALTER TABLE BBROCK ADD COLUMN MCP FLOAT DEFAULT 0.0;
 	private static Connection dbcon = null;
 	private static PreparedStatement symbolStmnt = null;
 	private static PreparedStatement symbolDateIDQuery = null;
@@ -268,10 +282,29 @@ public class DB {
 	private static PreparedStatement pureTeal = null;
 	private static PreparedStatement past30Stmnt = null;
 	private static PreparedStatement updateTBKStmnt = null;
-	////, , 
+	private static PreparedStatement updateRtsMcp = null;
+	private static PreparedStatement resetTBKStmnt = null;
+	private static PreparedStatement closestMCPStmnt = null;
+	private static PreparedStatement tbkStmnt = null;
 	
 	public static void closeConnection() {
 		try {
+			if( tbkStmnt != null) {
+				tbkStmnt.close();
+				tbkStmnt = null;
+			}
+			if( closestMCPStmnt != null) {
+				closestMCPStmnt.close();
+				closestMCPStmnt = null;
+			}
+			if( resetTBKStmnt != null) {
+				resetTBKStmnt.close();
+				resetTBKStmnt = null;
+			}
+			if( updateRtsMcp != null) {
+				updateRtsMcp.close();
+				updateRtsMcp = null;
+			}
 			if( updateTBKStmnt != null) {
 				updateTBKStmnt.close();
 				updateTBKStmnt = null;
@@ -1174,6 +1207,22 @@ public class DB {
 		return updateStockID ;
 	}
 	
+	
+	public static PreparedStatement updateRTS_MCP() {
+		if (updateRtsMcp== null) {
+			try {
+				String query = "UPDATE BBROCK SET RTS=?, MCP=? WHERE STOCKID=? AND DATEID=?";
+
+				updateRtsMcp  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return updateRtsMcp ;
+	}
+	
 	public static PreparedStatement updateD2() {
 		if (updateD2 == null) {
 			try {
@@ -1908,6 +1957,24 @@ public class DB {
 		return closePriceStmnt;
 	}
 
+	
+	public static PreparedStatement getTBKStmnt() {
+		getConnection();
+
+		if (tbkStmnt == null) {
+			try {
+
+				String query = "SELECT TBK, DATEID, CLOSE FROM BBROCK  WHERE TBK>=? AND STOCKID = ? AND DATEID >=? AND DATEID<=? ORDER BY DATEID DESC";
+
+				tbkStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return tbkStmnt;
+	}
+	
 	public static PreparedStatement getUPCStmnt() {
 		getConnection();
 
@@ -2551,6 +2618,23 @@ public class DB {
 
 		return queryPYStmnt;
 	}
+	
+	
+	public static PreparedStatement getClosetMCPStmnt() {
+		getConnection();
+
+		if (closestMCPStmnt == null) {
+			try {
+
+				String query = "select DATEID,MCP,RTS FROM BBROCK WHERE MCP>0.001 AND RTS>=? AND STOCKID = ? AND DATEID<? AND DATEID>? ORDER BY DATEID DESC LIMIT 50";
+				closestMCPStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return closestMCPStmnt;
+	}
 
 	// queryTealStmnt
 	public static PreparedStatement getTealQueryStmnt() {
@@ -2681,6 +2765,23 @@ public class DB {
 		}
 
 		return updateVBIStmnt;
+	}
+	
+	
+	public static PreparedStatement resetTBKStmnt() {
+		getConnection();
+
+		if (resetTBKStmnt == null) {
+			try {
+				String query = "UPDATE BBROCK SET TBK=0   WHERE STOCKID =?";
+
+				resetTBKStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return resetTBKStmnt;
 	}
 	
 	

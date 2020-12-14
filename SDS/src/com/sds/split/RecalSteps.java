@@ -238,6 +238,10 @@ public class RecalSteps {
 			UpDownMeasure.processStockEE8History(stockID);
 			//recalculate DBA history for alias stock
 			UpDownMeasure.processStockBDAHistory(stockID);
+			//recalculate RTS History 30 days breakout mark
+			UpDownMeasure.processStockRTSHistory(stockID, false); 
+			//recalculate stock breakout history based on RTS marks above
+			UpDownMeasure.processStockTBKHistory(stockID);
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}

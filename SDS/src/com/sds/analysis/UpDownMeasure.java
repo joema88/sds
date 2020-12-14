@@ -58,7 +58,7 @@ public class UpDownMeasure {
 		// processUpDownHistory();//no longer do DM update
 		// daily step 1
 		// processDMAHistory(); //DM update here
-		// daily step 2
+		// daily step 2, today only
 		// processDMRankAvgDMHistory();
 		// daily step 3
 		// processFUCHistory();
@@ -73,7 +73,7 @@ public class UpDownMeasure {
 		// daily step 7, update daily OBI (Over bought indicator)
 		// processOBIHistory(1);
 		// daily step 8, update daily f1, f8 count
-		// processF18History(1);
+		// processF18Today(currentDateID) ;
 		// daily step 9, process D2, D9 for each stock
 		// processD2D9History(true);
 		// daily step 10, process today's VBI
@@ -84,9 +84,15 @@ public class UpDownMeasure {
 		// processTodayIndustryAVGPDYDelta(currentDateID, -1);
 		// daily step 13, process BDA [(Delta of SAY)*100 + (Delta of IAYD)]
 		// processTodayBDA(currentDateID, -1);
-		// daily step 14, process last day TBK, last 30 days breakout bullish pattern
+		// daily step 14, this may have to be switched with step 14 once finalized
+		// processRTSHistory(true);
+		// daily step 15, process last day TBK, last 30 days breakout bullish pattern
+		// base on 30 days breakout mark set in step 14
 		// processTBKHistory(true);
 
+		// process entire Rolling Thirty days Sum(P+Y) and MCP(if qualified>=90%)
+		// history
+		// processRTSHistory(false);
 		//// process entire TBK history
 		processTBKHistory(false);
 		// process entire BDA history
@@ -108,9 +114,9 @@ public class UpDownMeasure {
 		// processStockUpDownHistory(stockId);
 		// processStockDMAHistory(stockId);
 		// update DMRankAvg SET ADM = ?, RK = ?
-        //processStockDMRankAvgDMHistory(stockId);
+		// processStockDMRankAvgDMHistory(stockId);
 		// update FUC history
-        //	processStockFUCHistory(stockId);
+		// processStockFUCHistory(stockId);
 		// transfer missing data
 
 	}
@@ -309,6 +315,7 @@ public class UpDownMeasure {
 			// String query = "select a.DATEID,b.CDATE, COUNT(*) FROM BBROCK a, DATES b
 			// WHERE a.DATEID=b.DATEID and FUC>? GROUP BY DATEID ORDER BY DATEID DESC limit
 			// ?;";
+
 			fucStmnt.setInt(1, 0);
 			fucStmnt.setInt(2, length);
 			ResultSet rs1 = fucStmnt.executeQuery();
@@ -318,6 +325,7 @@ public class UpDownMeasure {
 				f1UpdateStmnt.setInt(1, f1Count);
 				f1UpdateStmnt.setInt(2, dateId);
 				f1UpdateStmnt.executeUpdate();
+				System.out.println(dateId + " " + f1Count);
 
 			}
 
@@ -330,7 +338,7 @@ public class UpDownMeasure {
 				f8UpdateStmnt.setInt(1, f1Count);
 				f8UpdateStmnt.setInt(2, dateId);
 				f8UpdateStmnt.executeUpdate();
-
+				System.out.println(dateId + " " + f1Count);
 			}
 
 		} catch (Exception ex) {
@@ -1912,6 +1920,114 @@ public class UpDownMeasure {
 		}
 	}
 
+	public static void processRTSHistory(boolean lastOnly) {
+		// get all stocks, may be current??
+		try {
+
+			long t1 = System.currentTimeMillis();
+
+			PreparedStatement allStocks = DB.getAllStockIDs();
+			allStocks.setInt(1, 1);
+
+			ResultSet rs = allStocks.executeQuery();
+			int sc = 0;
+			System.out.println("-----------Begin---------");
+			while (rs.next()) {
+				sc++;
+				int stockID = rs.getInt(1);
+
+				processStockRTSHistory(stockID, lastOnly);
+
+				System.out.println("process StockRTSHistory done for " + stockID);
+				Thread.sleep(2000);
+			}
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+		// loop through stocks and calculate each history of RTS
+		// call processStockRTSHistory(int stockId, boolean lastOnly)
+
+	}
+
+	public static void processStockRTSHistory(int stockId, boolean lastOnly) {
+		try {
+			PreparedStatement dateIdRange = DB.getStockDateIDRange();
+			initCurrentDateID();
+			int beginDateId = 0;
+			int endDateId = currentDateID;
+
+			if (lastOnly && currentDateID > 0) {
+				processStockRTSToday(stockId, currentDateID);
+			} else {
+				// String query = "select MIN(DATEID), MAX(DATEID)
+				// FROM BBROCK WHERE STOCKID = ? ";
+				dateIdRange.setInt(1, stockId);
+				ResultSet rs = dateIdRange.executeQuery();
+				if (rs.next()) {
+					beginDateId = rs.getInt(1);
+					endDateId = rs.getInt(2);
+				}
+				int begin = beginDateId + 30;
+
+				if (begin < 8261)// 800 days is enough for now,2017/10/09
+					begin = 8261;
+
+				for (int k = endDateId; k >= begin; k--) {
+					processStockRTSToday(stockId, k);
+				}
+			}
+			// loop through stocks and calculate each history of RTS
+			// call processStockRTSToday(int stockId, int dateId)
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+
+	}
+
+	public static void processStockRTSToday(int stockId, int dateId) {
+		try {
+			PreparedStatement past30Stmnt = DB.getPast30Stmnt();
+			PreparedStatement updateRtsMcp = DB.updateRTS_MCP();
+			// String query = "SELECT MAX(CLOSE),SUM(YELLOW),SUM(PINK),
+			// AVG(VOLUME) FROM BBROCK WHERE STOCKID=? AND DATEID>=? AND DATEID<=?";
+			past30Stmnt.setInt(1, stockId);
+			past30Stmnt.setInt(2, dateId - 29);
+			past30Stmnt.setInt(3, dateId);
+
+			ResultSet rs = past30Stmnt.executeQuery();
+			if (rs.next()) {
+				float mcp = rs.getFloat(1);
+				int ySum = rs.getInt(2);
+				int pSum = rs.getInt(3);
+				// String query = "UPDATE BBROCK SET RTS=?, MCP=?
+				// WHERE STOCKID=? AND DATEID=?";
+				int rts = ySum + pSum;
+
+				if (rts >= 27) { // 90% of 30 days =27
+					// update RTS, MCP
+					updateRtsMcp.setInt(1, rts);
+					updateRtsMcp.setFloat(2, mcp);
+					updateRtsMcp.setInt(3, stockId);
+					updateRtsMcp.setInt(4, dateId);
+					updateRtsMcp.executeUpdate();
+
+				} else {
+					// update RTS only
+					updateRtsMcp.setInt(1, rts);
+					updateRtsMcp.setFloat(2, 0.00000000f);
+					updateRtsMcp.setInt(3, stockId);
+					updateRtsMcp.setInt(4, dateId);
+					updateRtsMcp.executeUpdate();
+				}
+			}
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+
+	}
+
 	public static void processDMAHistory() {
 		try {
 
@@ -2115,7 +2231,9 @@ public class UpDownMeasure {
 		// need a for loop here for history
 
 		// process last 200 days for the moment 9058 to 8858
-		for (int w = currentDateID; w >= 8858; w--) {
+		// begin = 8261;
+		// for (int w = currentDateID; w > 8261; w--) {
+		for (int w = 8261; w <= currentDateID; w++) { // TBK must start from early to latest
 			System.out.println("Processing TBK at " + w);
 			processTodayTBK(w, -1);
 
@@ -2139,8 +2257,10 @@ public class UpDownMeasure {
 			if (rs1.next()) {
 				int startDate = rs1.getInt(1);
 				// 30 is the past days number
-				for (int w = currentDateID; w >= startDate + 30; w--) {
+				for (int w = 8261; w <= currentDateID; w++) {
 					processTodayTBK(w, stockID);
+					//sleep in 2 seconds
+					Thread.sleep(2000);
 				}
 			}
 		} catch (Exception ex) {
@@ -2150,6 +2270,181 @@ public class UpDownMeasure {
 	}
 
 	public static void processTodayTBK(int dateID, int stockId) {
+		PreparedStatement getPureTeal = DB.getPureTeal();
+		PreparedStatement updateTBK = DB.updateTBKStmnt();
+		// PreparedStatement past30Stmnt = DB.getPast30Stmnt();
+		PreparedStatement resetTBK = DB.resetTBKStmnt();
+		PreparedStatement closestMCPStmnt = DB.getClosetMCPStmnt();
+		PreparedStatement closePriceStmnt = DB.getClosePriceStmnt();
+		PreparedStatement tbkStmnt = DB.getTBKStmnt();
+
+		try {
+
+			// String query = "select STOCKID FROM BBROCK WHERE DATEID=?
+			// AND STOCKID>=? AND STOCKID<=? AND TEAL=1 AND YELLOW=0 AND
+			// PINK=0 ORDER BY STOCKID ASC";
+			getPureTeal.setInt(1, dateID);
+			if (stockId <= 0) {
+				getPureTeal.setInt(2, 0);
+				getPureTeal.setInt(3, 1000000);
+			} else {
+				getPureTeal.setInt(2, stockId);
+				getPureTeal.setInt(3, stockId);
+			}
+
+			ResultSet rs1 = getPureTeal.executeQuery();
+
+			while (rs1.next()) {
+				int nextStockID = rs1.getInt(1);
+				try {
+					System.out.println("Processing TBK at " + dateID + " for " + nextStockID);
+					// 1. reset TBK to zero for this stock
+					if (dateID == 8261) { // only reset at the beginning!!!!
+						resetTBK.setInt(1, nextStockID);
+						resetTBK.executeUpdate();
+					}
+
+					// 2. select the closest MCP and RTS
+					// String query = "select DATEID,MCP,RTS FROM BBROCK
+					// WHERE MCP>0.001 AND RTS>=? AND STOCKID = ?
+					// AND DATEID<? AND DATEID>? ORDER BY DATEID DESC LIMIT 50";
+					closestMCPStmnt.setInt(1, 27);// 27 is 90% of 30 days, this could be up further
+					closestMCPStmnt.setInt(2, nextStockID);
+					closestMCPStmnt.setInt(3, dateID);
+					closestMCPStmnt.setInt(4, dateID - 500);// almost two years should be enough long
+
+					ResultSet rs2 = closestMCPStmnt.executeQuery();
+					if (rs2.next()) {
+						// 3. verify that close price>MCP
+						int cDateId = rs2.getInt(1);
+						float mcp = rs2.getFloat(2);
+						int rts = rs2.getInt(3);
+
+						// String query = "SELECT CLOSE,PDY,BDY FROM BBROCK
+						// WHERE STOCKID = ? AND DATEID =? ";
+
+						closePriceStmnt.setInt(1, nextStockID);
+						closePriceStmnt.setInt(2, dateID);
+
+						ResultSet rs3 = closePriceStmnt.executeQuery();
+						if (rs3.next()) {
+							float closePrice = rs3.getFloat(1);
+							if (closePrice > mcp) {
+								// now check between cDateId and dateID, how many TBK>=8
+								// String query = "SELECT TBK, DATEID, CLOSE FROM BBROCK
+								// WHERE TBK>=? AND STOCKID = ? AND DATEID >=? AND
+								// DATEID<=? ORDER BY DATEID DESC";
+								tbkStmnt.setInt(1, nextStockID);
+								tbkStmnt.setInt(2, 8); // only interested TBK>=8 cases
+								tbkStmnt.setInt(3, cDateId + 1);
+								tbkStmnt.setInt(4, dateID - 1);
+
+								ResultSet rs4 = tbkStmnt.executeQuery();
+								int tbkCount = 0;
+								int tbkMax = 0;
+								int lastestTBKDateID = 0;
+								int lastestTBKVal = 0;
+								while (rs4.next()) {
+									if (tbkCount == 0) {
+										lastestTBKVal = rs4.getInt(1);
+										lastestTBKDateID = rs4.getInt(2);
+										tbkMax = lastestTBKVal;
+									}
+
+									int tempTBK = rs4.getInt(1);
+									if (tempTBK > tbkMax) {
+										tbkMax = tempTBK;
+									}
+									tbkCount++;
+								} // end while
+
+								// 4. check if there is TBK =18 in the past 30 days
+								// and if it is the 3rd days within last 5 >MCP
+
+								// b. if it is the 3rd days within last 5 >MCP since TBK=8, then update TBK =18
+
+								// c. if there is TBK = 8 or TBK=88, but at least there is 20??(SUM(p+y) in
+								// between, then new TBK=8 maybe??)
+								int tbkFinal = 0;
+								if (tbkCount == 0) {
+									// a. first ever closePrice>closetMCP then update TBK =8
+									tbkFinal = 8;
+
+								} else { // tbkCount>0
+									// now we need to check between lastestTBKDateID and dateID
+									if (lastestTBKVal == 8) { // a failed breakout, then we need to >30 days
+										// before next closePrice>MCP considered to be valid
+										if ((dateID - lastestTBKDateID) > 30) {
+											tbkFinal = 8;
+										} else if ((dateID - lastestTBKDateID) <= 5) {
+											// now check if we have three days closePrice>MCP
+											// if so tbkFinal = 18; or more based on tbkMax
+											// not done yet
+											// now check between cDateId and dateID, how many TBK>=8
+											// String query = "SELECT TBK, DATEID, CLOSE FROM BBROCK
+											// WHERE TBK>=? AND STOCKID = ? AND DATEID >=? AND
+											// DATEID<=? ORDER BY DATEID DESC";
+											tbkStmnt.setInt(1, nextStockID);
+											tbkStmnt.setInt(2, 0); // check every day close price, so TBK>=0
+											tbkStmnt.setInt(3, lastestTBKDateID);
+											tbkStmnt.setInt(4, dateID);
+
+											ResultSet rs5 = tbkStmnt.executeQuery();
+
+											int aboveCount = 0;
+											while (rs5.next()) {
+												float close = rs5.getFloat(3);
+												if (close > mcp) {
+													aboveCount++;
+												}
+											}
+
+											if (aboveCount == 3) {
+												tbkFinal = tbkMax + 10;
+											}
+										}
+
+									} else { // more than 8
+										if ((dateID - lastestTBKDateID) > 30) {
+											// more than 30 days gap, new signal
+											tbkFinal = 8;
+										} else {
+											// ignore
+										}
+
+									}
+
+								}
+
+								// then update TBK
+								// String query = "UPDATE BBROCK SET TBK=?
+								// WHERE STOCKID =? and DATEID=?";
+
+								updateTBK.setInt(1, tbkFinal);
+								updateTBK.setInt(2, nextStockID);
+								updateTBK.setInt(3, dateID);
+								updateTBK.executeUpdate();
+							} // end if (closePrice > mcp)
+						} // if (rs3.next())
+					} // if (rs2.next()) {
+
+				} catch (Exception ex) {
+
+				}
+			} // while (rs1.next()) {
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+
+	}
+
+	// this is the old logic using immediately previous 30 days'
+	// sum(P+Y) and max lose price as reference
+	// The new model relax the gap between breakout and rolling 30 days mark
+	// Thus is more generic, also we could improve the requirement (bigger sum(Y+P))
+	// and thus improving accuracy and catch more positive cases at the same time
+	public static void processTodayTBK_OLD(int dateID, int stockId) {
 		PreparedStatement getPureTeal = DB.getPureTeal();
 		PreparedStatement updateTBK = DB.updateTBKStmnt();
 		PreparedStatement past30Stmnt = DB.getPast30Stmnt();
@@ -2180,7 +2475,7 @@ public class UpDownMeasure {
 				int nextStockID = rs1.getInt(1);
 				try {
 					System.out.println("Processing TBK at " + dateID + " for " + nextStockID);
-					
+
 					// String query = "SELECT MAX(CLOSE),SUM(YELLOW),SUM(PINK),
 					// AVG(VOLUME) FROM BBROCK WHERE STOCKID=? AND DATEID>=? AND DATEID<=?";
 
