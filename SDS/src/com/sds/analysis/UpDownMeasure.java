@@ -37,7 +37,7 @@ public class UpDownMeasure {
 	private static int currentDateID = 9045;
 	private static int upDays = 30; // this is used to measure 40% up days
 	private static int downDays = 250; // this is used to measure 60% down days
-
+	private static int tbkStartDateId = 8261;
 	// int buyDateId = 9007; //buy date
 	private static int buyDateId = 9034; // sell date, accumulator start here
 
@@ -94,6 +94,8 @@ public class UpDownMeasure {
 		// history
 		// processRTSHistory(false);
 		//// process entire TBK history
+		// processStockTBKHistory(963);
+		resetAllStocksTBKHistory();
 		processTBKHistory(false);
 		// process entire BDA history
 		// processBDAHistory();
@@ -2223,6 +2225,28 @@ public class UpDownMeasure {
 		}
 	}
 
+	public static void resetAllStocksTBKHistory() {
+		try {
+			PreparedStatement resetTBK = DB.resetTBKStmnt();
+			PreparedStatement allStocks = DB.getAllStockIDs();
+			allStocks.setInt(1, 1);
+			ResultSet rs = allStocks.executeQuery();
+			System.out.println("-----------Begin reset all stocks TBK to zero---------");
+			while (rs.next()) {
+				int stockID = rs.getInt(1);
+				// reset TBK for this stock to zero as we will recalculate values
+				resetTBK.setInt(1, stockID);
+				resetTBK.executeUpdate();
+
+			}
+			System.out.println("-----------Done reset all stocks TBK to zero---------");
+			Thread.sleep(2000);
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+
+	}
+
 	public static void processTBKHistory(boolean lastOnly) {
 
 		long t1 = System.currentTimeMillis();
@@ -2233,12 +2257,17 @@ public class UpDownMeasure {
 		// process last 200 days for the moment 9058 to 8858
 		// begin = 8261;
 		// for (int w = currentDateID; w > 8261; w--) {
-		for (int w = 8261; w <= currentDateID; w++) { // TBK must start from early to latest
+		for (int w = tbkStartDateId; w <= currentDateID; w++) { // TBK must start from early to latest
 			System.out.println("Processing TBK at " + w);
-			processTodayTBK(w, -1);
+			try {
+				processTodayTBK(w, -1);
+				// sleep in 2 seconds
+				Thread.sleep(2000);
+				if (lastOnly) {
+					break;
+				}
+			} catch (Exception ex) {
 
-			if (lastOnly) {
-				break;
 			}
 
 		}
@@ -2248,6 +2277,12 @@ public class UpDownMeasure {
 	public static void processStockTBKHistory(int stockID) {
 		try {
 			initCurrentDateID();// init currentDateID value based on DB
+
+			PreparedStatement resetTBK = DB.resetTBKStmnt();
+			// reset TBK for this stock to zero as we will recalculate values
+			resetTBK.setInt(1, stockID);
+			resetTBK.executeUpdate();
+
 			PreparedStatement startStmnt = DB.getDateIDStarttmnt();
 			// String query = "SELECT DATEID FROM BBROCK WHERE STOCKID =?
 			// ORDER BY DATEID ASC limit 1";
@@ -2256,11 +2291,16 @@ public class UpDownMeasure {
 
 			if (rs1.next()) {
 				int startDate = rs1.getInt(1);
+				boolean reset = false;
 				// 30 is the past days number
-				for (int w = 8261; w <= currentDateID; w++) {
+				int start = tbkStartDateId;
+				if (startDate > tbkStartDateId)
+					start = startDate + 30;
+				for (int w = start; w <= currentDateID; w++) {
+
 					processTodayTBK(w, stockID);
-					//sleep in 2 seconds
-					Thread.sleep(2000);
+					// sleep in 2 seconds
+					// Thread.sleep(2000);
 				}
 			}
 		} catch (Exception ex) {
@@ -2273,7 +2313,6 @@ public class UpDownMeasure {
 		PreparedStatement getPureTeal = DB.getPureTeal();
 		PreparedStatement updateTBK = DB.updateTBKStmnt();
 		// PreparedStatement past30Stmnt = DB.getPast30Stmnt();
-		PreparedStatement resetTBK = DB.resetTBKStmnt();
 		PreparedStatement closestMCPStmnt = DB.getClosetMCPStmnt();
 		PreparedStatement closePriceStmnt = DB.getClosePriceStmnt();
 		PreparedStatement tbkStmnt = DB.getTBKStmnt();
@@ -2299,10 +2338,8 @@ public class UpDownMeasure {
 				try {
 					System.out.println("Processing TBK at " + dateID + " for " + nextStockID);
 					// 1. reset TBK to zero for this stock
-					if (dateID == 8261) { // only reset at the beginning!!!!
-						resetTBK.setInt(1, nextStockID);
-						resetTBK.executeUpdate();
-					}
+					// may be should take out this logic do it separately
+					// as one time operation
 
 					// 2. select the closest MCP and RTS
 					// String query = "select DATEID,MCP,RTS FROM BBROCK
@@ -2320,6 +2357,11 @@ public class UpDownMeasure {
 						float mcp = rs2.getFloat(2);
 						int rts = rs2.getInt(3);
 
+						if (dateID == 8907 || dateID == 8945 || dateID == 8949 || dateID == 8950 || dateID == 8951
+								|| dateID == 8952 || dateID == 8953 || dateID == 8954) {
+							System.out.println("8907 debug starts...");
+						}
+
 						// String query = "SELECT CLOSE,PDY,BDY FROM BBROCK
 						// WHERE STOCKID = ? AND DATEID =? ";
 
@@ -2334,8 +2376,8 @@ public class UpDownMeasure {
 								// String query = "SELECT TBK, DATEID, CLOSE FROM BBROCK
 								// WHERE TBK>=? AND STOCKID = ? AND DATEID >=? AND
 								// DATEID<=? ORDER BY DATEID DESC";
-								tbkStmnt.setInt(1, nextStockID);
-								tbkStmnt.setInt(2, 8); // only interested TBK>=8 cases
+								tbkStmnt.setInt(1, 8); // only interested TBK>=8 cases
+								tbkStmnt.setInt(2, nextStockID);
 								tbkStmnt.setInt(3, cDateId + 1);
 								tbkStmnt.setInt(4, dateID - 1);
 
@@ -2384,8 +2426,8 @@ public class UpDownMeasure {
 											// String query = "SELECT TBK, DATEID, CLOSE FROM BBROCK
 											// WHERE TBK>=? AND STOCKID = ? AND DATEID >=? AND
 											// DATEID<=? ORDER BY DATEID DESC";
-											tbkStmnt.setInt(1, nextStockID);
-											tbkStmnt.setInt(2, 0); // check every day close price, so TBK>=0
+											tbkStmnt.setInt(1, 0); // check every day close price, so TBK>=0
+											tbkStmnt.setInt(2, nextStockID);
 											tbkStmnt.setInt(3, lastestTBKDateID);
 											tbkStmnt.setInt(4, dateID);
 

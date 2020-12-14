@@ -1924,7 +1924,6 @@ public class DB {
 	// a.STOCKID=509 order by a.DATEID DeSC limit 550;
 	public static PreparedStatement checkRankPriceStmnt() {
 		getConnection();
-
 		if (closePriceStmnt == null) {
 			try {
 

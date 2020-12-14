@@ -234,6 +234,7 @@ public class RecalSteps {
 				}
 
 			}
+			
 			//recalculate EE8 history for alias stock
 			UpDownMeasure.processStockEE8History(stockID);
 			//recalculate DBA history for alias stock
