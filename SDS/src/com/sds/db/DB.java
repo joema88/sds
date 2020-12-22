@@ -104,6 +104,7 @@ public class DB {
 	// formula: [SAY at n+1 (dateid) - SAY at n (dateId)]*100+[IAYD at n+1 (dateid)
 	// - IAYD at n (dateid)]
 
+	
 	// ALTER TABLE BBROCK ADD COLUMN AVI TINYINT UNSIGNED DEFAULT 0; -- Average
 	// Volume Depeltion (D9) indicator
 	// This is a slightly delayed indicator to detect volume up/down in conjunction

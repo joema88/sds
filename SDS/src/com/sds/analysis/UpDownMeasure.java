@@ -1958,6 +1958,7 @@ public class UpDownMeasure {
 
 	}
 
+	
 	public static void processStockAVIHistory(int stockId, boolean lastOnly) {
 		try {
 			PreparedStatement dateIdRange = DB.getStockDateIDRange();

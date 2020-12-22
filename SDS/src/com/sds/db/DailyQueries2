@@ -1,0 +1,55 @@
+//1. Overall US market buy/sell signal, SL1,SL2 --> Sell signal, BUY-->buy signal
+//This is short term weeks to months buy/sell wave judgement based on the percentage
+//of Teal, Pink and Yellow stock each day and calculation
+// Detail logic is defined in method processBuySellPoints of com.sds.analysis.Summary class
+// if(SALY == 4 && OS > 20.0f && OB < 60.0f)-->SL1 = 2
+//if (OS > 30.0f && OB < 45.0f) --> SL2 = 4
+// BOSY == 108 --> Buy =1, BOSY=100, wait 3 more BOSY=8
+//OBI, F1, F8 are all bullish count aggregate, AMC is F8? stock AVG Markcap
+
+SET @SYMB :='SPY';
+select a.DATEID AS ID, CDATE, b.SYMBOL AS SYM, CLOSE,OBI,F1,F8,ROUND(AMC,0) AS AMC,ROUND(c.BI,1) AS BI,ROUND(c.CBI,1) AS CBI,c.SALY,c.SL1,c.SL2,c.BUY, a.FUC, c.BOSY,ROUND(BAT,1) AS BAT,TOT,ROUND(OS,1) AS OS, ROUND(OB,1) AS OB, ROUND(OY,1) AS OY, ROUND(AY,1) AS AY  FROM BBROCK a, SYMBOLS b, DATES c  WHERE a.STOCKID = b.STOCKID and a.DATEID=c.DATEID and ( b.SYMBOL=@SYMB)  order by a.DATEID DeSC limit 300;
+
+//gentle bull continuous run (>=12) each day count
+SET @DATE_ID :=9066;
+select a.DATEID , CDATE, COUNT(*) AS BT9_GT11 FROM BBROCK a,DATES c WHERE a.DATEID>(@DATE_ID-60) and  a.DATEID=c.DATEID and BT9>=12 group by a.DATEID , CDATE ORDER BY a.DATEID DESC;
+
+//2. ETF ordered by BDY (bo-duang peroid yield)
+// BDY - yield in%, PDY-positive days, DPC- decrease from peak of trailing 12 months
+// UPC - up in % of last 30 days from lowest, DM - maximum delta in% between UPC and DPC of last 30 days
+//BT9 is the continuous Teal days of the stock, maybe this will find clue for option trading account
+//as ETF is much stable than individual stock
+
+//ETF FUC>=4 OR EE8>1 OR VBI>1 OR TBK>1
+SET @DATE_ID :=9066;
+select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, CLOSE, BT9,TBK,EE8,FUC, VBI, ROUND(BDY,1) AS BDY,PDY,ROUND(DPC,1) AS DPC, DDS, UDS, ROUND(UPC,1) AS UPC, ROUND(DM,1) AS DM, DA,ROUND(DD,1) AS DD, ROUND(D9,1) AS D9 FROM BBROCK a, SYMBOLS b,DATES c, INDUSTRY d  WHERE a.STOCKID = b.STOCKID and  b.INDID=d.INDID and d.INDID =69 and a.DATEID=c.DATEID and a.DATEID =@DATE_ID  and (FUC>=4 OR EE8>1 OR VBI>1 OR TBK>1);
+
+//sorted by BDY DESC
+SET @DATE_ID :=9065;
+select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, CLOSE, BT9,TBK,EE8,FUC, VBI, ROUND(BDY,1) AS BDY,PDY,ROUND(DPC,1) AS DPC, DDS, UDS, ROUND(UPC,1) AS UPC, ROUND(DM,1) AS DM, DA,ROUND(DD,1) AS DD, ROUND(D9,1) AS D9 FROM BBROCK a, SYMBOLS b,DATES c, INDUSTRY d  WHERE a.STOCKID = b.STOCKID and  b.INDID=d.INDID and d.INDID =69 and a.DATEID=c.DATEID and a.DATEID =@DATE_ID  ORDER BY BDY DESC;
+
+
+//Sorted by BT9 DESC
+SET @DATE_ID :=9065;
+select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, CLOSE, BT9,TBK,EE8,FUC, VBI, ROUND(BDY,1) AS BDY,PDY,ROUND(DPC,1) AS DPC, DDS, UDS, ROUND(UPC,1) AS UPC, ROUND(DM,1) AS DM, DA,ROUND(DD,1) AS DD, ROUND(D9,1) AS D9 FROM BBROCK a, SYMBOLS b,DATES c, INDUSTRY d  WHERE a.STOCKID = b.STOCKID and  b.INDID=d.INDID and d.INDID =69 and a.DATEID=c.DATEID and a.DATEID =@DATE_ID  ORDER BY BT9 DESC;
+
+
+// heavily traded ETF sorted by DD as (DD means days to trade 100% outstanding shares, D9 is DD average of last 10 days
+SET @DATE_ID :=9065;
+select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, CLOSE,ROUND(DD,1) AS DD, ROUND(D9,1)  AS D9,TBK, BT9,EE8,FUC, VBI, ROUND(BDY,1) AS BDY,PDY,ROUND(DPC,1) AS DPC, DDS, UDS, ROUND(UPC,1) AS UPC, ROUND(DM,1) AS DM, DA FROM BBROCK a, SYMBOLS b,DATES c, INDUSTRY d  WHERE a.STOCKID = b.STOCKID and  b.INDID=d.INDID and d.INDID =69 and a.DATEID=c.DATEID and a.DATEID =@DATE_ID  and (DD<10 and DD>0.1 and D9<20) ORDER BY DD ASC;
+
+//individual ETF history, TBK=28 seems significant for steady up trend,
+//basically 30 days outbreak, short consolidation then up again, kind reaffirm signal
+SET @SYM :='nio';
+select a.DATEID,a.STOCKID, CDATE, b.SYMBOL, CLOSE,ROUND(MCP,2) AS MCP, RTS,TBK, EE8,FUC, VBI, BT9,ROUND(DM,1) AS DM, DA,ROUND(BDY,1) AS BDY,PDY,ROUND(DPC,1) AS DPC, DDS, UDS, ROUND(UPC,1) AS UPC, ROUND(DD,1) AS DD, ROUND(D9,1) AS D9 FROM BBROCK a, SYMBOLS b,DATES c, INDUSTRY d  WHERE a.STOCKID = b.STOCKID and  b.INDID=d.INDID and d.INDID =69 and a.DATEID=c.DATEID and b.SYMBOL =@SYM  ORDER BY a.DATEID DESC limit 300;
+
+
+//3. Gentle bull BT9 continuous highest, no sector sorted
+//also a good place to find split, reserve split stocks
+//BT9 desc continuous
+SET @DATE_ID := 9066;
+SELECT a.DATEID AS DTID, a.STOCKID AS SKID, CDATE, b.SYMBOL AS SYM, BT9,ROUND(MARKCAP,0) AS CAP,SUBSTRING(INDUSTRY,1,8) AS IND,b.INDID as IID,SUBSTRING(SUBINDUSTRY,1,5) as SUB, b.SUBID as SID,VOLUME,ROUND(CLOSE,1) AS CLOS,ROUND(BDY,1) AS BDY,PDY, VBI,ROUND(DD,0) AS DD, ROUND(D9,1) AS D9,  ROUND(DPC,1) AS DPC,ROUND(UPC,1) AS UPC, ROUND(DM,0) AS DM FROM BBROCK a, SYMBOLS b, DATES c, INDUSTRY d, SUBINDUSTRY e   WHERE a.DATEID=@DATE_ID AND b.INDID=d.INDID and b.INDID=e.INDID and b.SUBID=e.SUBID   AND a.STOCKID=b.STOCKID and a.DATEID = c.DATEID and  a.BT9>=12
+AND a.DD<100 and a.D9<1000 order by a.BT9 DESC limit 500;
+
+
+
