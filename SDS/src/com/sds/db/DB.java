@@ -332,9 +332,19 @@ public class DB {
 	private static PreparedStatement checkD9AndClose = null;
 	private static PreparedStatement checkAVIExist = null;
 	private static PreparedStatement updateStockAVI = null;
+	private static PreparedStatement resetStockAVI = null;
+	private static PreparedStatement stkDateId = null;
 
 	public static void closeConnection() {
 		try {
+			if( stkDateId != null ) {
+				stkDateId.close();
+				stkDateId = null;
+			}
+			if( resetStockAVI != null) {
+				resetStockAVI.close();
+				resetStockAVI = null;
+			}
 			if( updateStockAVI != null) {
 				updateStockAVI.close();
 				updateStockAVI = null;
@@ -931,6 +941,19 @@ public class DB {
 		return dateIDRange;
 	}
 
+	public static PreparedStatement getStockVolumeDateIDRange() {
+		if (dateIDRange == null) {
+			try {
+				String query = "select MIN(DATEID), MAX(DATEID) FROM BBROCK WHERE STOCKID = ? AND VOLUME>1";
+				dateIDRange = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return dateIDRange;
+	}
 	// SELECT DATEID, CLOSE, DPC, UPC FROM BBROCK WHERE STOCKID=2626
 	// AND DATEID<=8720 AND DATEID>8470 ORDER BY CLOSE DESC, DATEID DESC LIMIT 20;
 	public static PreparedStatement getMaxClose() {
@@ -1050,6 +1073,20 @@ public class DB {
 		return vbifx;
 	}
 
+	public static PreparedStatement getStockDateId() {
+		if (stkDateId == null) {
+			try {
+				String query = "select  DATEID FROM BBROCK WHERE STOCKID=? AND DATEID>=? AND DATEID<=? ORDER BY DATEID DESC";
+				stkDateId = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return stkDateId;
+	}
+	
 	public static PreparedStatement getStockVBIFUCX() {
 		if (stkvbifx == null) {
 			try {
@@ -1268,6 +1305,21 @@ public class DB {
 		return checkAVIExist;
 	}
 	
+	
+	public static PreparedStatement resetStockAVI() {
+		if (resetStockAVI == null) {
+			try {
+				String query = "UPDATE BBROCK SET AVI=0 WHERE STOCKID=?";
+
+				resetStockAVI  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return resetStockAVI ;
+	}
 
 	public static PreparedStatement updateStockAVI() {
 		if (updateStockAVI == null) {

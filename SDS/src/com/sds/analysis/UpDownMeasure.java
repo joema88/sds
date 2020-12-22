@@ -1961,7 +1961,8 @@ public class UpDownMeasure {
 	
 	public static void processStockAVIHistory(int stockId, boolean lastOnly) {
 		try {
-			PreparedStatement dateIdRange = DB.getStockDateIDRange();
+			PreparedStatement dateIdRangeWithVolumeInfo = DB.getStockVolumeDateIDRange();
+			PreparedStatement resetStockAVI = DB.resetStockAVI();
 			initCurrentDateID();
 			int beginDateId = 0;
 			int endDateId = currentDateID;
@@ -1969,19 +1970,22 @@ public class UpDownMeasure {
 			if (lastOnly && currentDateID > 0) {
 				processStockAVIToday(stockId, currentDateID);
 			} else {
+				//reset AVI = 0
+				resetStockAVI.setInt(1, stockId);
+				resetStockAVI.executeUpdate();
 				// String query = "select MIN(DATEID), MAX(DATEID)
-				// FROM BBROCK WHERE STOCKID = ? ";
-				dateIdRange.setInt(1, stockId);
-				ResultSet rs = dateIdRange.executeQuery();
+				// FROM BBROCK WHERE STOCKID = ? AND VOLUME>1";
+				dateIdRangeWithVolumeInfo.setInt(1, stockId);
+				ResultSet rs = dateIdRangeWithVolumeInfo.executeQuery();
 				if (rs.next()) {
 					beginDateId = rs.getInt(1);
 					endDateId = rs.getInt(2);
 				}
-				int begin = beginDateId + 30;
+				
+				//we need 10 days for accurate D9 and another 14 days for AVI
+				int begin = beginDateId + 25;
 
-				if (begin < 8948)// 2020/07/01 or 25 days after we have daily volume data
-					begin = 8948;
-
+				
 				for (int k = begin; k <= endDateId; k++) {
 					processStockAVIToday(stockId, k);
 				}
@@ -1998,16 +2002,35 @@ public class UpDownMeasure {
 		try {
 			float upLimit = 0.35f;
 			float downLimit = -0.35f;
+			int days = 14;
+			PreparedStatement stkDateId = DB.getStockDateId();
 			PreparedStatement checkD9AndClose = DB.checkD9Close();
 			PreparedStatement checkAVIExist = DB.checkAVIExist();
 			PreparedStatement updateStockAVI = DB.updateStockAVI();
+			
+			//String query = "select  DATEID FROM BBROCK WHERE STOCKID=? 
+			//AND DATEID>=? AND DATEID<=? ORDER BY DATEID DESC";
+			stkDateId.setInt(1, stockId);
+			stkDateId.setInt(2,dateId-20);
+			stkDateId.setInt(3,dateId);
+			ResultSet rs0 = stkDateId.executeQuery();
+			int dateIdBegin = dateId-days+1; //default 14 days ago
+			int count1 = 0;
+			while(rs0.next()) {
+				dateIdBegin = rs0.getInt(1);
+				count1++;
+				if(count1>=days) { //need 14 days exact
+					break;
+				}
+			}
+			
 			// check if from dateId to dateId-13 (14 days) max(D9),min(D9)
 			// to see if +35% or -35% exist, if not exist, skip the rest
 			PreparedStatement minMaxD9 = DB.getMinMaxD9();
 			// String query = "select MIN(D9),MAX(D9) from BBROCK
 			// WHERE STOCKID=? and DATEID>=? and DATEID<=?";
 			minMaxD9.setInt(1, stockId);
-			minMaxD9.setInt(2, dateId - 13);
+			minMaxD9.setInt(2, dateIdBegin);
 			minMaxD9.setInt(3, dateId);
 
 			ResultSet rs1 = minMaxD9.executeQuery();
