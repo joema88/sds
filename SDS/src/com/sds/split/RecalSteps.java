@@ -243,6 +243,8 @@ public class RecalSteps {
 			UpDownMeasure.processStockRTSHistory(stockID, false); 
 			//recalculate stock breakout history based on RTS marks above
 			UpDownMeasure.processStockTBKHistory(stockID);
+			//recalculate Average Volume (D9) Indicator
+			UpDownMeasure.processStockAVIHistory(stockID, false);
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}

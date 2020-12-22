@@ -89,14 +89,19 @@ public class UpDownMeasure {
 		// daily step 15, process last day TBK, last 30 days breakout bullish pattern
 		// base on 30 days breakout mark set in step 14
 		// processTBKHistory(true);
+		// daily step 16, process last day AVI
+		// processAVIHistory(true);
 
+		
+		processStockAVIHistory(297, false); //test FB AVI first
+		//processAVIHistory(false);
 		// process entire Rolling Thirty days Sum(P+Y) and MCP(if qualified>=90%)
 		// history
 		// processRTSHistory(false);
 		//// process entire TBK history
 		// processStockTBKHistory(963);
-		resetAllStocksTBKHistory();
-		processTBKHistory(false);
+		// resetAllStocksTBKHistory();
+		// processTBKHistory(false);
 		// process entire BDA history
 		// processBDAHistory();
 		// calculate entire history
@@ -1922,6 +1927,205 @@ public class UpDownMeasure {
 		}
 	}
 
+	public static void processAVIHistory(boolean lastOnly) {
+		// get all stocks, may be current??
+		try {
+
+			long t1 = System.currentTimeMillis();
+
+			PreparedStatement allStocks = DB.getAllStockIDs();
+			allStocks.setInt(1, 1);
+
+			ResultSet rs = allStocks.executeQuery();
+			int sc = 0;
+			System.out.println("-----------Begin---------");
+			while (rs.next()) {
+				sc++;
+				int stockID = rs.getInt(1);
+
+				processStockAVIHistory(stockID, lastOnly);
+
+				System.out.println("process AVIHistory done for " + stockID);
+				if (!lastOnly)
+					Thread.sleep(2000);
+			}
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+		// loop through stocks and calculate each history of RTS
+		// call processStockAVIHistory(int stockId, boolean lastOnly)
+
+	}
+
+	public static void processStockAVIHistory(int stockId, boolean lastOnly) {
+		try {
+			PreparedStatement dateIdRange = DB.getStockDateIDRange();
+			initCurrentDateID();
+			int beginDateId = 0;
+			int endDateId = currentDateID;
+
+			if (lastOnly && currentDateID > 0) {
+				processStockAVIToday(stockId, currentDateID);
+			} else {
+				// String query = "select MIN(DATEID), MAX(DATEID)
+				// FROM BBROCK WHERE STOCKID = ? ";
+				dateIdRange.setInt(1, stockId);
+				ResultSet rs = dateIdRange.executeQuery();
+				if (rs.next()) {
+					beginDateId = rs.getInt(1);
+					endDateId = rs.getInt(2);
+				}
+				int begin = beginDateId + 30;
+
+				if (begin < 8948)// 2020/07/01 or 25 days after we have daily volume data
+					begin = 8948;
+
+				for (int k = begin; k <= endDateId; k++) {
+					processStockAVIToday(stockId, k);
+				}
+			}
+			// loop through stocks and calculate each history of RTS
+			// call processStockAVIToday(int stockId, int dateId)
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+
+	}
+
+	public static void processStockAVIToday(int stockId, int dateId) {
+		try {
+			float upLimit = 0.35f;
+			float downLimit = -0.35f;
+			PreparedStatement checkD9AndClose = DB.checkD9Close();
+			PreparedStatement checkAVIExist = DB.checkAVIExist();
+			PreparedStatement updateStockAVI = DB.updateStockAVI();
+			// check if from dateId to dateId-13 (14 days) max(D9),min(D9)
+			// to see if +35% or -35% exist, if not exist, skip the rest
+			PreparedStatement minMaxD9 = DB.getMinMaxD9();
+			// String query = "select MIN(D9),MAX(D9) from BBROCK
+			// WHERE STOCKID=? and DATEID>=? and DATEID<=?";
+			minMaxD9.setInt(1, stockId);
+			minMaxD9.setInt(2, dateId - 13);
+			minMaxD9.setInt(3, dateId);
+
+			ResultSet rs1 = minMaxD9.executeQuery();
+
+			if (rs1.next()) { // begin if (rs1.next())
+				float minD9 = rs1.getFloat(1);
+				float maxD9 = rs1.getFloat(2);
+
+				// if max(D9),min(D9) +35% or -35% exist, then more intensive calculation
+				// select close, d9, dateid from bbrock order by dateid asc dateid range
+
+				if ((1.0f + downLimit) * maxD9 >= minD9 || (1.0f + upLimit) * minD9 <= maxD9) {
+					// String query = "SELECT DATEID, CLOSE, D9 from BBROCK
+					// WHERE STOCKID=? and DATEID>=? and DATEID<=?
+					// ORDER BY DATEID ASC";
+					checkD9AndClose.setInt(1, stockId);
+					checkD9AndClose.setInt(2, dateId - 13);
+					checkD9AndClose.setInt(3, dateId);
+
+					ResultSet rs2 = checkD9AndClose.executeQuery();
+					int days = 14;
+					int[] dateIds = new int[days];
+					float[] closes = new float[days];
+					float[] d9s = new float[days];
+
+					int count = 0;
+					// get last 14 days each day data on close, D9
+					while (rs2.next()) {
+						dateIds[count] = rs2.getInt(1);
+						closes[count] = rs2.getFloat(2);
+						d9s[count] = rs2.getFloat(3);
+						count++;
+						if (count >= days) {// should not happen, just a precaution measurement
+							break;
+						}
+					} // end while
+
+					// loop through if d9 compared to max(d9) or min(d9) if neither +35% nor -35%
+					// then move on to next day
+					// if verified within range (>+35% or <-35%), then compare the rest days going
+					// forward to find the earlies
+					// such candidate, then compare close price to identify AVI
+					// once AVI value is assigned, then need to back date from this day 14 days to
+					// see if
+					// any exact AVI value has been assigned, if so skip updating (to avoid too much
+					// signals for a given day)
+					// if not then update, continue to move this dateid up till all data checked
+					for (int day = 0; day <= count; day++) { //count is better than days as sometime 13 records
+						float earlyD9 = d9s[day];
+						int earlyDateId = dateIds[day];
+						float earlyClose = closes[day];
+						for (int lateDay = day + 1; lateDay <= count; lateDay++) {// add one day to start loop
+							float lateD9 = d9s[lateDay];
+							int lateDateId = dateIds[lateDay];
+							float lateClose = closes[lateDay];
+							int avi = 0;
+							// logic starts
+							if (earlyD9 < lateD9 && (earlyD9 * (1.0f + upLimit) <= lateD9)) {// AVI=x28 candidate, early
+																								// date much faster pace
+																								// buy based on D9
+								if (earlyClose <= lateClose) {
+									avi = 128; // price increase but buying pace slowed down
+								} else if (earlyClose > lateClose) {
+									avi = 228; // price decrease and buying pace slowed down
+								}
+
+							} else if (earlyD9 > lateD9 && (earlyD9 * (1.0f + downLimit) >= lateD9)) {// AVI=x18
+																										// candidate,
+																										// early date
+																										// much slower
+																										// pace buy
+																										// based on D9
+								if (earlyClose <= lateClose) {
+									avi = 118; // price increase but buying pace faster
+								} else if (earlyClose > lateClose) {
+									avi = 218; // price decrease and buying pace faster
+								}
+
+								// so the first digit of AVI indicates price increase (1xx) or decrease(2xx)
+								// the second digit of AVI indicates the D9(smaller) faster(x1x) or slower
+								// (x2x)(bigger)
+							}
+
+							if (avi > 0) {
+								// need to check past 14 days if we have the same value or not
+								// String query = "SELECT COUNT(*) from BBROCK WHERE
+								// STOCKID=? and DATEID>=? and DATEID<=? AND AVI=?";
+								checkAVIExist.setInt(1, stockId);
+								checkAVIExist.setInt(2, lateDateId - 13);
+								checkAVIExist.setInt(3, lateDateId);
+								checkAVIExist.setInt(4, avi);
+								ResultSet rs3 = checkAVIExist.executeQuery();
+
+								if (rs3.next()) {
+									int exist = rs3.getInt(1);
+									if (exist == 0) {// if not then update
+										//String query = "UPDATE BBROCK SET AVI=?
+										//WHERE STOCKID=? AND DATEID=?";
+										updateStockAVI.setInt(1, avi);
+										updateStockAVI.setInt(2, stockId);
+										updateStockAVI.setInt(3, lateDateId);
+										updateStockAVI.executeUpdate();
+									} //end if (exist == 0) {
+								}//end if (rs3.next())
+							}// end if (avi > 0) {
+							// logic ends
+						} // end laterDate loop
+					} // end early day loop
+
+				} // end if ((1.0f + downLimit) * maxD9 >= minD9 || (1.0f + upLimit) * minD9 <=
+					// maxD9) {
+			} // end if (rs1.next())
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+
+	}
+
 	public static void processRTSHistory(boolean lastOnly) {
 		// get all stocks, may be current??
 		try {
@@ -1941,14 +2145,13 @@ public class UpDownMeasure {
 				processStockRTSHistory(stockID, lastOnly);
 
 				System.out.println("process StockRTSHistory done for " + stockID);
-				Thread.sleep(2000);
+				if (!lastOnly)
+					Thread.sleep(2000);
 			}
 
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}
-		// loop through stocks and calculate each history of RTS
-		// call processStockRTSHistory(int stockId, boolean lastOnly)
 
 	}
 
@@ -2257,20 +2460,19 @@ public class UpDownMeasure {
 		// process last 200 days for the moment 9058 to 8858
 		// begin = 8261;
 		// for (int w = currentDateID; w > 8261; w--) {
-		for (int w = tbkStartDateId; w <= currentDateID; w++) { // TBK must start from early to latest
-			System.out.println("Processing TBK at " + w);
-			try {
-				processTodayTBK(w, -1);
-				// sleep in 2 seconds
-				Thread.sleep(2000);
-				if (lastOnly) {
-					break;
-				}
-			} catch (Exception ex) {
+		// for (int w = tbkStartDateId; w <= currentDateID; w++) { // TBK must start
+		// from early to latest
+		// System.out.println("Processing TBK at " + w);
+		try {
+			processTodayTBK(currentDateID, -1);
+			// sleep in 2 seconds
+			Thread.sleep(2000);
 
-			}
+		} catch (Exception ex) {
 
 		}
+
+		// }
 
 	}
 

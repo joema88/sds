@@ -53,7 +53,7 @@ public class DB {
 	// THE DAY
 	// ALTER TABLE DATES ADD COLUMN F8 SMALLINT DEFAULT 0; //FUC=8 NUMBER COUNT OF
 	// THE DAY
-	
+
 	// 3. CREATE TABLE BBROCK(STOCKID SMALLINT, DATEID SMALLINT, PERCENT FLOAT
 	// DEFAULT 0.0, CLOSE FLOAT DEFAULT 0.0,NETCHANGE FLOAT DEFAULT 0.0, ATR FLOAT
 	// DEFAULT 0.0, OPEN FLOAT DEFAULT 0.0,HIGH FLOAT DEFAULT 0.0, LOW FLOAT DEFAULT
@@ -78,9 +78,12 @@ public class DB {
 	// ALTER TABLE BBROCK ADD COLUMN SPY FLOAT DEFAULT 0.0; //Industry sub sector
 	// avg PDY
 	// ALTER TABLE BBROCK ADD COLUMN IAYD FLOAT DEFAULT 0.0;
-		//-- INDUSTRY AVERAGE YIELD DELTA, EACH DAY, FOR A INDUSTRY/sub-industry GROUP ORDER BY MARKCAP ASC
-		//-- AVERAGE THE BDY (SUM/COUNT) THEN DELTA TWO VALUE (SMALL CAP AVERAGE - BIG CAP AVERAGE)
-		//-- THIS IS TO INDICATE IF AN INDUSTRY IS IN UPSWING AND COMPETITIVENESS RELATED TO MARKCAP
+	// -- INDUSTRY AVERAGE YIELD DELTA, EACH DAY, FOR A INDUSTRY/sub-industry GROUP
+	// ORDER BY MARKCAP ASC
+	// -- AVERAGE THE BDY (SUM/COUNT) THEN DELTA TWO VALUE (SMALL CAP AVERAGE - BIG
+	// CAP AVERAGE)
+	// -- THIS IS TO INDICATE IF AN INDUSTRY IS IN UPSWING AND COMPETITIVENESS
+	// RELATED TO MARKCAP
 
 	// ALTER TABLE BBROCK ADD COLUMN DD FLOAT DEFAULT 0.0; //Days to deplete the
 	// stock shares, markcap/(vol*close);
@@ -90,11 +93,30 @@ public class DB {
 	// BASED ON D9 UP/DOWN AND SCALE, WE MAY ASSIGN MINOR VALUE
 	// THIS IS IS AN EXTREMELY SHORT TERM BULLISH SIGNAL WEEKS TO ONE MONTH
 	// ALTER TABLE BBROCK ADD COLUMN VBI TINYINT DEFAULT 0;
-	// ALTER TABLE BBROCK ADD COLUMN EE8 TINYINT DEFAULT 0; //VBI=118 and FUC=8 within 3 days, then EE8=8
-    // ALTER TABLE BBROCK ADD COLUMN BDA SMALLINT DEFAULT 0; //Boduang Delta (of SAY) Delta (of IAYD) Sum
-	//This field indicates the delta values of two fields SAY (sub-industry accumlated yield of mini-bull boduang)
-	//and delta of IAYD (Industry(sub) accumlated yield delta(bottom substract top half marketcap stocks yield)
-	//formula: [SAY at n+1 (dateid) - SAY at n (dateId)]*100+[IAYD at n+1 (dateid) - IAYD at n (dateid)]
+	// ALTER TABLE BBROCK ADD COLUMN EE8 TINYINT DEFAULT 0; //VBI=118 and FUC=8
+	// within 3 days, then EE8=8
+	// ALTER TABLE BBROCK ADD COLUMN BDA SMALLINT DEFAULT 0; //Boduang Delta (of
+	// SAY) Delta (of IAYD) Sum
+	// This field indicates the delta values of two fields SAY (sub-industry
+	// accumlated yield of mini-bull boduang)
+	// and delta of IAYD (Industry(sub) accumlated yield delta(bottom substract top
+	// half marketcap stocks yield)
+	// formula: [SAY at n+1 (dateid) - SAY at n (dateId)]*100+[IAYD at n+1 (dateid)
+	// - IAYD at n (dateid)]
+
+	// ALTER TABLE BBROCK ADD COLUMN AVI TINYINT UNSIGNED DEFAULT 0; -- Average
+	// Volume Depeltion (D9) indicator
+	// This is a slightly delayed indicator to detect volume up/down in conjunction
+	// with price(close) fluctation
+	// So any 14 days range, if D9 is up 35% from the low within the dateid (14
+	// days) or down 35% from peak of the range
+	// then this is significant trading change pattern detected. This seems to be
+	// effective for big markcap stock bottom
+	// or top fishing.
+	// If +35% on D9 and price increase, then AVI 118, if +35% but price decrease
+	// then 218 (DATEID ASC)
+	// If -35% on D9 and price increase, then AVI 128, if -35% but price decrease
+	// then 228 (DATEID ASC)
 	/*
 	 * ALTER TABLE BBROCK ADD COLUMN TSM SMALLINT DEFAULT 0; //Teal color total
 	 * summary between two days ALTER TABLE BBROCK ADD COLUMN TOM TINYINT DEFAULT 0;
@@ -140,29 +162,47 @@ public class DB {
 	 * occurence, then assign value 1
 	 */
 	// ALTER TABLE BBROCK ADD COLUMN TBK TINYINT UNSIGNED DEFAULT 0;
-	// TBK means 30 days breakout bullish pattern based on Teal, Yellow, Pink color number
-	// The last bar must be pure Teal, and previous 30 days the sum of Yellow and Pink>=70%(21)
-	// -->TBK(58)/18 (18 if price<>) or 80%(>=24)-->TBK=68/28 or 90%(>=27)-->TBK=78/38 or 100%(>=30)-->TBK=88/48, Teal number not considered
-	//the last bar close price>max(previous 30 days) or at least within 1% (then wait for new high)
-	//Currently it is implemented as immediately 30 days before, but in reality there may be a gap
-	//between qualified Yellow concentrated area and breakout like NKE, so a better
-	//implementation would be keep track 30 Y+P saturation, then find breakout between>=95% saturation
-	//and breakout point, regardless the gap in between situation.
-	//basically --consolidation peroid + plus gap with no breakout and no clear pattern --> breakout
-	
-	//TBK is a special case of a more general 30 breakout pattern: any previous 30 days
-	// if SUM(Yellow+Pink)>=27 (90%), then it is a consolidating phase, if a later day
-	//breakout the highest of that 30 days' highest, then it is likely a bull buy entry point
-	// In this scenario, the gap between the breakout and consolidation 30 days doesn't have to be
-	//fixed (immediately previous as last case). However, the breakout day must be pure Teal color
-	// Also, the breakout must only check the immediately closest consolidation and its max price.
-	//To avoid data duplication, no new breakout signal in the next 30 days after given first
-	//Also no more new signal at least new consolidation phase appears or certain number of sum (Y+P) of rolling 30 days (>=15??? example, to be determined).
-	//Calculation method, rolling 30 days from old to new, sum(Y+P), if sum>=27(90%), recording max(Close) along with it
-	//Otherwise just take the sum. RTS (Rolling 30 days' sum), MCP (max close price)
-	//Based on RTS, MCP and current day close price, pure Teal, we decide TBK (We need to get rid of old implementation logic)
-	//ALTER TABLE BBROCK ADD COLUMN RTS TINYINT UNSIGNED DEFAULT 0;
-	//ALTER TABLE BBROCK ADD COLUMN MCP FLOAT DEFAULT 0.0;
+	// TBK means 30 days breakout bullish pattern based on Teal, Yellow, Pink color
+	// number
+	// The last bar must be pure Teal, and previous 30 days the sum of Yellow and
+	// Pink>=70%(21)
+	// -->TBK(58)/18 (18 if price<>) or 80%(>=24)-->TBK=68/28 or
+	// 90%(>=27)-->TBK=78/38 or 100%(>=30)-->TBK=88/48, Teal number not considered
+	// the last bar close price>max(previous 30 days) or at least within 1% (then
+	// wait for new high)
+	// Currently it is implemented as immediately 30 days before, but in reality
+	// there may be a gap
+	// between qualified Yellow concentrated area and breakout like NKE, so a better
+	// implementation would be keep track 30 Y+P saturation, then find breakout
+	// between>=95% saturation
+	// and breakout point, regardless the gap in between situation.
+	// basically --consolidation peroid + plus gap with no breakout and no clear
+	// pattern --> breakout
+
+	// TBK is a special case of a more general 30 breakout pattern: any previous 30
+	// days
+	// if SUM(Yellow+Pink)>=27 (90%), then it is a consolidating phase, if a later
+	// day
+	// breakout the highest of that 30 days' highest, then it is likely a bull buy
+	// entry point
+	// In this scenario, the gap between the breakout and consolidation 30 days
+	// doesn't have to be
+	// fixed (immediately previous as last case). However, the breakout day must be
+	// pure Teal color
+	// Also, the breakout must only check the immediately closest consolidation and
+	// its max price.
+	// To avoid data duplication, no new breakout signal in the next 30 days after
+	// given first
+	// Also no more new signal at least new consolidation phase appears or certain
+	// number of sum (Y+P) of rolling 30 days (>=15??? example, to be determined).
+	// Calculation method, rolling 30 days from old to new, sum(Y+P), if
+	// sum>=27(90%), recording max(Close) along with it
+	// Otherwise just take the sum. RTS (Rolling 30 days' sum), MCP (max close
+	// price)
+	// Based on RTS, MCP and current day close price, pure Teal, we decide TBK (We
+	// need to get rid of old implementation logic)
+	// ALTER TABLE BBROCK ADD COLUMN RTS TINYINT UNSIGNED DEFAULT 0;
+	// ALTER TABLE BBROCK ADD COLUMN MCP FLOAT DEFAULT 0.0;
 	private static Connection dbcon = null;
 	private static PreparedStatement symbolStmnt = null;
 	private static PreparedStatement symbolDateIDQuery = null;
@@ -267,14 +307,14 @@ public class DB {
 	private static PreparedStatement updateD2 = null;
 	private static PreparedStatement updateD9 = null;
 	private static PreparedStatement avgD2 = null;
-	private static PreparedStatement updateVBIStmnt= null;
+	private static PreparedStatement updateVBIStmnt = null;
 	private static PreparedStatement DDD9Stmnt = null;
 	private static PreparedStatement deleteSymb = null;
 	private static PreparedStatement updateStockID = null;
 	private static PreparedStatement updateEE8 = null;
 	private static PreparedStatement stkvbifx = null;
 	private static PreparedStatement vbifx = null;
-	private static PreparedStatement cDateId= null;
+	private static PreparedStatement cDateId = null;
 	private static PreparedStatement subIndStockCount = null;
 	private static PreparedStatement updateIndAvgYieldDelta = null;
 	private static PreparedStatement updateBDAStmnt = null;
@@ -286,82 +326,102 @@ public class DB {
 	private static PreparedStatement resetTBKStmnt = null;
 	private static PreparedStatement closestMCPStmnt = null;
 	private static PreparedStatement tbkStmnt = null;
-	
+	private static PreparedStatement minMaxD9 = null;
+	private static PreparedStatement checkD9AndClose = null;
+	private static PreparedStatement checkAVIExist = null;
+	private static PreparedStatement updateStockAVI = null;
+
 	public static void closeConnection() {
 		try {
-			if( tbkStmnt != null) {
+			if( updateStockAVI != null) {
+				updateStockAVI.close();
+				updateStockAVI = null;
+			}
+			if( checkAVIExist != null) {
+				checkAVIExist.close();
+				checkAVIExist = null;
+			}
+			if (checkD9AndClose != null) {
+				checkD9AndClose.close();
+				checkD9AndClose = null;
+			}
+			if (minMaxD9 != null) {
+				minMaxD9.close();
+				minMaxD9 = null;
+			}
+			if (tbkStmnt != null) {
 				tbkStmnt.close();
 				tbkStmnt = null;
 			}
-			if( closestMCPStmnt != null) {
+			if (closestMCPStmnt != null) {
 				closestMCPStmnt.close();
 				closestMCPStmnt = null;
 			}
-			if( resetTBKStmnt != null) {
+			if (resetTBKStmnt != null) {
 				resetTBKStmnt.close();
 				resetTBKStmnt = null;
 			}
-			if( updateRtsMcp != null) {
+			if (updateRtsMcp != null) {
 				updateRtsMcp.close();
 				updateRtsMcp = null;
 			}
-			if( updateTBKStmnt != null) {
+			if (updateTBKStmnt != null) {
 				updateTBKStmnt.close();
 				updateTBKStmnt = null;
 			}
-			if( past30Stmnt != null) {
+			if (past30Stmnt != null) {
 				past30Stmnt.close();
 				past30Stmnt = null;
 			}
-			if(pureTeal != null) {
+			if (pureTeal != null) {
 				pureTeal.close();
 				pureTeal = null;
 			}
-			if( stockInfoHistory != null) {
+			if (stockInfoHistory != null) {
 				stockInfoHistory.close();
 				stockInfoHistory = null;
 			}
-			if( updateBDAStmnt != null) {
+			if (updateBDAStmnt != null) {
 				updateBDAStmnt.close();
 				updateBDAStmnt = null;
 			}
-			if(updateIndAvgYieldDelta != null) {
+			if (updateIndAvgYieldDelta != null) {
 				updateIndAvgYieldDelta.close();
 				updateIndAvgYieldDelta = null;
 			}
-			if(subIndStockCount != null) {
+			if (subIndStockCount != null) {
 				subIndStockCount.close();
 				subIndStockCount = null;
 			}
-			if(cDateId != null) {
+			if (cDateId != null) {
 				cDateId.close();
 				cDateId = null;
 			}
-			if(vbifx != null) {
+			if (vbifx != null) {
 				vbifx.close();
-				vbifx  = null;
+				vbifx = null;
 			}
-			if( stkvbifx != null) {
+			if (stkvbifx != null) {
 				stkvbifx.close();
 				stkvbifx = null;
 			}
-			if( updateEE8 != null) {
+			if (updateEE8 != null) {
 				updateEE8.close();
 				updateEE8 = null;
 			}
-			if(updateStockID != null) {
+			if (updateStockID != null) {
 				updateStockID.close();
 				updateStockID = null;
 			}
-			if(deleteSymb !=  null) {
+			if (deleteSymb != null) {
 				deleteSymb.close();
 				deleteSymb = null;
 			}
-			if(DDD9Stmnt != null) {
+			if (DDD9Stmnt != null) {
 				DDD9Stmnt.close();
 				DDD9Stmnt = null;
 			}
-			if( updateVBIStmnt != null ) {
+			if (updateVBIStmnt != null) {
 				updateVBIStmnt.close();
 				updateVBIStmnt = null;
 			}
@@ -931,7 +991,7 @@ public class DB {
 	}
 
 	public static PreparedStatement getCurrentDateID() {
-		if (cDateId== null) {
+		if (cDateId == null) {
 			try {
 				String query = "select MAX(DATEID) FROM BBROCK";
 				cDateId = getConnection().prepareStatement(query);
@@ -944,6 +1004,7 @@ public class DB {
 
 		return cDateId;
 	}
+
 	public static PreparedStatement getMinDPC() {
 		if (minDPC == null) {
 			try {
@@ -977,36 +1038,35 @@ public class DB {
 		if (vbifx == null) {
 			try {
 				String query = "select FUC,VBI,STOCKID,CLOSE, DATEID FROM BBROCK WHERE DATEID=? AND ( FUC>? OR VBI>? ) ORDER BY STOCKID ASC";
-				vbifx  = getConnection().prepareStatement(query);
+				vbifx = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
 			}
 
 		}
 
-		return vbifx ;
+		return vbifx;
 	}
-	
+
 	public static PreparedStatement getStockVBIFUCX() {
 		if (stkvbifx == null) {
 			try {
 				String query = "select FUC,VBI,STOCKID,CLOSE, DATEID FROM BBROCK WHERE STOCKID=? AND DATEID>=? AND DATEID<=? ORDER BY DATEID DESC";
-				stkvbifx  = getConnection().prepareStatement(query);
+				stkvbifx = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
 			}
 
 		}
 
-		return stkvbifx ;
+		return stkvbifx;
 	}
-	
-	
+
 	public static PreparedStatement updateEE8() {
 		if (updateEE8 == null) {
 			try {
 				String query = "UPDATE BBROCK SET EE8=? WHERE STOCKID=? AND DATEID=?";
-				updateEE8  = getConnection().prepareStatement(query);
+				updateEE8 = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
 			}
@@ -1015,8 +1075,7 @@ public class DB {
 
 		return updateEE8;
 	}
-	
-	
+
 	public static PreparedStatement getFUCF() {
 		if (fucf == null) {
 			try {
@@ -1162,6 +1221,67 @@ public class DB {
 		return startDateIdStmnt;
 	}
 
+	public static PreparedStatement getMinMaxD9() {
+		if (minMaxD9 == null) {
+			try {
+				String query = "select MIN(D9),MAX(D9) from BBROCK WHERE STOCKID=? and DATEID>=? and DATEID<=?";
+
+				minMaxD9 = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return minMaxD9;
+	}
+
+	public static PreparedStatement checkD9Close() {
+		if (checkD9AndClose == null) {
+			try {
+				String query = "SELECT DATEID, CLOSE, D9 from BBROCK WHERE STOCKID=? and DATEID>=? and DATEID<=? ORDER BY DATEID ASC";
+
+				checkD9AndClose = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return checkD9AndClose;
+	}
+
+	public static PreparedStatement checkAVIExist() {
+		if (checkAVIExist == null) {
+			try {
+				String query = "SELECT COUNT(*) from BBROCK WHERE STOCKID=? and DATEID>=? and DATEID<=? AND AVI=?";
+
+				checkAVIExist = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return checkAVIExist;
+	}
+	
+
+	public static PreparedStatement updateStockAVI() {
+		if (updateStockAVI == null) {
+			try {
+				String query = "UPDATE BBROCK SET AVI=? WHERE STOCKID=? AND DATEID=?";
+
+				updateStockAVI = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return updateStockAVI;
+	}
+	
 	public static PreparedStatement getAvgD2() {
 		if (avgD2 == null) {
 			try {
@@ -1197,32 +1317,31 @@ public class DB {
 			try {
 				String query = "UPDATE BBROCK SET STOCKID=? WHERE STOCKID=?";
 
-				updateStockID  = getConnection().prepareStatement(query);
+				updateStockID = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
 			}
 
 		}
 
-		return updateStockID ;
+		return updateStockID;
 	}
-	
-	
+
 	public static PreparedStatement updateRTS_MCP() {
-		if (updateRtsMcp== null) {
+		if (updateRtsMcp == null) {
 			try {
 				String query = "UPDATE BBROCK SET RTS=?, MCP=? WHERE STOCKID=? AND DATEID=?";
 
-				updateRtsMcp  = getConnection().prepareStatement(query);
+				updateRtsMcp = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
 			}
 
 		}
 
-		return updateRtsMcp ;
+		return updateRtsMcp;
 	}
-	
+
 	public static PreparedStatement updateD2() {
 		if (updateD2 == null) {
 			try {
@@ -1956,7 +2075,6 @@ public class DB {
 		return closePriceStmnt;
 	}
 
-	
 	public static PreparedStatement getTBKStmnt() {
 		getConnection();
 
@@ -1973,7 +2091,7 @@ public class DB {
 
 		return tbkStmnt;
 	}
-	
+
 	public static PreparedStatement getUPCStmnt() {
 		getConnection();
 
@@ -2008,8 +2126,6 @@ public class DB {
 		return fucStmnt;
 	}
 
-	
-	
 	public static PreparedStatement getFUCTodayStmnt() {
 		getConnection();
 
@@ -2062,7 +2178,7 @@ public class DB {
 	}
 
 	public static PreparedStatement getSubIndStockCount() {
-		if (subIndStockCount== null) {
+		if (subIndStockCount == null) {
 			try {
 				String query = "SELECT count(*) FROM  BBROCK a, SYMBOLS b, DATES c WHERE a.DATEID=c.DATEID and a.DATEID=? and a.STOCKID=b.STOCKID and b.INDID=? and b.SUBID=?";
 				subIndStockCount = getConnection().prepareStatement(query);
@@ -2074,7 +2190,7 @@ public class DB {
 
 		return subIndStockCount;
 	}
-	
+
 	public static PreparedStatement getAllSubIndStockInfo() {
 		if (subIndStockInfo == null) {
 			try {
@@ -2175,7 +2291,7 @@ public class DB {
 
 		return updateIndAvgYieldDelta;
 	}
-	
+
 	public static PreparedStatement updateStockSectorStmnt() {
 		getConnection();
 
@@ -2617,8 +2733,7 @@ public class DB {
 
 		return queryPYStmnt;
 	}
-	
-	
+
 	public static PreparedStatement getClosetMCPStmnt() {
 		getConnection();
 
@@ -2697,9 +2812,7 @@ public class DB {
 
 		return past30Stmnt;
 	}
-	
-	
-	
+
 	public static PreparedStatement updateTBKStmnt() {
 		getConnection();
 
@@ -2715,7 +2828,7 @@ public class DB {
 
 		return updateTBKStmnt;
 	}
-	
+
 	public static PreparedStatement getPureTeal() {
 		getConnection();
 
@@ -2732,7 +2845,6 @@ public class DB {
 		return pureTeal;
 	}
 
-	
 	public static PreparedStatement getDDD9Stmnt() {
 		getConnection();
 
@@ -2749,7 +2861,6 @@ public class DB {
 		return DDD9Stmnt;
 	}
 
-	
 	public static PreparedStatement updateVBIStmnt() {
 		getConnection();
 
@@ -2765,8 +2876,7 @@ public class DB {
 
 		return updateVBIStmnt;
 	}
-	
-	
+
 	public static PreparedStatement resetTBKStmnt() {
 		getConnection();
 
@@ -2782,8 +2892,7 @@ public class DB {
 
 		return resetTBKStmnt;
 	}
-	
-	
+
 	public static PreparedStatement updateBDAStmnt() {
 		getConnection();
 
@@ -2799,8 +2908,7 @@ public class DB {
 
 		return updateBDAStmnt;
 	}
-	
-	
+
 	public static PreparedStatement getTYPDSumByStockIDStmnt() {
 		getConnection();
 
@@ -3012,7 +3120,7 @@ public class DB {
 
 		return deleteSymb;
 	}
-	
+
 	public static PreparedStatement getRockInsertStatement() {
 		getConnection();
 
