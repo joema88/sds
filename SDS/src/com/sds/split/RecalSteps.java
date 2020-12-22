@@ -245,6 +245,7 @@ public class RecalSteps {
 			UpDownMeasure.processStockTBKHistory(stockID);
 			//recalculate Average Volume (D9) Indicator
 			UpDownMeasure.processStockAVIHistory(stockID, false);
+			
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}

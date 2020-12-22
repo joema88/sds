@@ -93,8 +93,8 @@ public class UpDownMeasure {
 		// processAVIHistory(true);
 
 		
-		processStockAVIHistory(297, false); //test FB AVI first
-		//processAVIHistory(false);
+		//processStockAVIHistory(297, false); //test FB AVI first
+		processAVIHistory(false);
 		// process entire Rolling Thirty days Sum(P+Y) and MCP(if qualified>=90%)
 		// history
 		// processRTSHistory(false);
@@ -2055,11 +2055,11 @@ public class UpDownMeasure {
 					// any exact AVI value has been assigned, if so skip updating (to avoid too much
 					// signals for a given day)
 					// if not then update, continue to move this dateid up till all data checked
-					for (int day = 0; day <= count; day++) { //count is better than days as sometime 13 records
+					for (int day = 0; day < count; day++) { //count is better than days as sometime 13 records
 						float earlyD9 = d9s[day];
 						int earlyDateId = dateIds[day];
 						float earlyClose = closes[day];
-						for (int lateDay = day + 1; lateDay <= count; lateDay++) {// add one day to start loop
+						for (int lateDay = day + 1; lateDay < count; lateDay++) {// add one day to start loop
 							float lateD9 = d9s[lateDay];
 							int lateDateId = dateIds[lateDay];
 							float lateClose = closes[lateDay];
