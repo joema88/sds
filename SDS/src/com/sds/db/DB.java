@@ -118,6 +118,7 @@ public class DB {
 	// then 218 (DATEID ASC)
 	// If -35% on D9 and price increase, then AVI 128, if -35% but price decrease
 	// then 228 (DATEID ASC)
+	
 	/*
 	 * ALTER TABLE BBROCK ADD COLUMN TSM SMALLINT DEFAULT 0; //Teal color total
 	 * summary between two days ALTER TABLE BBROCK ADD COLUMN TOM TINYINT DEFAULT 0;
