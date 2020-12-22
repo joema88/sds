@@ -1958,7 +1958,9 @@ public class UpDownMeasure {
 
 	}
 
-	
+	//-- bull pattern within 30 days, 118 ->128->228(optional) then close price 
+	//above max from 118 bull buy like GE, FB
+
 	public static void processStockAVIHistory(int stockId, boolean lastOnly) {
 		try {
 			PreparedStatement dateIdRangeWithVolumeInfo = DB.getStockVolumeDateIDRange();
@@ -2047,11 +2049,10 @@ public class UpDownMeasure {
 					// WHERE STOCKID=? and DATEID>=? and DATEID<=?
 					// ORDER BY DATEID ASC";
 					checkD9AndClose.setInt(1, stockId);
-					checkD9AndClose.setInt(2, dateId - 13);
+					checkD9AndClose.setInt(2, dateIdBegin);
 					checkD9AndClose.setInt(3, dateId);
 
 					ResultSet rs2 = checkD9AndClose.executeQuery();
-					int days = 14;
 					int[] dateIds = new int[days];
 					float[] closes = new float[days];
 					float[] d9s = new float[days];
@@ -2119,8 +2120,8 @@ public class UpDownMeasure {
 								// String query = "SELECT COUNT(*) from BBROCK WHERE
 								// STOCKID=? and DATEID>=? and DATEID<=? AND AVI=?";
 								checkAVIExist.setInt(1, stockId);
-								checkAVIExist.setInt(2, lateDateId - 13);
-								checkAVIExist.setInt(3, lateDateId);
+								checkAVIExist.setInt(2, lateDateId-days);
+								checkAVIExist.setInt(3, lateDateId+days);//expand as the loop goes back and forth
 								checkAVIExist.setInt(4, avi);
 								ResultSet rs3 = checkAVIExist.executeQuery();
 
