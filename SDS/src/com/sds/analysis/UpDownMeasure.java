@@ -94,7 +94,8 @@ public class UpDownMeasure {
 		// daily step 17, process last day TTA
 		// processTTAHistory(true);
 
-		processTTAHistory(false);
+		processStockTTAHistory(297, false);
+		//processTTAHistory(false);
 		// processStockAVIHistory(297, false); //test FB AVI first
 		// processAVIHistory(false);
 		// process entire Rolling Thirty days Sum(P+Y) and MCP(if qualified>=90%)
@@ -1949,7 +1950,7 @@ public class UpDownMeasure {
 
 				processStockTTAHistory(stockID, lastOnly);
 
-				System.out.println("process AVIHistory done for " + stockID);
+				System.out.println("process TTA History done for " + stockID);
 				if (!lastOnly)
 					Thread.sleep(2000);
 			}
@@ -2052,8 +2053,8 @@ public class UpDownMeasure {
 			TTAInfo.setInt(1, stockId);
 			TTAInfo.setInt(2, dateId - days);
 			TTAInfo.setInt(3, dateId);
-			TTAInfo.setInt(3, dateId - days);
-			TTAInfo.setInt(4, dateId);
+			TTAInfo.setInt(4, dateId - days);
+			TTAInfo.setInt(5, dateId);
 
 			ResultSet rs1 = TTAInfo.executeQuery();
 
@@ -2077,7 +2078,9 @@ public class UpDownMeasure {
 			// FUC TAKE 1ST PRIORITY UNLESS THERE IS ONE WITHIN 30 DAYS, THEN TBK, THEN VBI
 			// AS FUC IS LONG TERM AND RARE, TBK IS MEDIATE TERM, VBI IS SHORT TERM AND
 			// FREQUENT
-
+			if(dateId==8972) {
+				System.out.println("Debugging...");
+			}
 			float endPrice = 0.0f;// 30 day last close price with/without TTA <>0
 			float ttaEndPrice = 0.0f;// last(DATEID max) TTA<>0 tag close price
 			float beginPrice = 0.0f;// 30 day begin close price with/without TTA<>0
@@ -2085,6 +2088,7 @@ public class UpDownMeasure {
 			while (rs1.next()) { // begin if (rs1.next())
 				// DATEID,CLOSE,FUC,TBK,VBI,DD,VOLUME
 				int tempDateId = rs1.getInt(1);
+				
 				float tempClose = rs1.getFloat(2);
 				int tempFUC = rs1.getInt(3);
 				int tempTBK = rs1.getInt(4);
@@ -2198,7 +2202,7 @@ public class UpDownMeasure {
 					minBeginClose = ttaBeginPrice; // first (DATEID min) TTA<>0 tag close price
 				
 				if (maxEndClose > minBeginClose) { //begin if (maxEndClose > maxBeginClose)
-					int ValTTA = 100 * fucNum + 10 * vbiNum + vbiNum;
+					int ValTTA = 100 * fucNum + 10 * tbkNum + vbiNum;
 					// before update TTA with stockId, dateId and ValTTA
 					// check if such value exists in the last 30 days to avoid repeat
 					// and too much signal to read each day

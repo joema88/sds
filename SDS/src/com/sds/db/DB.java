@@ -1010,6 +1010,7 @@ public class DB {
 		return TTAInfo;
 	}
 	
+	
 	public static PreparedStatement checkTTAExistence() {
 		if (existTTA == null) {
 			try {
