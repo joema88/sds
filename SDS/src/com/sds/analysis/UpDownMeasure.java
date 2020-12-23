@@ -85,16 +85,16 @@ public class UpDownMeasure {
 		// daily step 13, process BDA [(Delta of SAY)*100 + (Delta of IAYD)]
 		// processTodayBDA(currentDateID, -1);
 		// daily step 14, this may have to be switched with step 14 once finalized
-		// processRTSHistory(true);
+		 //processRTSHistory(true);
 		// daily step 15, process last day TBK, last 30 days breakout bullish pattern
 		// base on 30 days breakout mark set in step 14
-		// processTBKHistory(true);
+		//processTBKHistory(true);
 		// daily step 16, process last day AVI
 		// processAVIHistory(true);
 
 		
 		//processStockAVIHistory(297, false); //test FB AVI first
-		processAVIHistory(false);
+		//processAVIHistory(false);
 		// process entire Rolling Thirty days Sum(P+Y) and MCP(if qualified>=90%)
 		// history
 		// processRTSHistory(false);
