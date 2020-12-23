@@ -205,6 +205,21 @@ public class DB {
 	// need to get rid of old implementation logic)
 	// ALTER TABLE BBROCK ADD COLUMN RTS TINYINT UNSIGNED DEFAULT 0;
 	// ALTER TABLE BBROCK ADD COLUMN MCP FLOAT DEFAULT 0.0;
+	
+	// ALTER TABLE BBROCK ADD COLUMN TTA TINYINT UNSIGNED DEFAULT 0;
+	//TTA (TIE SHANG JIAO) THREE TRIANGLE = FUC+TBK+VBI
+	//ANY TWO OR THREE WITHIN 30 DAYS IS GOOD
+	// IF FUC=4, THEN 1XX, FUC=8, THEN 2XX
+	// IF TBK>=8, COUNT HOW MANY WITHIN 30 DAYS, IF C, THEN XCX
+	// IF VBI>=18, COUNT HOW MANY WITHIN 30 DAYS, IF D, THEN XXD
+	//SO TTA IS 1CD OR 2CD, MOVING FROM DATEID ASC DIRECTION,TTA MUST NOT BE THE
+	//SAME VALUE FOR LAST 30 DAYS
+	//ALSO, THE LATEID MARK DAY CLOSE PRICE SHOULD BE HIGHER THAN EARLY CLOSE PRICE
+	//ALSO WATCH DD=0, NOT CONSIDER VBI. ALSO IF TWO VALUES ON SAME DAY, ONLY ONE CAN BE CHOSEN
+	//FUC TAKE 1ST PRIORITY UNLESS THERE IS ONE WITHIN 30 DAYS, THEN TBK, THEN VBI
+	//AS FUC IS LONG TERM AND RARE, TBK IS MEDIATE TERM, VBI IS SHORT TERM AND FREQUENT
+	
+	
 	private static Connection dbcon = null;
 	private static PreparedStatement symbolStmnt = null;
 	private static PreparedStatement symbolDateIDQuery = null;
@@ -334,9 +349,34 @@ public class DB {
 	private static PreparedStatement updateStockAVI = null;
 	private static PreparedStatement resetStockAVI = null;
 	private static PreparedStatement stkDateId = null;
-
+	private static PreparedStatement resetStockTTA = null;
+	private static PreparedStatement TTADateIDStart = null;
+	private static PreparedStatement TTAInfo = null;
+	private static PreparedStatement updateTTA = null;
+	private static PreparedStatement existTTA = null;
+	
 	public static void closeConnection() {
 		try {
+			if( existTTA != null ) {
+				existTTA.close();
+				existTTA = null;
+			}
+			if( updateTTA != null) {
+				updateTTA.close();
+				updateTTA = null;
+			}
+			if( TTAInfo != null ) {
+				TTAInfo.close();
+				TTAInfo = null;
+			}
+			if( TTADateIDStart != null) {
+				TTADateIDStart.close();
+				TTADateIDStart = null;
+			}
+			if( resetStockTTA != null) {
+				resetStockTTA.close();
+				resetStockTTA = null;
+			}
 			if( stkDateId != null ) {
 				stkDateId.close();
 				stkDateId = null;
@@ -954,6 +994,64 @@ public class DB {
 
 		return dateIDRange;
 	}
+	
+	
+	public static PreparedStatement getStockTTAInfo() {
+		if (TTAInfo == null) {
+			try {
+				String query = "select DATEID,CLOSE,FUC,TBK,VBI,DD,VOLUME FROM BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=? AND (FUC>=4 OR VBI>=28 OR TBK>=8 OR DATEID=? OR DATEID=?) ORDER BY DATEID DESC";
+				TTAInfo = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return TTAInfo;
+	}
+	
+	public static PreparedStatement checkTTAExistence() {
+		if (existTTA == null) {
+			try {
+				String query = "select COUNT(*) FROM BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=? AND TTA=?";
+				existTTA = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return existTTA;
+	}
+	
+	public static PreparedStatement updateTTA() {
+		if (updateTTA == null) {
+			try {
+				String query = "UPDATE BBROCK SET TTA=? WHERE STOCKID = ? AND DATEID=?";
+				updateTTA = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return updateTTA;
+	}
+	
+	public static PreparedStatement getStockTTADateIDBegin() {
+		if (TTADateIDStart== null) {
+			try {
+				String query = "select MIN(DATEID) FROM BBROCK WHERE STOCKID = ? AND (FUC>=4 OR VBI>=28 OR TBK>=8)";
+				TTADateIDStart = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return TTADateIDStart;
+	}
+	
 	// SELECT DATEID, CLOSE, DPC, UPC FROM BBROCK WHERE STOCKID=2626
 	// AND DATEID<=8720 AND DATEID>8470 ORDER BY CLOSE DESC, DATEID DESC LIMIT 20;
 	public static PreparedStatement getMaxClose() {
@@ -1321,6 +1419,20 @@ public class DB {
 		return resetStockAVI ;
 	}
 
+	public static PreparedStatement resetStockTTA() {
+		if (resetStockTTA == null) {
+			try {
+				String query = "UPDATE BBROCK SET TTA=0 WHERE STOCKID=? AND TTA<>0";
+
+				resetStockTTA  = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return resetStockTTA ;
+	}
 	public static PreparedStatement updateStockAVI() {
 		if (updateStockAVI == null) {
 			try {

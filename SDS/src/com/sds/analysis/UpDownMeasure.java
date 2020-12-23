@@ -85,16 +85,18 @@ public class UpDownMeasure {
 		// daily step 13, process BDA [(Delta of SAY)*100 + (Delta of IAYD)]
 		// processTodayBDA(currentDateID, -1);
 		// daily step 14, this may have to be switched with step 14 once finalized
-		 //processRTSHistory(true);
+		// processRTSHistory(true);
 		// daily step 15, process last day TBK, last 30 days breakout bullish pattern
 		// base on 30 days breakout mark set in step 14
-		//processTBKHistory(true);
+		// processTBKHistory(true);
 		// daily step 16, process last day AVI
 		// processAVIHistory(true);
+		// daily step 17, process last day TTA
+		// processTTAHistory(true);
 
-		
-		//processStockAVIHistory(297, false); //test FB AVI first
-		//processAVIHistory(false);
+		processTTAHistory(false);
+		// processStockAVIHistory(297, false); //test FB AVI first
+		// processAVIHistory(false);
 		// process entire Rolling Thirty days Sum(P+Y) and MCP(if qualified>=90%)
 		// history
 		// processRTSHistory(false);
@@ -1927,6 +1929,312 @@ public class UpDownMeasure {
 		}
 	}
 
+	// TTA bull indicator, basically FUC, TBK and VBI any two is a combination
+	// of long/intermediate signals with bullish potentials
+	public static void processTTAHistory(boolean lastOnly) {
+		// get all stocks, may be current??
+		try {
+
+			long t1 = System.currentTimeMillis();
+
+			PreparedStatement allStocks = DB.getAllStockIDs();
+			allStocks.setInt(1, 1);
+
+			ResultSet rs = allStocks.executeQuery();
+			int sc = 0;
+			System.out.println("-----------Begin---------");
+			while (rs.next()) {
+				sc++;
+				int stockID = rs.getInt(1);
+
+				processStockTTAHistory(stockID, lastOnly);
+
+				System.out.println("process AVIHistory done for " + stockID);
+				if (!lastOnly)
+					Thread.sleep(2000);
+			}
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+		// loop through stocks and calculate each history of TTA
+		// call processStockTTAHistory(int stockId, boolean lastOnly)
+
+	}
+
+	public static void processStockTTAHistory(int stockId, boolean lastOnly) {
+		try {
+			PreparedStatement dateIdBeginWithTTA = DB.getStockTTADateIDBegin();
+			PreparedStatement resetStockTTA = DB.resetStockTTA();
+			initCurrentDateID();
+			int beginDateId = 0;
+			int endDateId = currentDateID;
+
+			if (lastOnly && currentDateID > 0) {
+				processStockTTAToday(stockId, currentDateID);
+			} else {
+				// reset AVI = 0
+				resetStockTTA.setInt(1, stockId);
+				resetStockTTA.executeUpdate();
+				// String query = "select MIN(DATEID) FROM BBROCK
+				// WHERE STOCKID = ? AND (FUC>=4 OR VBI>=28 OR TBK>=8)";
+
+				dateIdBeginWithTTA.setInt(1, stockId);
+				ResultSet rs = dateIdBeginWithTTA.executeQuery();
+				if (rs.next()) {
+					beginDateId = rs.getInt(1);
+				}
+
+				// we need 30 days for checking TTA combo
+				int begin = beginDateId + 29;
+
+				for (int k = begin; k <= endDateId; k++) {
+					processStockTTAToday(stockId, k);
+				}
+			}
+			// loop through stocks and calculate each history of TTA
+			// call processStockTTAToday(int stockId, int dateId)
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+
+	}
+
+	/*
+	 * VBI calculation logic is based on DD (days to deplete outstand stocks, i.e.,
+	 * markcap/close/dailyVolume) and D9 (10 day average of DD). VBI only detects
+	 * latest DD compared to last 3 days (4 days data total), if DD drops more than
+	 * 2/3 from any of the previous 3 days, any VBI>=8 (18,28,108,118) indicates
+	 * this, based on D9 change range 10% or 20%, the rest is determined, not sure
+	 * how big the impact is. So VBI>=8 (especially VBI>=108) is an early indicator
+	 * of strong buy or sell, very time sensitive (within a week or two). [ detail
+	 * logic is in processVBIToday(int stockID, int dateId) of UpDownMeasure] This
+	 * metrics maybe should be combined with TBK (30 days outbreak pattern), pure
+	 * Teal of latest and close price above the last 90% (>=27 days) of pink+yellow
+	 * count of continuous 30 days). So TBK only consider P/Y/T and close pattern
+	 * and close price over 30 days with no volume info. TBK+VBI --> considers short
+	 * term heavy volume action with long term price breakout pattern. A good
+	 * combination. TBK AND VBI SHOULD NOT BE ON THE SAME DAY
+	 * 
+	 * FUC (U turn pattern) is based on last 250 days (one year) max drop DPC ( drop
+	 * percentage from peak) and UPC (Up percentage from bottom of last 30 days),
+	 * UTURN is defined UPC>40 and UPC-DPC>100 (FUC=8) or only UPC>40 and
+	 * UPC-DPC<100, then FUC=4 So FUC+VBI --> considers short term heavy volume
+	 * action with long term price bullish pattern. A good combination. FUC AND VBI
+	 * SHOULD NOT BE ON THE SAME DAY
+	 * 
+	 * TBK + FUC IS ALSO A GOOD COMBINATION AS THE BREAKOUT HAS A YEAR BASE??
+	 * 
+	 * FUC by itself is significant as it takes both intermediate (30 days) bullish
+	 * pattern with long term correction pattern
+	 * 
+	 * EE8 is a combo of FUC and VBI of last 4 days, maybe this should be more days
+	 * in between, like 25 to 30 days?...for FUC+VBI or TBK+VBI patterns
+	 * 
+	 * Examples of such: PLUG, FUBO,GUSH,
+	 * LABU,FB,AAPL,TSLA,SIG,VUZI,JKS,RIG,PTON,SNAP,TCS,LOVE,OCUL,BE,BEEM,BILI,WST,
+	 * WDC(DANGER),SHOO, FOSL, NVTA, SOXL,TQQQ,FCEL,ZM,
+	 * AMZN,PINS,FSLY,TUP,ROKU,CRSP,SQ,NVTA,Z,PRLB,TDOC,SHOP,EDIT,NSTG,U
+	 */
+	public static void processStockTTAToday(int stockId, int dateId) {
+		try {
+			int days = 29; // dateId-days to dateId is 30 days
+			PreparedStatement TTAInfo = DB.getStockTTAInfo();
+			PreparedStatement updateTTA = DB.updateTTA();
+			PreparedStatement existTTA = DB.checkTTAExistence();
+
+			// Check last 30 days TTA info
+			// String query = "select DATEID,CLOSE,FUC,TBK,VBI,DD,VOLUME FROM
+			// BBROCK WHERE STOCKID = ? AND DATEID>=? AND DATEID<=?
+			// AND (FUC>=4 OR VBI>=28 OR TBK>=8 OR DATEID=? OR DATEID=?)
+			// ORDER BY DATEID DESC";
+
+			TTAInfo.setInt(1, stockId);
+			TTAInfo.setInt(2, dateId - days);
+			TTAInfo.setInt(3, dateId);
+			TTAInfo.setInt(3, dateId - days);
+			TTAInfo.setInt(4, dateId);
+
+			ResultSet rs1 = TTAInfo.executeQuery();
+
+			boolean fucAlone = false;
+			boolean tbkAlone = false;
+			boolean vbiAlone = false;
+			int fucNum = 0;
+			int tbkNum = 0;
+			int vbiNum = 0;
+
+			// TTA (TIE SHANG JIAO) THREE TRIANGLE = FUC+TBK+VBI
+			// ANY TWO OR THREE WITHIN 30 DAYS IS GOOD
+			// IF FUC=4, THEN 1XX, FUC=8, THEN 2XX
+			// IF TBK>=8, COUNT HOW MANY WITHIN 30 DAYS, IF C, THEN XCX
+			// IF VBI>=18, COUNT HOW MANY WITHIN 30 DAYS, IF D, THEN XXD
+			// SO TTA IS 1CD OR 2CD, MOVING FROM DATEID ASC DIRECTION,TTA MUST NOT BE THE
+			// SAME VALUE FOR LAST 30 DAYS
+			// ALSO, THE LATEID MARK DAY CLOSE PRICE SHOULD BE HIGHER THAN EARLY CLOSE PRICE
+			// ALSO WATCH DD=0, NOT CONSIDER VBI. ALSO IF TWO VALUES ON SAME DAY, ONLY ONE
+			// CAN BE CHOSEN
+			// FUC TAKE 1ST PRIORITY UNLESS THERE IS ONE WITHIN 30 DAYS, THEN TBK, THEN VBI
+			// AS FUC IS LONG TERM AND RARE, TBK IS MEDIATE TERM, VBI IS SHORT TERM AND
+			// FREQUENT
+
+			float endPrice = 0.0f;// 30 day last close price with/without TTA <>0
+			float ttaEndPrice = 0.0f;// last(DATEID max) TTA<>0 tag close price
+			float beginPrice = 0.0f;// 30 day begin close price with/without TTA<>0
+			float ttaBeginPrice = 0.0f; // first (DATEID min) TTA<>0 tag close price
+			while (rs1.next()) { // begin if (rs1.next())
+				// DATEID,CLOSE,FUC,TBK,VBI,DD,VOLUME
+				int tempDateId = rs1.getInt(1);
+				float tempClose = rs1.getFloat(2);
+				int tempFUC = rs1.getInt(3);
+				int tempTBK = rs1.getInt(4);
+				int tempVBI = rs1.getInt(5);
+				float tempDD = rs1.getFloat(6);
+				float tempVolume = rs1.getFloat(7);
+
+				// only update endPrice once at loop begin
+				if (endPrice < 0.001f) {
+					endPrice = tempClose;
+				}
+
+				// only update ttaEndPrice once if TTA tag <>0, VBI has to take out DD=0 special
+				// case
+				if (ttaEndPrice < 0.001f
+						&& (tempFUC >= 4 || tempTBK >= 8 || (tempVBI >= 28 && tempDD > 0.0000001f && tempVolume > 1))) {
+					ttaEndPrice = tempClose;
+				}
+
+				// keep updating begin price as DATEID in DESC order
+				beginPrice = tempClose;
+
+				// keep updating ttaBeginPrice as DATEID in DESC order if TTA tag <>0, VBI has
+				// to take out DD=0 special case
+				if (tempFUC >= 4 || tempTBK >= 8 || (tempVBI >= 28 && tempDD > 0.0000001f && tempVolume > 1)) {
+					ttaBeginPrice = tempClose;
+				}
+
+				// update fucAlone tag if conditions met for a result row
+				if (tempFUC >= 4 && tempTBK < 2 && tempVBI < 2) {
+					fucAlone = true;
+					fucNum++;
+				} else if (tempFUC < 2 && tempTBK >= 8 && tempVBI < 2) {
+					// update tbkAlone tag if conditions met for a result row
+					tbkAlone = true;
+					tbkNum++;
+				} else if (tempFUC < 2 && tempTBK < 2 && (tempVBI >= 28 && tempDD > 0.0000001f && tempVolume > 1)) {
+					// update vbiAlone tag if conditions met for a result row, VBI has to take out
+					// DD=0 special case
+					vbiAlone = true;
+					vbiNum++;
+				} else if (tempFUC >= 4 && tempTBK >= 8 && (tempVBI >= 28 && tempDD > 0.0000001f && tempVolume > 1)) {
+					if (!fucAlone) { // fuc take priority as it is the longest term indicator (250 days) with rarest
+										// frequency
+						fucAlone = true;
+						fucNum++;
+					} else if (!tbkAlone) { // then tbk, it is at least 31 days long indicator
+						tbkAlone = true;
+						tbkNum++;
+					} else if (!vbiAlone) { // VBI is the most frequent with 10 days data only
+						vbiAlone = true;
+						vbiNum++;
+					} else if (fucNum < 2) { // since unsigned tiny int max 255
+						fucNum++;
+					} else if (tbkNum < 5) { // since unsigned tiny int max 255
+						tbkNum++;
+					} else if (vbiNum < 5) {
+						vbiNum++;
+					}
+				} else if (tempFUC >= 4 && tempTBK >= 8 && tempVBI < 2) {
+					if (!fucAlone) { // fuc take priority as it is the longest term indicator (250 days) with rarest
+										// frequency
+						fucAlone = true;
+						fucNum++;
+					} else if (!tbkAlone) { // then tbk, it is at least 31 days long indicator
+						tbkAlone = true;
+						tbkNum++;
+					} else if (fucNum < 2) { // since unsigned tiny int max 255
+						fucNum++;
+					} else if (tbkNum < 5) { // since unsigned tiny int max 255
+						tbkNum++;
+					}
+				} else if (tempFUC < 2 && tempTBK >= 8 && (tempVBI >= 28 && tempDD > 0.0000001f && tempVolume > 1)) {
+					if (!tbkAlone) { // then tbk, it is at least 31 days long indicator
+						tbkAlone = true;
+						tbkNum++;
+					} else if (!vbiAlone) { // VBI is the most frequent with 10 days data only
+						vbiAlone = true;
+						vbiNum++;
+					} else if (tbkNum < 5) {
+						tbkNum++;
+					} else if (vbiNum < 5) {
+						vbiNum++;
+					}
+				} else if (tempFUC >= 4 && tempTBK < 2 && (tempVBI >= 28 && tempDD > 0.0000001f && tempVolume > 1)) {
+					if (!fucAlone) { // fuc take priority as it is the longest term indicator (250 days) with rarest
+										// frequency
+						fucAlone = true;
+						fucNum++;
+					} else if (!vbiAlone) { // VBI is the most frequent with 10 days data only
+						vbiAlone = true;
+						vbiNum++;
+					} else if (fucNum < 2) {
+						fucNum++;
+					} else if (vbiNum < 5) {
+						vbiNum++;
+					}
+				}
+
+			} // end while (rs1.next())
+
+			// only consider if at least two indicators show up within 30 days
+			if ((fucNum > 0 && tbkNum > 0) || (fucNum > 0 && vbiNum > 0) || (vbiNum > 0 && tbkNum > 0)) {
+
+				// only consider a bull case if only end close price is higher
+				float maxEndClose = endPrice; // 30 day last close price with/without TTA <>0
+				if (ttaEndPrice > maxEndClose)
+					maxEndClose = ttaEndPrice;// last(DATEID max) TTA<>0 tag close price
+				float minBeginClose = beginPrice; // 30 day begin close price with/without TTA<>0
+				if (ttaBeginPrice < minBeginClose)
+					minBeginClose = ttaBeginPrice; // first (DATEID min) TTA<>0 tag close price
+				
+				if (maxEndClose > minBeginClose) { //begin if (maxEndClose > maxBeginClose)
+					int ValTTA = 100 * fucNum + 10 * vbiNum + vbiNum;
+					// before update TTA with stockId, dateId and ValTTA
+					// check if such value exists in the last 30 days to avoid repeat
+					// and too much signal to read each day
+					// String query = "select COUNT(*) FROM BBROCK WHERE STOCKID = ?
+					// AND DATEID>=? AND DATEID<=? AND TTA=?";
+
+					existTTA.setInt(1, stockId);
+					existTTA.setInt(2, dateId - days);
+					existTTA.setInt(3, dateId);
+					existTTA.setInt(4, ValTTA);
+
+					ResultSet rs2 = existTTA.executeQuery();
+
+					if (rs2.next()) { //begin if (rs2.next())
+						int exist = rs2.getInt(1);
+						if (exist == 0) { //if a new VAlTTA, then update
+							// update TTA with stockId, dateId and ValTTA
+							// String query = "UPDATE BBROCK SET TTA=? WHERE STOCKID = ?
+							// AND DATEID=?";
+							updateTTA.setInt(1, ValTTA);
+							updateTTA.setInt(2, stockId);
+							updateTTA.setInt(3, dateId);
+							updateTTA.executeUpdate();
+						}
+					} // end if (rs2.next())
+				}//end if (maxEndClose > maxBeginClose)
+			} // only consider if at least two indicators show up within 30 days
+
+		} catch (
+
+		Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+
+	}
+
 	public static void processAVIHistory(boolean lastOnly) {
 		// get all stocks, may be current??
 		try {
@@ -1958,8 +2266,8 @@ public class UpDownMeasure {
 
 	}
 
-	//-- bull pattern within 30 days, 118 ->128->228(optional) then close price 
-	//above max from 118 bull buy like GE, FB
+	// -- bull pattern within 30 days, 118 ->128->228(optional) then close price
+	// above max from 118 bull buy like GE, FB
 
 	public static void processStockAVIHistory(int stockId, boolean lastOnly) {
 		try {
@@ -1972,7 +2280,7 @@ public class UpDownMeasure {
 			if (lastOnly && currentDateID > 0) {
 				processStockAVIToday(stockId, currentDateID);
 			} else {
-				//reset AVI = 0
+				// reset AVI = 0
 				resetStockAVI.setInt(1, stockId);
 				resetStockAVI.executeUpdate();
 				// String query = "select MIN(DATEID), MAX(DATEID)
@@ -1983,11 +2291,10 @@ public class UpDownMeasure {
 					beginDateId = rs.getInt(1);
 					endDateId = rs.getInt(2);
 				}
-				
-				//we need 10 days for accurate D9 and another 14 days for AVI
+
+				// we need 10 days for accurate D9 and another 14 days for AVI
 				int begin = beginDateId + 25;
 
-				
 				for (int k = begin; k <= endDateId; k++) {
 					processStockAVIToday(stockId, k);
 				}
@@ -2009,23 +2316,23 @@ public class UpDownMeasure {
 			PreparedStatement checkD9AndClose = DB.checkD9Close();
 			PreparedStatement checkAVIExist = DB.checkAVIExist();
 			PreparedStatement updateStockAVI = DB.updateStockAVI();
-			
-			//String query = "select  DATEID FROM BBROCK WHERE STOCKID=? 
-			//AND DATEID>=? AND DATEID<=? ORDER BY DATEID DESC";
+
+			// String query = "select DATEID FROM BBROCK WHERE STOCKID=?
+			// AND DATEID>=? AND DATEID<=? ORDER BY DATEID DESC";
 			stkDateId.setInt(1, stockId);
-			stkDateId.setInt(2,dateId-20);
-			stkDateId.setInt(3,dateId);
+			stkDateId.setInt(2, dateId - 20);
+			stkDateId.setInt(3, dateId);
 			ResultSet rs0 = stkDateId.executeQuery();
-			int dateIdBegin = dateId-days+1; //default 14 days ago
+			int dateIdBegin = dateId - days + 1; // default 14 days ago
 			int count1 = 0;
-			while(rs0.next()) {
+			while (rs0.next()) {
 				dateIdBegin = rs0.getInt(1);
 				count1++;
-				if(count1>=days) { //need 14 days exact
+				if (count1 >= days) { // need 14 days exact
 					break;
 				}
 			}
-			
+
 			// check if from dateId to dateId-13 (14 days) max(D9),min(D9)
 			// to see if +35% or -35% exist, if not exist, skip the rest
 			PreparedStatement minMaxD9 = DB.getMinMaxD9();
@@ -2079,7 +2386,7 @@ public class UpDownMeasure {
 					// any exact AVI value has been assigned, if so skip updating (to avoid too much
 					// signals for a given day)
 					// if not then update, continue to move this dateid up till all data checked
-					for (int day = 0; day < count; day++) { //count is better than days as sometime 13 records
+					for (int day = 0; day < count; day++) { // count is better than days as sometime 13 records
 						float earlyD9 = d9s[day];
 						int earlyDateId = dateIds[day];
 						float earlyClose = closes[day];
@@ -2120,24 +2427,24 @@ public class UpDownMeasure {
 								// String query = "SELECT COUNT(*) from BBROCK WHERE
 								// STOCKID=? and DATEID>=? and DATEID<=? AND AVI=?";
 								checkAVIExist.setInt(1, stockId);
-								checkAVIExist.setInt(2, lateDateId-days);
-								checkAVIExist.setInt(3, lateDateId+days);//expand as the loop goes back and forth
+								checkAVIExist.setInt(2, lateDateId - days);
+								checkAVIExist.setInt(3, lateDateId + days);// expand as the loop goes back and forth
 								checkAVIExist.setInt(4, avi);
 								ResultSet rs3 = checkAVIExist.executeQuery();
 
 								if (rs3.next()) {
 									int exist = rs3.getInt(1);
 									if (exist == 0) {// if not then update
-										//String query = "UPDATE BBROCK SET AVI=?
-										//WHERE STOCKID=? AND DATEID=?";
+										// String query = "UPDATE BBROCK SET AVI=?
+										// WHERE STOCKID=? AND DATEID=?";
 										updateStockAVI.setInt(1, avi);
 										updateStockAVI.setInt(2, stockId);
 										updateStockAVI.setInt(3, lateDateId);
 										updateStockAVI.executeUpdate();
-									} //end if (exist == 0) {
-								}//end if (rs3.next())
-							}// end if (avi > 0) {
-							// logic ends
+									} // end if (exist == 0) {
+								} // end if (rs3.next())
+							} // end if (avi > 0) {
+								// logic ends
 						} // end laterDate loop
 					} // end early day loop
 
