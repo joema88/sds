@@ -1,0 +1,52 @@
+1. FUC=8 OR 4 SEEMS TO BE A RELIABLE AND TIME EARLY INDICATOR OF BULL (MAYBE LACK OF VOLUME DATA)
+
+SET @SYMB := 'LABU';
+SELECT a.DATEID, a.STOCKID AS SKID, CDATE, b.SYMBOL AS SYM, ROUND(CLOSE,1) AS CLOS, TBK, VBI,FUC,EE8,ROUND(SAY,1) AS SAY,MARKCAP AS CAP,VOLUME,ROUND(BDY,1) AS BDY,PDY,BT9, ROUND(DPC,1) AS DPC, ROUND(UPC,1) AS UPC, ROUND(DM,0) AS DM,ROUND(DD,1) AS DD, ROUND(D9,1) AS D9 FROM BBROCK a, SYMBOLS b, DATES c WHERE a.STOCKID=b.STOCKID and a.DATEID = c.DATEID and b.SYMBOL=@SYMB
+order by a.DATEID DESC limit 300;
+
+-- bull pattern within 30 days, 118 ->128->228(optional) then price above max from 118 bull buy like GE, FB, ADBE(danger)
+SET @STOCK_ID := 4;
+SELECT a.DATEID, a.STOCKID AS SKID, CDATE, b.SYMBOL AS SYM, CLOSE,ROUND(DD,1) AS DD, ROUND(D9,1) AS D9, AVI,TBK,EE8,FUC, VBI,ROUND(SAY,1) AS SAY,MARKCAP AS CAP,VOLUME,ROUND(CLOSE,1) AS CLOS,ROUND(BDY,1) AS BDY,PDY,BT9, ROUND(DPC,1) AS DPC, ROUND(UPC,1) AS UPC, ROUND(DM,0) AS DM FROM BBROCK a, SYMBOLS b, DATES c WHERE a.STOCKID=b.STOCKID and a.DATEID = c.DATEID and  a.STOCKID=@STOCK_ID
+order by a.DATEID DESC limit 200;
+
+
+//VBI calculation logic is based on DD (days to deplete outstand stocks, i.e., markcap/close/dailyVolume) and D9 (10 day average of DD). VBI only detects latest DD compared to last 3 days (4 days data total), if DD drops more than 2/3 from any  of the previous 3 days, any VBI>=8 (18,28,108,118) indicates this, based on D9 change range 10% or 20%, the rest is determined, not sure how big the impact is. So VBI>=8 (especially VBI>=108) is an early indicator of strong buy or sell, very time sensitive (within a week or two). [ detail logic is in processVBIToday(int stockID, int dateId) of UpDownMeasure]
+This metrics maybe should be combined with TBK (30 days outbreak pattern), pure Teal of latest and close price above the last 90% (>=27 days) of pink+yellow count of continuous 30 days). So TBK only consider P/Y/T and close pattern and close price over 30 days with no volume info. TBK+VBI --> considers short term heavy volume action with long term price breakout pattern. A good combination.
+TBK AND VBI SHOULD NOT BE ON THE SAME DAY
+
+FUC (U turn pattern) is based on last 250 days (one year) max drop DPC ( drop percentage from peak) and UPC (Up percentage from bottom of last 30 days), UTURN is defined UPC>40 and UPC-DPC>100 (FUC=8) or only UPC>40 and UPC-DPC<100, then FUC=4
+So FUC+VBI --> considers short term heavy volume action with long term price bullish pattern. A good combination.
+FUC AND VBI SHOULD NOT BE ON THE SAME DAY
+
+FUC by itself is significant as it takes both intermediate (30 days) bullish pattern with long term correction pattern
+
+EE8 is a combo of FUC and VBI of last 4 days, maybe this should be more days in between, like 25 to 30 days?...for FUC+VBI or TBK+VBI patterns
+
+Examples of such: PLUG, FUBO,GUSH, LABU,FB,AAPL,TSLA,SIG,VUZI,JKS,RIG,PTON,SNAP,TCS,LOVE,OCUL,BE,BEEM,BILI,WST,WDC(DANGER),SHOO, FOSL, NVTA,
+SOXL,TQQQ,FCEL,BRPA,EYES (NO ZERO DD/VOLUME, LATER CLOSE>EARLY CLOSE)
+
+
+
+
+//study stock by id
+SET @STID := 1644;
+SELECT a.DATEID, a.STOCKID AS SKID, CDATE, b.SYMBOL AS SYM, ROUND(CLOSE,1) AS CLOS, FUC,TBK, VBI,TTA,ROUND(SAY,1) AS SAY,MARKCAP AS CAP,VOLUME,ROUND(BDY,1) AS BDY,PDY,BT9, ROUND(DPC,1) AS DPC, ROUND(UPC,1) AS UPC, ROUND(DM,0) AS DM,ROUND(DD,1) AS DD, ROUND(D9,1) AS D9 FROM BBROCK a, SYMBOLS b, DATES c WHERE a.STOCKID=b.STOCKID and a.DATEID = c.DATEID and b.STOCKID=@STID
+order by a.DATEID DESC limit 500;
+
+//study stock by symbol
+SET @SYMB := 'LGVW';
+SELECT a.DATEID, a.STOCKID AS SKID, CDATE, b.SYMBOL AS SYM, ROUND(CLOSE,1) AS CLOS, FUC,TBK, VBI,TTA,ROUND(SAY,1) AS SAY,MARKCAP AS CAP,VOLUME,ROUND(BDY,1) AS BDY,PDY,BT9, ROUND(DPC,1) AS DPC, ROUND(UPC,1) AS UPC, ROUND(DM,0) AS DM,ROUND(DD,1) AS DD, ROUND(D9,1) AS D9 FROM BBROCK a, SYMBOLS b, DATES c WHERE a.STOCKID=b.STOCKID and a.DATEID = c.DATEID and b.SYMBOL=@SYMB
+order by a.DATEID DESC limit 300;
+
+
+//TTA of today
+SET @dateID := 9070;
+SELECT a.DATEID, a.STOCKID AS SKID, CDATE, b.SYMBOL AS SYM, ROUND(CLOSE,1) AS CLOS, FUC,TBK, VBI,TTA,ROUND(SAY,1) AS SAY,MARKCAP AS CAP,VOLUME,ROUND(BDY,1) AS BDY,PDY,BT9, ROUND(DPC,1) AS DPC, ROUND(UPC,1) AS UPC, ROUND(DM,0) AS DM,ROUND(DD,1) AS DD, ROUND(D9,1) AS D9 FROM BBROCK a, SYMBOLS b, DATES c WHERE a.STOCKID=b.STOCKID and a.DATEID = c.DATEID and a.DATEID=@dateID and TTA>0 AND DD<50 and D9<200 ORDER by TTA DESC, MARKCAP DESC;
+
+//TTA Sum over last 10 days
+SET @dateID := 9070;
+select a.STOCKID, b.SYMBOL, SUM(TTA), AVG(DD),AVG(D9)  FROM BBROCK a, SYMBOLS b WHERE a.STOCKID = b.STOCKID and a.DATEID>=@dateID-9 AND a.DATEID<=@dateID  GROUP BY a.STOCKID, b.SYMBOL having SUM(TTA)>400 AND AVG(DD)<20 AND AVG(D9)<100 order by SUM(TTA) DESC limit 100;
+
+//FUC>=4 today
+SET @dateID := 9068;
+SELECT a.DATEID, a.STOCKID AS SKID, CDATE, b.SYMBOL AS SYM, ROUND(CLOSE,1) AS CLOS, FUC,TBK, VBI,TTA,ROUND(SAY,1) AS SAY,MARKCAP AS CAP,VOLUME,ROUND(BDY,1) AS BDY,PDY,BT9, ROUND(DPC,1) AS DPC, ROUND(UPC,1) AS UPC, ROUND(DM,0) AS DM,ROUND(DD,1) AS DD, ROUND(D9,1) AS D9 FROM BBROCK a, SYMBOLS b, DATES c WHERE a.STOCKID=b.STOCKID and a.DATEID = c.DATEID and a.DATEID=@dateID and FUC>=4 AND DD<50 and D9<200;
