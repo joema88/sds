@@ -63,7 +63,7 @@ public class UpDownMeasure {
 		// daily step 3
 		// processFUCHistory();
 		// daily step 4
-		// Summary.processDailyUTurnSummary(currentDateID);
+		//Summary.processDailyUTurnSummary(currentDateID);
 		// int buyDateId = 9007; //buy date
 
 		// daily step 5
@@ -77,7 +77,7 @@ public class UpDownMeasure {
 		// daily step 9, process D2, D9 for each stock
 		// processD2D9History(true);
 		// daily step 10, process today's VBI
-		// processVBIHistory(true);
+	   // processVBIHistory(true);
 		// daily step 11, process EE8
 		// processTodayEE8(currentDateID);
 		// daily step 12, process IAYD
@@ -85,7 +85,7 @@ public class UpDownMeasure {
 		// daily step 13, process BDA [(Delta of SAY)*100 + (Delta of IAYD)]
 		// processTodayBDA(currentDateID, -1);
 		// daily step 14, this may have to be switched with step 14 once finalized
-		// processRTSHistory(true);
+		//processRTSHistory(true);
 		// daily step 15, process last day TBK, last 30 days breakout bullish pattern
 		// base on 30 days breakout mark set in step 14
 		// processTBKHistory(true);
@@ -94,7 +94,7 @@ public class UpDownMeasure {
 		// daily step 17, process last day TTA
 		// processTTAHistory(true);
 
-		processStockTTAHistory(297, false);
+		//processStockTTAHistory(6660, false);
 		//processTTAHistory(false);
 		// processStockAVIHistory(297, false); //test FB AVI first
 		// processAVIHistory(false);
@@ -1986,8 +1986,8 @@ public class UpDownMeasure {
 					beginDateId = rs.getInt(1);
 				}
 
-				// we need 30 days for checking TTA combo
-				int begin = beginDateId + 29;
+				// we need 30 days for checking TTA combo, but start 15 days after 1st signal
+				int begin = beginDateId + 15;
 
 				for (int k = begin; k <= endDateId; k++) {
 					processStockTTAToday(stockId, k);
@@ -2078,7 +2078,7 @@ public class UpDownMeasure {
 			// FUC TAKE 1ST PRIORITY UNLESS THERE IS ONE WITHIN 30 DAYS, THEN TBK, THEN VBI
 			// AS FUC IS LONG TERM AND RARE, TBK IS MEDIATE TERM, VBI IS SHORT TERM AND
 			// FREQUENT
-			if(dateId==8972) {
+			if(dateId==9052) {
 				System.out.println("Debugging...");
 			}
 			float endPrice = 0.0f;// 30 day last close price with/without TTA <>0
