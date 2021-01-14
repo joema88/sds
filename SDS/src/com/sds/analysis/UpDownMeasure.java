@@ -2,6 +2,7 @@ package com.sds.analysis;
 
 import java.sql.*;
 import java.util.*;
+import java.io.*;
 
 import com.sds.db.DB;
 
@@ -63,7 +64,7 @@ public class UpDownMeasure {
 		// daily step 3
 		// processFUCHistory();
 		// daily step 4
-		//Summary.processDailyUTurnSummary(currentDateID);
+		// Summary.processDailyUTurnSummary(currentDateID);
 		// int buyDateId = 9007; //buy date
 
 		// daily step 5
@@ -77,7 +78,7 @@ public class UpDownMeasure {
 		// daily step 9, process D2, D9 for each stock
 		// processD2D9History(true);
 		// daily step 10, process today's VBI
-	   // processVBIHistory(true);
+		// processVBIHistory(true);
 		// daily step 11, process EE8
 		// processTodayEE8(currentDateID);
 		// daily step 12, process IAYD
@@ -85,7 +86,7 @@ public class UpDownMeasure {
 		// daily step 13, process BDA [(Delta of SAY)*100 + (Delta of IAYD)]
 		// processTodayBDA(currentDateID, -1);
 		// daily step 14, this may have to be switched with step 14 once finalized
-		//processRTSHistory(true);
+		// processRTSHistory(true);
 		// daily step 15, process last day TBK, last 30 days breakout bullish pattern
 		// base on 30 days breakout mark set in step 14
 		// processTBKHistory(true);
@@ -94,8 +95,10 @@ public class UpDownMeasure {
 		// daily step 17, process last day TTA
 		// processTTAHistory(true);
 
-		//processStockTTAHistory(6660, false);
-		//processTTAHistory(false);
+		printOutBullStocks(9080, 9082);
+
+		// processStockTTAHistory(6660, false);
+		// processTTAHistory(false);
 		// processStockAVIHistory(297, false); //test FB AVI first
 		// processAVIHistory(false);
 		// process entire Rolling Thirty days Sum(P+Y) and MCP(if qualified>=90%)
@@ -128,6 +131,397 @@ public class UpDownMeasure {
 		// update FUC history
 		// processStockFUCHistory(stockId);
 		// transfer missing data
+
+	}
+
+	public static void printOutBullStocks(int startDateId, int endDateId) {
+		PreparedStatement ttaToday = DB.ttaToday();
+		PreparedStatement ttaLastTenSum = DB.ttaLastTenSum();
+		PreparedStatement fucToday = DB.fucToday();
+		PreparedStatement tbkToday = DB.tbkToday();
+		PreparedStatement vbiToday = DB.vbiToday();
+		PreparedStatement ee8Today = DB.ee8Today();
+		PreparedStatement gentleBullToday = DB.gentleBullToday();
+		int limit = 50;
+		HashMap ttaTodayTable = new HashMap();
+		HashMap ttaLastTenSumTable = new HashMap();
+		HashMap fucTodayTable = new HashMap();
+		HashMap tbkTodayTable = new HashMap();
+		HashMap vbiTodayTable = new HashMap();
+		HashMap ee8TodayTable = new HashMap();
+		HashMap gentleBullTodayTable = new HashMap();
+		HashMap allStocks = new HashMap();
+		HashMap allStocksExceptGentleBull = new HashMap();
+		StringBuffer allStocksBuffer = new StringBuffer();
+
+		try {
+			for (int k = startDateId; k <= endDateId; k++) {
+				// ttaToday()
+				// String query = "SELECT a.DATEID, a.STOCKID AS SKID, CDATE, b.SYMBOL AS SYM,
+				// ROUND(CLOSE,1) AS CLOS, FUC,TBK, VBI,TTA,ROUND(SAY,1) AS SAY,MARKCAP AS
+				// CAP,VOLUME,ROUND(BDY,1) AS BDY,PDY,BT9, ROUND(DPC,1) AS DPC, ROUND(UPC,1) AS
+				// UPC, ROUND(DM,0) AS DM,ROUND(DD,1) AS DD, ROUND(D9,1) AS D9 FROM BBROCK a,
+				// SYMBOLS b, DATES c WHERE a.STOCKID=b.STOCKID and a.DATEID = c.DATEID and
+				// a.DATEID=? and TTA>0 AND DD<50 and D9<200 AND MARKCAP>1000 AND CLOSE>20 ORDER
+				// by TTA DESC, MARKCAP DESC limit ?";
+				ttaToday.setInt(1, k);
+				ttaToday.setInt(2, limit);
+				ResultSet rs1 = ttaToday.executeQuery();
+				int count1 = 0;
+				while (rs1.next()) {
+					String stock = rs1.getString(4);
+					// System.out.println("Find stock " + stock);
+					if (ttaTodayTable.containsKey(stock)) {
+						int newCount = Integer.parseInt(ttaTodayTable.get(stock).toString()) + 1;
+						ttaTodayTable.put(stock, "" + (newCount + 1));
+
+					} else {
+						ttaTodayTable.put(stock, "" + 1);
+					}
+					count1++;
+				}
+				if (count1 == limit) {
+					System.out.println("TTA today reached limit " + limit);
+				}
+
+				// ttaLastTenSum()
+				// String query = "select a.STOCKID, b.SYMBOL, SUM(TTA), AVG(DD),AVG(D9) FROM
+				// BBROCK a, SYMBOLS b WHERE a.STOCKID = b.STOCKID and a.DATEID>=? AND
+				// a.DATEID<=? AND MARKCAP>1000 GROUP BY a.STOCKID, b.SYMBOL having SUM(TTA)>400
+				// AND AVG(DD)<20 AND AVG(D9)<100 order by SUM(TTA) DESC limit ?";
+				ttaLastTenSum.setInt(1, k - 9);
+				ttaLastTenSum.setInt(2, k);
+				ttaLastTenSum.setInt(3, limit);
+				ResultSet rs2 = ttaLastTenSum.executeQuery();
+				int count2 = 0;
+				while (rs2.next()) {
+					String stock = rs2.getString(2);
+					// System.out.println("Find stock " + stock);
+					if (ttaLastTenSumTable.containsKey(stock)) {
+						int newCount = Integer.parseInt(ttaLastTenSumTable.get(stock).toString()) + 1;
+						ttaLastTenSumTable.put(stock, "" + (newCount + 1));
+
+					} else {
+						ttaLastTenSumTable.put(stock, "" + 1);
+					}
+					count2++;
+				}
+				if (count2 == limit) {
+					System.out.println("ttaLastTenSum reached limit " + limit);
+				}
+
+				// fucToday
+				// String query = "select a.DATEID,a.STOCKID, CDATE, b.SYMBOL AS
+				// SYM,RTS,MCP,TBK,TEAL AS T, YELLOW AS Y, PINK AS P,
+				// MARKCAP,CLOSE,TTA,TBK,EE8,FUC, VBI,ROUND(DD,1) AS DD, ROUND(D9,0) AS D9, MOR,
+				// BT9 FROM BBROCK a, SYMBOLS b,DATES c WHERE a.FUC>=4 AND a.MARKCAP>1000 AND
+				// DD<30 and D9<100 AND a.STOCKID = b.STOCKID and a.DATEID=c.DATEID AND
+				// a.DATEID= ? ORDER BY MARKCAP DESC limit ?";
+				fucToday.setInt(1, k);
+				fucToday.setInt(2, limit);
+				ResultSet rs3 = fucToday.executeQuery();
+				int count3 = 0;
+				while (rs3.next()) {
+					String stock = rs3.getString(4);
+					// System.out.println("Find stock " + stock);
+					if (fucTodayTable.containsKey(stock)) {
+						int newCount = Integer.parseInt(fucTodayTable.get(stock).toString()) + 1;
+						fucTodayTable.put(stock, "" + (newCount + 1));
+
+					} else {
+						fucTodayTable.put(stock, "" + 1);
+					}
+					count3++;
+				}
+				if (count3 == limit) {
+					System.out.println("fucToday reached limit " + limit);
+				}
+
+				// tbkToday
+				// String query = "select a.DATEID,a.STOCKID, CDATE, b.SYMBOL AS
+				// SYM,RTS,MCP,TBK,TEAL AS T, YELLOW AS Y, PINK AS P,
+				// MARKCAP,CLOSE,TTA,TBK,EE8,FUC, VBI,ROUND(DD,1) AS DD, ROUND(D9,0) AS D9, MOR,
+				// BT9 FROM BBROCK a, SYMBOLS b,DATES c WHERE a.TBK>=8 AND a.MARKCAP>1000 AND
+				// DD<30 and D9<100 AND a.STOCKID = b.STOCKID and a.DATEID=c.DATEID AND
+				// a.DATEID= ? ORDER BY MARKCAP DESC limit ?";
+				tbkToday.setInt(1, k);
+				tbkToday.setInt(2, limit);
+				ResultSet rs4 = tbkToday.executeQuery();
+				int count4 = 0;
+				while (rs4.next()) {
+					String stock = rs4.getString(4);
+					// System.out.println("Find stock " + stock);
+					if (tbkTodayTable.containsKey(stock)) {
+						int newCount = Integer.parseInt(tbkTodayTable.get(stock).toString()) + 1;
+						tbkTodayTable.put(stock, "" + (newCount + 1));
+
+					} else {
+						tbkTodayTable.put(stock, "" + 1);
+					}
+					count4++;
+				}
+				if (count4 == limit) {
+					System.out.println("tbkToday reached limit " + limit);
+				}
+
+				// vbiToday
+				// String query = "SELECT a.DATEID, a.STOCKID AS STKID, CDATE, b.SYMBOL AS SYM,
+				// MARKCAP,VOLUME,CLOSE, ROUND(DD,1) AS DD, ROUND(D9,1) AS D9,VBI,FUC, BT9,
+				// ROUND(DPC,2) AS DPC, ROUND(UPC,1) AS UPC, ROUND(DM,1) AS DM FROM BBROCK a,
+				// SYMBOLS b, DATES c WHERE DD>1 AND a.STOCKID=b.STOCKID and a.DATEID = c.DATEID
+				// and a.DATEID =? and VBI>0 AND DD<20 AND D9<100 AND a.MARKCAP>1000 ORDER BY
+				// MARKCAP DESC limit ?";
+				vbiToday.setInt(1, k);
+				vbiToday.setInt(2, limit);
+				ResultSet rs5 = vbiToday.executeQuery();
+				int count5 = 0;
+				while (rs5.next()) {
+					String stock = rs5.getString(4);
+					// System.out.println("Find stock " + stock);
+					if (vbiTodayTable.containsKey(stock)) {
+						int newCount = Integer.parseInt(vbiTodayTable.get(stock).toString()) + 1;
+						vbiTodayTable.put(stock, "" + (newCount + 1));
+
+					} else {
+						vbiTodayTable.put(stock, "" + 1);
+					}
+					count5++;
+				}
+				if (count5 == limit) {
+					System.out.println("vbiToday reached limit " + limit);
+				}
+
+				// ee8Today
+				// String query = "SELECT a.DATEID, a.STOCKID AS STKID, CDATE, b.SYMBOL AS
+				// SYM,EE8,VBI,FUC AS UT, MARKCAP AS CAP,VOLUME,ROUND(CLOSE,1) AS CLOS,
+				// ROUND(DD,1) AS DD, ROUND(D9,1) AS D9,VBI, ROUND(BDY,1) AS
+				// BDY,PDY,ROUND(DPC,1) as DPC, ROUND(UPC,1) AS UPC FROM BBROCK a, SYMBOLS b,
+				// DATES c WHERE EE8>1 AND a.STOCKID=b.STOCKID and a.DATEID = c.DATEID and
+				// a.DATEID =? AND DD<20 AND D9<100 and a.MARKCAP>1000 ORDER BY MARKCAP DESC
+				// limit ?";
+				ee8Today.setInt(1, k);
+				ee8Today.setInt(2, limit);
+				ResultSet rs6 = ee8Today.executeQuery();
+				int count6 = 0;
+				while (rs6.next()) {
+					String stock = rs6.getString(4);
+					// System.out.println("Find stock " + stock);
+					if (ee8TodayTable.containsKey(stock)) {
+						int newCount = Integer.parseInt(ee8TodayTable.get(stock).toString()) + 1;
+						ee8TodayTable.put(stock, "" + (newCount + 1));
+
+					} else {
+						ee8TodayTable.put(stock, "" + 1);
+					}
+					count6++;
+				}
+				if (count6 == limit) {
+					System.out.println("ee8Today reached limit " + limit);
+				}
+
+				// gentleBullToday
+				// String query = "SELECT a.DATEID AS DTID, a.STOCKID AS SKID, CDATE, b.SYMBOL
+				// AS SYM, BT9,ROUND(MARKCAP,0) AS CAP,VOLUME,ROUND(CLOSE,1) AS
+				// CLOS,ROUND(BDY,1) AS BDY,PDY, VBI,ROUND(DD,1) AS DD, ROUND(D9,1) AS D9,
+				// ROUND(DPC,1) AS DPC,ROUND(UPC,1) AS UPC, ROUND(DM,0) AS DM FROM BBROCK a,
+				// SYMBOLS b, DATES c WHERE a.DATEID=? AND a.STOCKID=b.STOCKID and a.DATEID =
+				// c.DATEID and a.BT9>=12 AND a.DD<100 and a.D9<300 and a.MARKCAP>1000 order by
+				// a.BT9 DESC limit ?";
+				gentleBullToday.setInt(1, k);
+				gentleBullToday.setInt(2, limit);
+				ResultSet rs7 = gentleBullToday.executeQuery();
+				int count7 = 0;
+				while (rs7.next()) {
+					String stock = rs7.getString(4);
+					// System.out.println("Find stock " + stock);
+					if (gentleBullTodayTable.containsKey(stock)) {
+						int newCount = Integer.parseInt(gentleBullTodayTable.get(stock).toString()) + 1;
+						gentleBullTodayTable.put(stock, "" + (newCount + 1));
+
+					} else {
+						gentleBullTodayTable.put(stock, "" + 1);
+					}
+					count7++;
+				}
+				if (count7 == limit) {
+					System.out.println("gentleBullToday reached limit " + limit);
+				}
+
+				// combine all stocks
+				Set ttaTodayKeys = ttaTodayTable.keySet();
+				Set ttaLastTenSumKeys = ttaLastTenSumTable.keySet();
+				Set fucTodayKeys = fucTodayTable.keySet();
+				Set tbkTodayKeys = tbkTodayTable.keySet();
+				Set vbiTodayKeys = vbiTodayTable.keySet();
+				Set ee8TodayKeys = ee8TodayTable.keySet();
+				Set gentleBullTodayKeys = gentleBullTodayTable.keySet();
+
+				// loop through ttaTodayTable
+				Iterator ttaIT = ttaTodayKeys.iterator();
+				while (ttaIT.hasNext()) {
+					String stk = ttaIT.next().toString();
+					String count = ttaTodayTable.get(stk).toString();
+					if (!allStocks.containsKey(stk)) {
+						allStocks.put(stk, count);
+						allStocksExceptGentleBull.put(stk, count);
+					} else {
+						String existCount = allStocks.get(stk).toString();
+						int totalCount = Integer.parseInt(count) + Integer.parseInt(existCount);
+						allStocks.put(stk, "" + totalCount);
+						allStocksExceptGentleBull.put(stk, "" + totalCount);
+					}
+				}
+
+				// loop through ttaLastTenSumTable
+				Iterator ttaLastTenSumKeysIT = ttaLastTenSumKeys.iterator();
+				while (ttaLastTenSumKeysIT.hasNext()) {
+					String stk = ttaLastTenSumKeysIT.next().toString();
+					String count = ttaLastTenSumTable.get(stk).toString();
+					if (!allStocks.containsKey(stk)) {
+						allStocks.put(stk, count);
+						allStocksExceptGentleBull.put(stk, count);
+					} else {
+						String existCount = allStocks.get(stk).toString();
+						int totalCount = Integer.parseInt(count) + Integer.parseInt(existCount);
+						allStocks.put(stk, "" + totalCount);
+						allStocksExceptGentleBull.put(stk, "" + totalCount);
+					}
+				}
+
+				// loop through fucTodayTable
+				Iterator fucTodayKeysIT = fucTodayKeys.iterator();
+				while (fucTodayKeysIT.hasNext()) {
+					String stk = fucTodayKeysIT.next().toString();
+					String count = fucTodayTable.get(stk).toString();
+					if (!allStocks.containsKey(stk)) {
+						allStocks.put(stk, count);
+						allStocksExceptGentleBull.put(stk, count);
+					} else {
+						String existCount = allStocks.get(stk).toString();
+						int totalCount = Integer.parseInt(count) + Integer.parseInt(existCount);
+						allStocks.put(stk, "" + totalCount);
+						allStocksExceptGentleBull.put(stk, "" + totalCount);
+					}
+				}
+
+				// loop through tbkTodayTable
+				Iterator tbkTodayKeysIT = tbkTodayKeys.iterator();
+				while (tbkTodayKeysIT.hasNext()) {
+					String stk = tbkTodayKeysIT.next().toString();
+					String count = tbkTodayTable.get(stk).toString();
+					if (!allStocks.containsKey(stk)) {
+						allStocks.put(stk, count);
+						allStocksExceptGentleBull.put(stk, count);
+					} else {
+						String existCount = allStocks.get(stk).toString();
+						int totalCount = Integer.parseInt(count) + Integer.parseInt(existCount);
+						allStocks.put(stk, "" + totalCount);
+						allStocksExceptGentleBull.put(stk, "" + totalCount);
+					}
+				}
+
+				// loop through vbiTodayKeys
+				Iterator vbiTodayKeysIT = vbiTodayKeys.iterator();
+				while (vbiTodayKeysIT.hasNext()) {
+					String stk = vbiTodayKeysIT.next().toString();
+					String count = vbiTodayTable.get(stk).toString();
+					if (!allStocks.containsKey(stk)) {
+						allStocks.put(stk, count);
+						allStocksExceptGentleBull.put(stk, count);
+					} else {
+						String existCount = allStocks.get(stk).toString();
+						int totalCount = Integer.parseInt(count) + Integer.parseInt(existCount);
+						allStocks.put(stk, "" + totalCount);
+						allStocksExceptGentleBull.put(stk, "" + totalCount);
+					}
+				}
+
+				// loop through ee8TodayTable
+				Iterator ee8TodayKeysIT = ee8TodayKeys.iterator();
+				while (ee8TodayKeysIT.hasNext()) {
+					String stk = ee8TodayKeysIT.next().toString();
+					String count = ee8TodayTable.get(stk).toString();
+					if (!allStocks.containsKey(stk)) {
+						allStocks.put(stk, count);
+						allStocksExceptGentleBull.put(stk, count);
+					} else {
+						String existCount = allStocks.get(stk).toString();
+						int totalCount = Integer.parseInt(count) + Integer.parseInt(existCount);
+						allStocks.put(stk, "" + totalCount);
+						allStocksExceptGentleBull.put(stk, "" + totalCount);
+					}
+				}
+
+				// loop through gentleBullTodayTable
+				Iterator gentleBullTodayKeysIT = gentleBullTodayKeys.iterator();
+				while (ee8TodayKeysIT.hasNext()) {
+					String stk = gentleBullTodayKeysIT.next().toString();
+					String count = gentleBullTodayTable.get(stk).toString();
+					if (!allStocks.containsKey(stk)) {
+						allStocks.put(stk, count);
+						// allStocksExceptGentleBull.put(stk, count);
+					} else {
+						String existCount = allStocks.get(stk).toString();
+						int totalCount = Integer.parseInt(count) + Integer.parseInt(existCount);
+						allStocks.put(stk, "" + totalCount);
+						// allStocksExceptGentleBull.put(stk,""+totalCount);
+					}
+
+				}
+
+				// print out sorted results
+				Map<String, String> sortedMap = new TreeMap<String, String>(allStocks);
+				System.out.println("With gentle bull stocks..." + sortedMap.size());
+				Set sortedStocks = sortedMap.keySet();
+				Iterator ttaITSorted = sortedStocks.iterator();
+				while (ttaITSorted.hasNext()) {
+					String stk = ttaITSorted.next().toString();
+					String count = sortedMap.get(stk).toString();
+					System.out.println(stk + " count " + count);
+					allStocksBuffer.append(stk + ",");
+				}
+
+			}
+
+			String path = "/home/joma/share/test/";
+			Calendar cal = Calendar.getInstance();
+			int month = cal.get(Calendar.MONTH) + 1;
+			int year = cal.get(Calendar.YEAR);
+			int date = cal.get(Calendar.DAY_OF_MONTH);
+			String fileName = "" + year + "_" + month + "_" + date + "_Bull.txt";
+			try {
+				File myObj = new File(path + fileName);
+				System.out.println(".... " + allStocksBuffer.toString());
+
+				if(!myObj.exists())
+					myObj.createNewFile();
+				// if (myObj.createNewFile()) {
+				 Thread.sleep(5000);
+				FileWriter myWriter = new FileWriter(myObj);
+				myWriter.write(allStocksBuffer.toString());
+				myWriter.close();
+				// System.out.println("File created: " + myObj.getName());
+				// } else {
+				// System.out.println("File already exists.");
+				// }
+			} catch (IOException e) {
+				System.out.println("An error occurred.");
+				e.printStackTrace();
+			}
+
+			Map<String, String> sortedMap2 = new TreeMap<String, String>(allStocksExceptGentleBull);
+			System.out.println("Without gentle bull stocks..." + sortedMap2.size());
+			Set sortedStocks2 = sortedMap2.keySet();
+			Iterator ttaITSorted2 = sortedStocks2.iterator();
+			while (ttaITSorted2.hasNext()) {
+				String stk = ttaITSorted2.next().toString();
+				String count = sortedMap2.get(stk).toString();
+				System.out.println(stk + " count " + count);
+
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
 
 	}
 
@@ -2078,7 +2472,7 @@ public class UpDownMeasure {
 			// FUC TAKE 1ST PRIORITY UNLESS THERE IS ONE WITHIN 30 DAYS, THEN TBK, THEN VBI
 			// AS FUC IS LONG TERM AND RARE, TBK IS MEDIATE TERM, VBI IS SHORT TERM AND
 			// FREQUENT
-			if(dateId==9052) {
+			if (dateId == 9052) {
 				System.out.println("Debugging...");
 			}
 			float endPrice = 0.0f;// 30 day last close price with/without TTA <>0
@@ -2088,7 +2482,7 @@ public class UpDownMeasure {
 			while (rs1.next()) { // begin if (rs1.next())
 				// DATEID,CLOSE,FUC,TBK,VBI,DD,VOLUME
 				int tempDateId = rs1.getInt(1);
-				
+
 				float tempClose = rs1.getFloat(2);
 				int tempFUC = rs1.getInt(3);
 				int tempTBK = rs1.getInt(4);
@@ -2200,8 +2594,8 @@ public class UpDownMeasure {
 				float minBeginClose = beginPrice; // 30 day begin close price with/without TTA<>0
 				if (ttaBeginPrice < minBeginClose)
 					minBeginClose = ttaBeginPrice; // first (DATEID min) TTA<>0 tag close price
-				
-				if (maxEndClose > minBeginClose) { //begin if (maxEndClose > maxBeginClose)
+
+				if (maxEndClose > minBeginClose) { // begin if (maxEndClose > maxBeginClose)
 					int ValTTA = 100 * fucNum + 10 * tbkNum + vbiNum;
 					// before update TTA with stockId, dateId and ValTTA
 					// check if such value exists in the last 30 days to avoid repeat
@@ -2216,9 +2610,9 @@ public class UpDownMeasure {
 
 					ResultSet rs2 = existTTA.executeQuery();
 
-					if (rs2.next()) { //begin if (rs2.next())
+					if (rs2.next()) { // begin if (rs2.next())
 						int exist = rs2.getInt(1);
-						if (exist == 0) { //if a new VAlTTA, then update
+						if (exist == 0) { // if a new VAlTTA, then update
 							// update TTA with stockId, dateId and ValTTA
 							// String query = "UPDATE BBROCK SET TTA=? WHERE STOCKID = ?
 							// AND DATEID=?";
@@ -2228,7 +2622,7 @@ public class UpDownMeasure {
 							updateTTA.executeUpdate();
 						}
 					} // end if (rs2.next())
-				}//end if (maxEndClose > maxBeginClose)
+				} // end if (maxEndClose > maxBeginClose)
 			} // only consider if at least two indicators show up within 30 days
 
 		} catch (

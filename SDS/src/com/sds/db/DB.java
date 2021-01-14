@@ -104,7 +104,6 @@ public class DB {
 	// formula: [SAY at n+1 (dateid) - SAY at n (dateId)]*100+[IAYD at n+1 (dateid)
 	// - IAYD at n (dateid)]
 
-	
 	// ALTER TABLE BBROCK ADD COLUMN AVI TINYINT UNSIGNED DEFAULT 0; -- Average
 	// Volume Depeltion (D9) indicator
 	// This is a slightly delayed indicator to detect volume up/down in conjunction
@@ -118,7 +117,7 @@ public class DB {
 	// then 218 (DATEID ASC)
 	// If -35% on D9 and price increase, then AVI 128, if -35% but price decrease
 	// then 228 (DATEID ASC)
-	
+
 	/*
 	 * ALTER TABLE BBROCK ADD COLUMN TSM SMALLINT DEFAULT 0; //Teal color total
 	 * summary between two days ALTER TABLE BBROCK ADD COLUMN TOM TINYINT DEFAULT 0;
@@ -205,21 +204,22 @@ public class DB {
 	// need to get rid of old implementation logic)
 	// ALTER TABLE BBROCK ADD COLUMN RTS TINYINT UNSIGNED DEFAULT 0;
 	// ALTER TABLE BBROCK ADD COLUMN MCP FLOAT DEFAULT 0.0;
-	
+
 	// ALTER TABLE BBROCK ADD COLUMN TTA TINYINT UNSIGNED DEFAULT 0;
-	//TTA (TIE SHANG JIAO) THREE TRIANGLE = FUC+TBK+VBI
-	//ANY TWO OR THREE WITHIN 30 DAYS IS GOOD
+	// TTA (TIE SHANG JIAO) THREE TRIANGLE = FUC+TBK+VBI
+	// ANY TWO OR THREE WITHIN 30 DAYS IS GOOD
 	// IF FUC=4, THEN 1XX, FUC=8, THEN 2XX
 	// IF TBK>=8, COUNT HOW MANY WITHIN 30 DAYS, IF C, THEN XCX
 	// IF VBI>=18, COUNT HOW MANY WITHIN 30 DAYS, IF D, THEN XXD
-	//SO TTA IS 1CD OR 2CD, MOVING FROM DATEID ASC DIRECTION,TTA MUST NOT BE THE
-	//SAME VALUE FOR LAST 30 DAYS
-	//ALSO, THE LATEID MARK DAY CLOSE PRICE SHOULD BE HIGHER THAN EARLY CLOSE PRICE
-	//ALSO WATCH DD=0, NOT CONSIDER VBI. ALSO IF TWO VALUES ON SAME DAY, ONLY ONE CAN BE CHOSEN
-	//FUC TAKE 1ST PRIORITY UNLESS THERE IS ONE WITHIN 30 DAYS, THEN TBK, THEN VBI
-	//AS FUC IS LONG TERM AND RARE, TBK IS MEDIATE TERM, VBI IS SHORT TERM AND FREQUENT
-	
-	
+	// SO TTA IS 1CD OR 2CD, MOVING FROM DATEID ASC DIRECTION,TTA MUST NOT BE THE
+	// SAME VALUE FOR LAST 30 DAYS
+	// ALSO, THE LATEID MARK DAY CLOSE PRICE SHOULD BE HIGHER THAN EARLY CLOSE PRICE
+	// ALSO WATCH DD=0, NOT CONSIDER VBI. ALSO IF TWO VALUES ON SAME DAY, ONLY ONE
+	// CAN BE CHOSEN
+	// FUC TAKE 1ST PRIORITY UNLESS THERE IS ONE WITHIN 30 DAYS, THEN TBK, THEN VBI
+	// AS FUC IS LONG TERM AND RARE, TBK IS MEDIATE TERM, VBI IS SHORT TERM AND
+	// FREQUENT
+
 	private static Connection dbcon = null;
 	private static PreparedStatement symbolStmnt = null;
 	private static PreparedStatement symbolDateIDQuery = null;
@@ -354,42 +354,79 @@ public class DB {
 	private static PreparedStatement TTAInfo = null;
 	private static PreparedStatement updateTTA = null;
 	private static PreparedStatement existTTA = null;
-	
+	private static PreparedStatement ttaToday = null;
+	private static PreparedStatement ttaLastTenSum = null;
+	private static PreparedStatement fucToday = null;
+	private static PreparedStatement tbkToday = null;
+	private static PreparedStatement vbiToday = null;
+	private static PreparedStatement ee8Today = null;
+	private static PreparedStatement gentleBullToday = null;
+
+	//
+
 	public static void closeConnection() {
 		try {
-			if( existTTA != null ) {
+			if (gentleBullToday != null) {
+				gentleBullToday.close();
+				gentleBullToday = null;
+			}
+			if (ee8Today != null) {
+				ee8Today.close();
+				ee8Today = null;
+			}
+			if (vbiToday != null) {
+				vbiToday.close();
+				vbiToday = null;
+			}
+			if (tbkToday != null) {
+				tbkToday.close();
+				tbkToday = null;
+			}
+			if (fucToday != null) {
+				fucToday.close();
+				fucToday = null;
+			}
+			if (ttaLastTenSum != null) {
+				ttaLastTenSum.close();
+				ttaLastTenSum = null;
+			}
+			if (ttaToday != null) {
+				ttaToday.close();
+				ttaToday = null;
+			}
+			if (existTTA != null) {
 				existTTA.close();
 				existTTA = null;
 			}
-			if( updateTTA != null) {
+			if (updateTTA != null) {
 				updateTTA.close();
 				updateTTA = null;
 			}
-			if( TTAInfo != null ) {
+			if (TTAInfo != null) {
 				TTAInfo.close();
 				TTAInfo = null;
 			}
-			if( TTADateIDStart != null) {
+			if (TTADateIDStart != null) {
 				TTADateIDStart.close();
 				TTADateIDStart = null;
 			}
-			if( resetStockTTA != null) {
+			if (resetStockTTA != null) {
 				resetStockTTA.close();
 				resetStockTTA = null;
 			}
-			if( stkDateId != null ) {
+			if (stkDateId != null) {
 				stkDateId.close();
 				stkDateId = null;
 			}
-			if( resetStockAVI != null) {
+			if (resetStockAVI != null) {
 				resetStockAVI.close();
 				resetStockAVI = null;
 			}
-			if( updateStockAVI != null) {
+			if (updateStockAVI != null) {
 				updateStockAVI.close();
 				updateStockAVI = null;
 			}
-			if( checkAVIExist != null) {
+			if (checkAVIExist != null) {
 				checkAVIExist.close();
 				checkAVIExist = null;
 			}
@@ -994,8 +1031,7 @@ public class DB {
 
 		return dateIDRange;
 	}
-	
-	
+
 	public static PreparedStatement getStockTTAInfo() {
 		if (TTAInfo == null) {
 			try {
@@ -1009,8 +1045,7 @@ public class DB {
 
 		return TTAInfo;
 	}
-	
-	
+
 	public static PreparedStatement checkTTAExistence() {
 		if (existTTA == null) {
 			try {
@@ -1024,7 +1059,7 @@ public class DB {
 
 		return existTTA;
 	}
-	
+
 	public static PreparedStatement updateTTA() {
 		if (updateTTA == null) {
 			try {
@@ -1038,9 +1073,9 @@ public class DB {
 
 		return updateTTA;
 	}
-	
+
 	public static PreparedStatement getStockTTADateIDBegin() {
-		if (TTADateIDStart== null) {
+		if (TTADateIDStart == null) {
 			try {
 				String query = "select MIN(DATEID) FROM BBROCK WHERE STOCKID = ? AND (FUC>=4 OR VBI>=28 OR TBK>=8)";
 				TTADateIDStart = getConnection().prepareStatement(query);
@@ -1052,7 +1087,7 @@ public class DB {
 
 		return TTADateIDStart;
 	}
-	
+
 	// SELECT DATEID, CLOSE, DPC, UPC FROM BBROCK WHERE STOCKID=2626
 	// AND DATEID<=8720 AND DATEID>8470 ORDER BY CLOSE DESC, DATEID DESC LIMIT 20;
 	public static PreparedStatement getMaxClose() {
@@ -1185,7 +1220,7 @@ public class DB {
 
 		return stkDateId;
 	}
-	
+
 	public static PreparedStatement getStockVBIFUCX() {
 		if (stkvbifx == null) {
 			try {
@@ -1254,6 +1289,105 @@ public class DB {
 		}
 
 		return updateBDYPDY;
+	}
+
+	// ttaToday ttaLastTenSum fucToday tbkToday vbiToday ee8Today gentleBullToday
+	public static PreparedStatement ttaToday() {
+		if (ttaToday == null) {
+			try {
+				String query = "SELECT a.DATEID, a.STOCKID AS SKID, CDATE, b.SYMBOL AS SYM, ROUND(CLOSE,1) AS CLOS, FUC,TBK, VBI,TTA,ROUND(SAY,1) AS SAY,MARKCAP AS CAP,VOLUME,ROUND(BDY,1) AS BDY,PDY,BT9, ROUND(DPC,1) AS DPC, ROUND(UPC,1) AS UPC, ROUND(DM,0) AS DM,ROUND(DD,1) AS DD, ROUND(D9,1) AS D9 FROM BBROCK a, SYMBOLS b, DATES c WHERE a.STOCKID=b.STOCKID and a.DATEID = c.DATEID and a.DATEID=? and TTA>0 AND DD<50 and D9<200 AND MARKCAP>1000 AND CLOSE>20 ORDER by TTA DESC, MARKCAP DESC limit ?";
+				ttaToday = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return ttaToday;
+	}
+
+	public static PreparedStatement ttaLastTenSum() {
+		if (ttaLastTenSum == null) {
+			try {
+				String query = "select a.STOCKID, b.SYMBOL, SUM(TTA), AVG(DD),AVG(D9)  FROM BBROCK a, SYMBOLS b WHERE a.STOCKID = b.STOCKID and a.DATEID>=? AND a.DATEID<=? AND MARKCAP>1000 GROUP BY a.STOCKID, b.SYMBOL having SUM(TTA)>400 AND AVG(DD)<20 AND AVG(D9)<100 order by SUM(TTA) DESC limit ?";
+				ttaLastTenSum = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return ttaLastTenSum;
+	}
+
+	public static PreparedStatement fucToday() {
+		if (fucToday == null) {
+			try {
+				String query = "select a.DATEID,a.STOCKID, CDATE, b.SYMBOL AS SYM,RTS,MCP,TBK,TEAL AS T, YELLOW AS Y, PINK AS P, MARKCAP,CLOSE,TTA,TBK,EE8,FUC, VBI,ROUND(DD,1) AS DD, ROUND(D9,0) AS D9, MOR, BT9 FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.FUC>=4 AND a.MARKCAP>1000 AND DD<30 and D9<100 AND a.STOCKID = b.STOCKID and a.DATEID=c.DATEID  AND  a.DATEID= ?  ORDER BY MARKCAP DESC limit ?";
+				fucToday = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return fucToday;
+	}
+
+	public static PreparedStatement tbkToday() {
+		if (tbkToday == null) {
+			try {
+				String query = "select a.DATEID,a.STOCKID, CDATE, b.SYMBOL AS SYM,RTS,MCP,TBK,TEAL AS T, YELLOW AS Y, PINK AS P, MARKCAP,CLOSE,TTA,TBK,EE8,FUC, VBI,ROUND(DD,1) AS DD, ROUND(D9,0) AS D9, MOR, BT9 FROM BBROCK a, SYMBOLS b,DATES c  WHERE a.TBK>=8 AND a.MARKCAP>1000 AND DD<30 and D9<100 AND a.STOCKID = b.STOCKID and a.DATEID=c.DATEID  AND  a.DATEID= ?  ORDER BY MARKCAP DESC limit ?";
+				tbkToday = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return tbkToday;
+	}
+
+	public static PreparedStatement vbiToday() {
+		if (vbiToday == null) {
+			try {
+				String query = "SELECT a.DATEID, a.STOCKID AS STKID, CDATE, b.SYMBOL AS SYM, MARKCAP,VOLUME,CLOSE, ROUND(DD,1) AS DD, ROUND(D9,1) AS D9,VBI,FUC, BT9, ROUND(DPC,2) AS DPC, ROUND(UPC,1) AS UPC, ROUND(DM,1) AS DM FROM BBROCK a, SYMBOLS b, DATES c WHERE DD>1 AND a.STOCKID=b.STOCKID and a.DATEID = c.DATEID and   a.DATEID =?  and VBI>0 AND DD<20 AND D9<100 AND a.MARKCAP>1000 ORDER BY MARKCAP DESC limit ?";
+				vbiToday = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return vbiToday;
+	}
+
+	public static PreparedStatement ee8Today() {
+		if (ee8Today == null) {
+			try {
+				String query = "SELECT a.DATEID, a.STOCKID AS STKID, CDATE, b.SYMBOL AS SYM,EE8,VBI,FUC AS UT, MARKCAP AS CAP,VOLUME,ROUND(CLOSE,1) AS CLOS, ROUND(DD,1) AS DD, ROUND(D9,1) AS D9,VBI, ROUND(BDY,1) AS BDY,PDY,ROUND(DPC,1) as DPC, ROUND(UPC,1) AS UPC FROM BBROCK a, SYMBOLS b, DATES c WHERE EE8>1 AND a.STOCKID=b.STOCKID and a.DATEID = c.DATEID and   a.DATEID =?   AND DD<20 AND D9<100 and a.MARKCAP>1000 ORDER BY MARKCAP DESC limit ?";
+				ee8Today = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return ee8Today;
+	}
+
+	public static PreparedStatement gentleBullToday() {
+		if (gentleBullToday == null) {
+			try {
+				String query = "SELECT a.DATEID AS DTID, a.STOCKID AS SKID, CDATE, b.SYMBOL AS SYM, BT9,ROUND(MARKCAP,0) AS CAP,VOLUME,ROUND(CLOSE,1) AS CLOS,ROUND(BDY,1) AS BDY,PDY, VBI,ROUND(DD,1) AS DD, ROUND(D9,1) AS D9,  ROUND(DPC,1) AS DPC,ROUND(UPC,1) AS UPC, ROUND(DM,0) AS DM FROM BBROCK a, SYMBOLS b, DATES c  WHERE a.DATEID=?  AND a.STOCKID=b.STOCKID and a.DATEID = c.DATEID and  a.BT9>=12 AND a.DD<100 and a.D9<300 and a.MARKCAP>1000 order by a.BT9 DESC limit ?";
+				gentleBullToday = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return gentleBullToday;
 	}
 
 	public static PreparedStatement getMinClose() {
@@ -1403,21 +1537,20 @@ public class DB {
 
 		return checkAVIExist;
 	}
-	
-	
+
 	public static PreparedStatement resetStockAVI() {
 		if (resetStockAVI == null) {
 			try {
 				String query = "UPDATE BBROCK SET AVI=0 WHERE STOCKID=?";
 
-				resetStockAVI  = getConnection().prepareStatement(query);
+				resetStockAVI = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
 			}
 
 		}
 
-		return resetStockAVI ;
+		return resetStockAVI;
 	}
 
 	public static PreparedStatement resetStockTTA() {
@@ -1425,15 +1558,16 @@ public class DB {
 			try {
 				String query = "UPDATE BBROCK SET TTA=0 WHERE STOCKID=? AND TTA<>0";
 
-				resetStockTTA  = getConnection().prepareStatement(query);
+				resetStockTTA = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
 			}
 
 		}
 
-		return resetStockTTA ;
+		return resetStockTTA;
 	}
+
 	public static PreparedStatement updateStockAVI() {
 		if (updateStockAVI == null) {
 			try {
@@ -1448,7 +1582,7 @@ public class DB {
 
 		return updateStockAVI;
 	}
-	
+
 	public static PreparedStatement getAvgD2() {
 		if (avgD2 == null) {
 			try {
