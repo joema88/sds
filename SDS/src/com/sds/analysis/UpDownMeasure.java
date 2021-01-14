@@ -142,7 +142,8 @@ public class UpDownMeasure {
 		PreparedStatement vbiToday = DB.vbiToday();
 		PreparedStatement ee8Today = DB.ee8Today();
 		PreparedStatement gentleBullToday = DB.gentleBullToday();
-		int limit = 50;
+		int limitBT9 = 50;
+		int limit = 100;
 		HashMap ttaTodayTable = new HashMap();
 		HashMap ttaLastTenSumTable = new HashMap();
 		HashMap fucTodayTable = new HashMap();
@@ -328,7 +329,7 @@ public class UpDownMeasure {
 				// c.DATEID and a.BT9>=12 AND a.DD<100 and a.D9<300 and a.MARKCAP>1000 order by
 				// a.BT9 DESC limit ?";
 				gentleBullToday.setInt(1, k);
-				gentleBullToday.setInt(2, limit);
+				gentleBullToday.setInt(2, limitBT9);
 				ResultSet rs7 = gentleBullToday.executeQuery();
 				int count7 = 0;
 				while (rs7.next()) {
@@ -343,8 +344,8 @@ public class UpDownMeasure {
 					}
 					count7++;
 				}
-				if (count7 == limit) {
-					System.out.println("gentleBullToday reached limit " + limit);
+				if (count7 == limitBT9) {
+					System.out.println("gentleBullToday reached limit " + limitBT9);
 				}
 
 				// combine all stocks
