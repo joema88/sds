@@ -1375,6 +1375,7 @@ public class DB {
 
 		return ee8Today;
 	}
+	
 
 	public static PreparedStatement gentleBullToday() {
 		if (gentleBullToday == null) {

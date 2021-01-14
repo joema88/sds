@@ -72,9 +72,9 @@ public class UpDownMeasure {
 		// daily step 6
 		// processTodayIndustryAVGPDY(currentDateID, -1);
 		// daily step 7, update daily OBI (Over bought indicator)
-		// processOBIHistory(1);
+		 //processOBIHistory(1);
 		// daily step 8, update daily f1, f8 count
-		// processF18Today(currentDateID) ;
+		//processF18Today(currentDateID) ;
 		// daily step 9, process D2, D9 for each stock
 		// processD2D9History(true);
 		// daily step 10, process today's VBI
@@ -95,7 +95,7 @@ public class UpDownMeasure {
 		// daily step 17, process last day TTA
 		// processTTAHistory(true);
 
-		printOutBullStocks(9080, 9082);
+		printOutBullStocks(9083, 9083);
 
 		// processStockTTAHistory(6660, false);
 		// processTTAHistory(false);
