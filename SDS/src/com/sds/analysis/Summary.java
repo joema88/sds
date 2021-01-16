@@ -604,7 +604,7 @@ public class Summary {
 			UMACUpdate.setFloat(2,marketCapSum / (1.0f * tot));
 			UMACUpdate.setInt(3,dateID);
 			UMACUpdate.executeUpdate();
-			System.out.println(date+"  Total " + tot + " avg market cap " + marketCapSum / (1.0f * tot));
+			System.out.println("processDailyUTurnSummary "+date+"  Total " + tot + " avg market cap " + marketCapSum / (1.0f * tot));
 		} catch (Exception ex) {
 
 		}

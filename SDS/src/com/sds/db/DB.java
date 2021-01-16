@@ -361,11 +361,19 @@ public class DB {
 	private static PreparedStatement vbiToday = null;
 	private static PreparedStatement ee8Today = null;
 	private static PreparedStatement gentleBullToday = null;
-
-	//
-
+	private static PreparedStatement weekSumBullToday = null;
+	private static PreparedStatement monthlySumBearToday = null;
+	
 	public static void closeConnection() {
 		try {
+			if( monthlySumBearToday != null) {
+				monthlySumBearToday.close();
+				monthlySumBearToday = null;
+			}
+			if(weekSumBullToday != null) {
+				weekSumBullToday.close();
+				weekSumBullToday =  null;
+			}
 			if (gentleBullToday != null) {
 				gentleBullToday.close();
 				gentleBullToday = null;
@@ -1309,7 +1317,7 @@ public class DB {
 	public static PreparedStatement ttaLastTenSum() {
 		if (ttaLastTenSum == null) {
 			try {
-				String query = "select a.STOCKID, b.SYMBOL, SUM(TTA), AVG(DD),AVG(D9)  FROM BBROCK a, SYMBOLS b WHERE a.STOCKID = b.STOCKID and a.DATEID>=? AND a.DATEID<=? AND MARKCAP>1000 GROUP BY a.STOCKID, b.SYMBOL having SUM(TTA)>400 AND AVG(DD)<20 AND AVG(D9)<100 order by SUM(TTA) DESC limit ?";
+				String query = "select a.STOCKID, b.SYMBOL, SUM(TTA), AVG(DD),AVG(D9),AVG(CLOSE)  FROM BBROCK a, SYMBOLS b WHERE a.STOCKID = b.STOCKID and a.DATEID>=? AND a.DATEID<=? AND MARKCAP>1000 GROUP BY a.STOCKID, b.SYMBOL having SUM(TTA)>400 AND AVG(DD)<20 AND AVG(D9)<100 order by SUM(TTA) DESC limit ?";
 				ttaLastTenSum = getConnection().prepareStatement(query);
 			} catch (Exception ex) {
 				ex.printStackTrace(System.out);
@@ -1390,7 +1398,39 @@ public class DB {
 
 		return gentleBullToday;
 	}
+	
+	
 
+	public static PreparedStatement weekSumBullToday() {
+		if (weekSumBullToday == null) {
+			try {
+				String query = "select a.STOCKID,b.SYMBOL,ROUND(SUM(NETCHANGE),2) AS SUM_NETCHANGE,ROUND(SUM(PERCENT),2) AS SUM_PERCENT,ROUND(AVG(MARKCAP),2) AS AVG_MARKCAP, ROUND(AVG(CLOSE),2) AS AVG_CLOSE, MAX(CLOSE),MIN(CLOSE) FROM BBROCK a, SYMBOLS b WHERE a.STOCKID=b.STOCKID and DATEID<=? and DATEID>=?   GROUP BY a.STOCKID, b.SYMBOL HAVING AVG(MARKCAP)>1000 AND SUM(PERCENT)>35 AND AVG(CLOSE)>10 order by SUM(PERCENT) DeSC limit ?";
+				weekSumBullToday = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return weekSumBullToday;
+	}
+	
+	
+	public static PreparedStatement monthlySumBearToday() {
+		if (monthlySumBearToday == null) {
+			try {
+				String query = "select a.STOCKID,b.SYMBOL,ROUND(SUM(NETCHANGE),2) AS SUM_NETCHANGE,ROUND(SUM(PERCENT),2) AS SUM_PERCENT,ROUND(AVG(MARKCAP),2) AS AVG_MARKCAP, ROUND(AVG(CLOSE),2) AS AVG_CLOSE, MAX(CLOSE),MIN(CLOSE) FROM BBROCK a, SYMBOLS b WHERE a.STOCKID=b.STOCKID and DATEID<=? and DATEID>=?   GROUP BY a.STOCKID, b.SYMBOL HAVING AVG(MARKCAP)>1000 AND SUM(PERCENT)<-30 AND AVG(CLOSE)>10 order by SUM(PERCENT) ASC limit ?";
+				monthlySumBearToday = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return monthlySumBearToday;
+	}
+	
+	
 	public static PreparedStatement getMinClose() {
 		if (minClose == null) {
 			try {

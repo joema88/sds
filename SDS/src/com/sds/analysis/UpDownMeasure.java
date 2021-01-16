@@ -72,9 +72,9 @@ public class UpDownMeasure {
 		// daily step 6
 		// processTodayIndustryAVGPDY(currentDateID, -1);
 		// daily step 7, update daily OBI (Over bought indicator)
-		 //processOBIHistory(1);
+		// processOBIHistory(1);
 		// daily step 8, update daily f1, f8 count
-		//processF18Today(currentDateID) ;
+		// processF18Today(currentDateID) ;
 		// daily step 9, process D2, D9 for each stock
 		// processD2D9History(true);
 		// daily step 10, process today's VBI
@@ -95,7 +95,8 @@ public class UpDownMeasure {
 		// daily step 17, process last day TTA
 		// processTTAHistory(true);
 
-		printOutBullStocks(9083, 9083);
+		// printOutBullStocks(9084, 9084);
+		printOutWeeklyBullMonthlyBear(9075, 9084);
 
 		// processStockTTAHistory(6660, false);
 		// processTTAHistory(false);
@@ -134,6 +135,168 @@ public class UpDownMeasure {
 
 	}
 
+	public static void printOutWeeklyBullMonthlyBear(int startDateId, int endDateId) {
+		System.out.println("Processing weekly bulls, monthly bears");
+		PreparedStatement weekSumBullToday = DB.weekSumBullToday();
+		PreparedStatement monthlySumBearToday = DB.monthlySumBearToday();
+		int limit = 50;
+		HashMap weekSumBullMap = new HashMap();
+		HashMap weekSumBullPriceMap = new HashMap();
+		HashMap monthlySumBearMap = new HashMap();
+		HashMap monthlySumBearPriceMap = new HashMap();
+
+		StringBuffer allBullStocksBuffer = new StringBuffer();
+		StringBuffer allBullPriceBuffer = new StringBuffer();
+		StringBuffer allBearStocksBuffer = new StringBuffer();
+		StringBuffer allBearPriceBuffer = new StringBuffer();
+
+		try {
+			for (int k = startDateId; k <= endDateId; k++) {
+				// String query = "select a.STOCKID,b.SYMBOL,ROUND(SUM(NETCHANGE),2) AS
+				// SUM_NETCHANGE,ROUND(SUM(PERCENT),2) AS SUM_PERCENT,ROUND(AVG(MARKCAP),2) AS
+				// AVG_MARKCAP, ROUND(AVG(CLOSE),2) AS AVG_CLOSE, MAX(CLOSE),MIN(CLOSE) FROM
+				// BBROCK a, SYMBOLS b WHERE a.STOCKID=b.STOCKID and DATEID<=? and DATEID>=?
+				// GROUP BY a.STOCKID, b.SYMBOL HAVING AVG(MARKCAP)>1000 AND SUM(PERCENT)>35 AND
+				// AVG(CLOSE)>10 order by SUM(PERCENT) DeSC limit ?";
+				weekSumBullToday.setInt(1, k);
+				weekSumBullToday.setInt(2, k - 4);
+				weekSumBullToday.setInt(3, limit);
+				ResultSet rs1 = weekSumBullToday.executeQuery();
+				int count1 = 0;
+				while (rs1.next()) {
+					String stock = rs1.getString(2);
+					String closePrice = "" + rs1.getFloat(6);
+					weekSumBullPriceMap.put(stock, closePrice);
+					// System.out.println("Find stock " + stock);
+					if (weekSumBullMap.containsKey(stock)) {
+						int newCount = Integer.parseInt(weekSumBullMap.get(stock).toString()) + 1;
+						weekSumBullMap.put(stock, "" + (newCount + 1));
+
+					} else {
+						weekSumBullMap.put(stock, "" + 1);
+					}
+					count1++;
+				}
+				
+				if (count1 == limit) {
+					System.out.println("weekSumBull today reached limit " + limit + " at dateId " + k);
+				}
+
+				// String query = "select a.STOCKID,b.SYMBOL,ROUND(SUM(NETCHANGE),2) AS
+				// SUM_NETCHANGE,ROUND(SUM(PERCENT),2) AS SUM_PERCENT,ROUND(AVG(MARKCAP),2) AS
+				// AVG_MARKCAP, ROUND(AVG(CLOSE),2) AS AVG_CLOSE, MAX(CLOSE),MIN(CLOSE) FROM
+				// BBROCK a, SYMBOLS b WHERE a.STOCKID=b.STOCKID and DATEID<=? and DATEID>=?
+				// GROUP BY a.STOCKID, b.SYMBOL HAVING AVG(MARKCAP)>1000 AND SUM(PERCENT)<-30
+				// AND AVG(CLOSE)>10 order by SUM(PERCENT) ASC limit ?";
+				monthlySumBearToday.setInt(1, k);
+				monthlySumBearToday.setInt(2, k - 24);
+				monthlySumBearToday.setInt(3, limit);
+				ResultSet rs2 = monthlySumBearToday.executeQuery();
+				int count2 = 0;
+				while (rs2.next()) {
+					String stock = rs2.getString(2);
+					String closePrice = "" + rs2.getFloat(6);
+					monthlySumBearPriceMap.put(stock, closePrice);
+					// System.out.println("Find stock " + stock);
+					if (monthlySumBearMap.containsKey(stock)) {
+						int newCount = Integer.parseInt(monthlySumBearMap.get(stock).toString()) + 1;
+						monthlySumBearMap.put(stock, "" + (newCount + 1));
+
+					} else {
+						monthlySumBearMap.put(stock, "" + 1);
+					}
+					count2++;
+				}
+				
+				if (count2 == limit) {
+					System.out.println("monthlySumBear today reached limit " + limit + " at dateId " + k);
+				}
+			}
+
+			// print out sorted results
+			Map<String, String> sortedMap = new TreeMap<String, String>(weekSumBullMap);
+			System.out.println("With weekly bull stocks..." + sortedMap.size());
+			Set sortedStocks = sortedMap.keySet();
+			Iterator weeklyBullITSorted = sortedStocks.iterator();
+			while (weeklyBullITSorted.hasNext()) {
+				String stk = weeklyBullITSorted.next().toString();
+				String count = sortedMap.get(stk).toString();
+				System.out.println(stk + " count " + count);
+				allBullStocksBuffer.append(stk + ",");
+			}
+
+			// weeklyBullsWithPrice print out with price
+			System.out.println("With price weekly bull stocks..." + weekSumBullPriceMap.size());
+			Set weeklyBullsPrice = weekSumBullMap.keySet();
+			Iterator weeklyBullPriceIT = weeklyBullsPrice.iterator();
+			while (weeklyBullPriceIT.hasNext()) {
+				String stk = weeklyBullPriceIT.next().toString();
+				String close = weekSumBullPriceMap.get(stk).toString();
+				allBullPriceBuffer.append(stk + " " + close + ",");
+			}
+
+			Map<String, String> sortedMap2 = new TreeMap<String, String>(monthlySumBearMap);
+			System.out.println("With monthly bear stocks..." + sortedMap2.size());
+			Set sortedStocks2 = sortedMap2.keySet();
+			Iterator monthlyBearITSorted = sortedStocks2.iterator();
+			while (monthlyBearITSorted.hasNext()) {
+				String stk = monthlyBearITSorted.next().toString();
+				String count = sortedMap2.get(stk).toString();
+				System.out.println(stk + " count " + count);
+				allBearStocksBuffer.append(stk + ",");
+			}
+
+			// weeklyBullsWithPrice print out with price
+			System.out.println("With price montly bear stocks..." + monthlySumBearPriceMap.size());
+			Set monthlyBearPrice = monthlySumBearPriceMap.keySet();
+			Iterator monthlyBearPriceIT = monthlyBearPrice.iterator();
+			while (monthlyBearPriceIT.hasNext()) {
+				String stk = monthlyBearPriceIT.next().toString();
+				String close = monthlySumBearPriceMap.get(stk).toString();
+				allBearPriceBuffer.append(stk + " " + close + ",");
+			}
+
+			String path = "/home/joma/share/test/";
+			Calendar cal = Calendar.getInstance();
+			int month = cal.get(Calendar.MONTH) + 1;
+			int year = cal.get(Calendar.YEAR);
+			int date = cal.get(Calendar.DAY_OF_MONTH);
+			String fileName1 = "" + year + "_" + month + "_" + date + "_WeeklyBull.txt";
+			writeToFile(path + fileName1, allBullStocksBuffer);
+
+			String fileName2 = "" + year + "_" + month + "_" + date + "_WeeklyBullPrice.txt";
+			writeToFile(path + fileName2, allBullPriceBuffer);
+
+			String fileName3 = "" + year + "_" + month + "_" + date + "_MonthlyBear.txt";
+			writeToFile(path + fileName3, allBearStocksBuffer);
+
+			String fileName4 = "" + year + "_" + month + "_" + date + "_MonthlyBearPrice.txt";
+			writeToFile(path + fileName4, allBearPriceBuffer);
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
+
+	public static void writeToFile(String fullPath, StringBuffer content) {
+		try {
+			File myObj = new File(fullPath);
+
+			if (!myObj.exists())
+				myObj.createNewFile();
+			// if (myObj.createNewFile()) {
+			Thread.sleep(5000);
+			FileWriter myWriter = new FileWriter(myObj);
+			myWriter.write(content.toString());
+			myWriter.close();
+
+		} catch (Exception e) {
+			System.out.println("An error occurred.");
+			e.printStackTrace();
+		}
+
+	}
+
 	public static void printOutBullStocks(int startDateId, int endDateId) {
 		PreparedStatement ttaToday = DB.ttaToday();
 		PreparedStatement ttaLastTenSum = DB.ttaLastTenSum();
@@ -152,8 +315,10 @@ public class UpDownMeasure {
 		HashMap ee8TodayTable = new HashMap();
 		HashMap gentleBullTodayTable = new HashMap();
 		HashMap allStocks = new HashMap();
+		HashMap allStocksWithPrice = new HashMap();
 		HashMap allStocksExceptGentleBull = new HashMap();
 		StringBuffer allStocksBuffer = new StringBuffer();
+		StringBuffer allStocksPriceBuffer = new StringBuffer();
 
 		try {
 			for (int k = startDateId; k <= endDateId; k++) {
@@ -171,6 +336,8 @@ public class UpDownMeasure {
 				int count1 = 0;
 				while (rs1.next()) {
 					String stock = rs1.getString(4);
+					String closePrice = "" + rs1.getFloat(5);
+					allStocksWithPrice.put(stock, closePrice);
 					// System.out.println("Find stock " + stock);
 					if (ttaTodayTable.containsKey(stock)) {
 						int newCount = Integer.parseInt(ttaTodayTable.get(stock).toString()) + 1;
@@ -186,7 +353,8 @@ public class UpDownMeasure {
 				}
 
 				// ttaLastTenSum()
-				// String query = "select a.STOCKID, b.SYMBOL, SUM(TTA), AVG(DD),AVG(D9) FROM
+				// String query = "select a.STOCKID, b.SYMBOL, SUM(TTA),
+				// AVG(DD),AVG(D9),AVG(CLOSE) FROM
 				// BBROCK a, SYMBOLS b WHERE a.STOCKID = b.STOCKID and a.DATEID>=? AND
 				// a.DATEID<=? AND MARKCAP>1000 GROUP BY a.STOCKID, b.SYMBOL having SUM(TTA)>400
 				// AND AVG(DD)<20 AND AVG(D9)<100 order by SUM(TTA) DESC limit ?";
@@ -198,6 +366,8 @@ public class UpDownMeasure {
 				while (rs2.next()) {
 					String stock = rs2.getString(2);
 					// System.out.println("Find stock " + stock);
+					String closePrice = "" + rs2.getFloat(6);
+					allStocksWithPrice.put(stock, closePrice);
 					if (ttaLastTenSumTable.containsKey(stock)) {
 						int newCount = Integer.parseInt(ttaLastTenSumTable.get(stock).toString()) + 1;
 						ttaLastTenSumTable.put(stock, "" + (newCount + 1));
@@ -225,6 +395,9 @@ public class UpDownMeasure {
 				while (rs3.next()) {
 					String stock = rs3.getString(4);
 					// System.out.println("Find stock " + stock);
+					String closePrice = "" + rs3.getFloat(12);
+					allStocksWithPrice.put(stock, closePrice);
+
 					if (fucTodayTable.containsKey(stock)) {
 						int newCount = Integer.parseInt(fucTodayTable.get(stock).toString()) + 1;
 						fucTodayTable.put(stock, "" + (newCount + 1));
@@ -252,6 +425,9 @@ public class UpDownMeasure {
 				while (rs4.next()) {
 					String stock = rs4.getString(4);
 					// System.out.println("Find stock " + stock);
+					String closePrice = "" + rs4.getFloat(12);
+					allStocksWithPrice.put(stock, closePrice);
+
 					if (tbkTodayTable.containsKey(stock)) {
 						int newCount = Integer.parseInt(tbkTodayTable.get(stock).toString()) + 1;
 						tbkTodayTable.put(stock, "" + (newCount + 1));
@@ -279,6 +455,9 @@ public class UpDownMeasure {
 				while (rs5.next()) {
 					String stock = rs5.getString(4);
 					// System.out.println("Find stock " + stock);
+					String closePrice = "" + rs5.getFloat(7);
+					allStocksWithPrice.put(stock, closePrice);
+
 					if (vbiTodayTable.containsKey(stock)) {
 						int newCount = Integer.parseInt(vbiTodayTable.get(stock).toString()) + 1;
 						vbiTodayTable.put(stock, "" + (newCount + 1));
@@ -307,6 +486,9 @@ public class UpDownMeasure {
 				while (rs6.next()) {
 					String stock = rs6.getString(4);
 					// System.out.println("Find stock " + stock);
+					String closePrice = "" + rs6.getFloat(10);
+					allStocksWithPrice.put(stock, closePrice);
+
 					if (ee8TodayTable.containsKey(stock)) {
 						int newCount = Integer.parseInt(ee8TodayTable.get(stock).toString()) + 1;
 						ee8TodayTable.put(stock, "" + (newCount + 1));
@@ -335,6 +517,9 @@ public class UpDownMeasure {
 				while (rs7.next()) {
 					String stock = rs7.getString(4);
 					// System.out.println("Find stock " + stock);
+					String closePrice = "" + rs7.getFloat(8);
+					allStocksWithPrice.put(stock, closePrice);
+
 					if (gentleBullTodayTable.containsKey(stock)) {
 						int newCount = Integer.parseInt(gentleBullTodayTable.get(stock).toString()) + 1;
 						gentleBullTodayTable.put(stock, "" + (newCount + 1));
@@ -482,6 +667,16 @@ public class UpDownMeasure {
 					allStocksBuffer.append(stk + ",");
 				}
 
+				// allStocksWithPrice print out with price
+				System.out.println("With price bull stocks..." + allStocksWithPrice.size());
+				Set stocksPrice = allStocksWithPrice.keySet();
+				Iterator stocksPriceIT = stocksPrice.iterator();
+				while (stocksPriceIT.hasNext()) {
+					String stk = stocksPriceIT.next().toString();
+					String close = allStocksWithPrice.get(stk).toString();
+					allStocksPriceBuffer.append(stk + " " + close + ",");
+				}
+
 			}
 
 			String path = "/home/joma/share/test/";
@@ -494,12 +689,33 @@ public class UpDownMeasure {
 				File myObj = new File(path + fileName);
 				System.out.println(".... " + allStocksBuffer.toString());
 
-				if(!myObj.exists())
+				if (!myObj.exists())
 					myObj.createNewFile();
 				// if (myObj.createNewFile()) {
-				 Thread.sleep(5000);
+				Thread.sleep(5000);
 				FileWriter myWriter = new FileWriter(myObj);
 				myWriter.write(allStocksBuffer.toString());
+				myWriter.close();
+				// System.out.println("File created: " + myObj.getName());
+				// } else {
+				// System.out.println("File already exists.");
+				// }
+			} catch (IOException e) {
+				System.out.println("An error occurred.");
+				e.printStackTrace();
+			}
+
+			String fileName2 = "" + year + "_" + month + "_" + date + "_BullPrice.txt";
+			try {
+				File myObj2 = new File(path + fileName2);
+				System.out.println(".... " + allStocksPriceBuffer.toString());
+
+				if (!myObj2.exists())
+					myObj2.createNewFile();
+				// if (myObj.createNewFile()) {
+				Thread.sleep(5000);
+				FileWriter myWriter = new FileWriter(myObj2);
+				myWriter.write(allStocksPriceBuffer.toString());
 				myWriter.close();
 				// System.out.println("File created: " + myObj.getName());
 				// } else {
@@ -786,6 +1002,7 @@ public class UpDownMeasure {
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}
+		System.out.println("processF18Today done");
 	}
 
 	public static void processUpDownHistory() {
@@ -2076,7 +2293,7 @@ public class UpDownMeasure {
 				UpdateOBIStmnt.setInt(1, obi);
 				UpdateOBIStmnt.setInt(2, dateId);
 				UpdateOBIStmnt.executeUpdate();
-				System.out.println("DateId done " + dateId);
+				System.out.println("processOBIHistory done " + dateId);
 			}
 
 		} catch (Exception ex) {
@@ -3026,7 +3243,7 @@ public class UpDownMeasure {
 						processTodayDMA(stockID, k);
 				}
 
-				System.out.println("process done for " + stockID);
+				System.out.println("processDMAHistory done for " + stockID);
 			}
 
 		} catch (Exception ex) {
@@ -3151,7 +3368,7 @@ public class UpDownMeasure {
 				} catch (Exception ex) {
 
 				}
-				System.out.println("process done for " + stockID);
+				System.out.println("processFUCHistory done for " + stockID);
 			}
 
 		} catch (Exception ex) {
@@ -3674,6 +3891,7 @@ public class UpDownMeasure {
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}
+		System.out.println("processTodayBDA done");
 	}
 
 	// Accumulated yield of stocks since each stage buying to selling
@@ -3837,6 +4055,7 @@ public class UpDownMeasure {
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}
+		System.out.println("processTodayIndustryAVGPDY done");
 	}
 
 	// Accumulated yield of stocks since each stage buying to selling
@@ -3998,6 +4217,7 @@ public class UpDownMeasure {
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}
+		System.out.println("processTodayIndustryAVGPDYDelta done");
 	}
 
 	// Accumulated yield of stocks since each stage buying to selling
@@ -4094,6 +4314,7 @@ public class UpDownMeasure {
 			} else {
 				processTodayPDY(stockID, dateId, buyDateId);
 			}
+			System.out.println("processTodayAllPDY done");
 		} catch (Exception ex) {
 
 		}
