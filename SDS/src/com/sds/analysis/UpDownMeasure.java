@@ -92,11 +92,15 @@ public class UpDownMeasure {
 		// processTBKHistory(true);
 		// daily step 16, process last day AVI
 		// processAVIHistory(true);
-		// daily step 17, process last day TTA
+		/// daily step 17, process last day TTA
 		// processTTAHistory(true);
 
-		// printOutBullStocks(9084, 9084);
-		printOutWeeklyBullMonthlyBear(9075, 9084);
+		// two more task, 1. 15 days fresh TTA>100,
+		// 2. Merrill export sort and group
+
+		// Why TME not printed out??? TTA=128
+		printOutBullStocks(9088, 9088);
+		// printOutWeeklyBullMonthlyBear(9086, 9086);
 
 		// processStockTTAHistory(6660, false);
 		// processTTAHistory(false);
@@ -104,6 +108,7 @@ public class UpDownMeasure {
 		// processAVIHistory(false);
 		// process entire Rolling Thirty days Sum(P+Y) and MCP(if qualified>=90%)
 		// history
+
 		// processRTSHistory(false);
 		//// process entire TBK history
 		// processStockTBKHistory(963);
@@ -177,7 +182,7 @@ public class UpDownMeasure {
 					}
 					count1++;
 				}
-				
+
 				if (count1 == limit) {
 					System.out.println("weekSumBull today reached limit " + limit + " at dateId " + k);
 				}
@@ -207,7 +212,7 @@ public class UpDownMeasure {
 					}
 					count2++;
 				}
-				
+
 				if (count2 == limit) {
 					System.out.println("monthlySumBear today reached limit " + limit + " at dateId " + k);
 				}
@@ -316,9 +321,11 @@ public class UpDownMeasure {
 		HashMap gentleBullTodayTable = new HashMap();
 		HashMap allStocks = new HashMap();
 		HashMap allStocksWithPrice = new HashMap();
+
 		HashMap allStocksExceptGentleBull = new HashMap();
 		StringBuffer allStocksBuffer = new StringBuffer();
 		StringBuffer allStocksPriceBuffer = new StringBuffer();
+		StringBuffer allFreshStocksPriceBuffer = new StringBuffer();
 
 		try {
 			for (int k = startDateId; k <= endDateId; k++) {
@@ -338,7 +345,7 @@ public class UpDownMeasure {
 					String stock = rs1.getString(4);
 					String closePrice = "" + rs1.getFloat(5);
 					allStocksWithPrice.put(stock, closePrice);
-					// System.out.println("Find stock " + stock);
+					// System.out.println("Find TTA stock " + stock);
 					if (ttaTodayTable.containsKey(stock)) {
 						int newCount = Integer.parseInt(ttaTodayTable.get(stock).toString()) + 1;
 						ttaTodayTable.put(stock, "" + (newCount + 1));
@@ -346,6 +353,7 @@ public class UpDownMeasure {
 					} else {
 						ttaTodayTable.put(stock, "" + 1);
 					}
+
 					count1++;
 				}
 				if (count1 == limit) {
@@ -365,7 +373,7 @@ public class UpDownMeasure {
 				int count2 = 0;
 				while (rs2.next()) {
 					String stock = rs2.getString(2);
-					// System.out.println("Find stock " + stock);
+					// System.out.println("Find TTA last ten sum stock " + stock);
 					String closePrice = "" + rs2.getFloat(6);
 					allStocksWithPrice.put(stock, closePrice);
 					if (ttaLastTenSumTable.containsKey(stock)) {
@@ -394,7 +402,7 @@ public class UpDownMeasure {
 				int count3 = 0;
 				while (rs3.next()) {
 					String stock = rs3.getString(4);
-					// System.out.println("Find stock " + stock);
+					// System.out.println("Find fuc stock " + stock);
 					String closePrice = "" + rs3.getFloat(12);
 					allStocksWithPrice.put(stock, closePrice);
 
@@ -424,7 +432,7 @@ public class UpDownMeasure {
 				int count4 = 0;
 				while (rs4.next()) {
 					String stock = rs4.getString(4);
-					// System.out.println("Find stock " + stock);
+					// System.out.println("Find TBK stock " + stock);
 					String closePrice = "" + rs4.getFloat(12);
 					allStocksWithPrice.put(stock, closePrice);
 
@@ -454,7 +462,7 @@ public class UpDownMeasure {
 				int count5 = 0;
 				while (rs5.next()) {
 					String stock = rs5.getString(4);
-					// System.out.println("Find stock " + stock);
+					// System.out.println("Find vbi stock " + stock);
 					String closePrice = "" + rs5.getFloat(7);
 					allStocksWithPrice.put(stock, closePrice);
 
@@ -485,7 +493,7 @@ public class UpDownMeasure {
 				int count6 = 0;
 				while (rs6.next()) {
 					String stock = rs6.getString(4);
-					// System.out.println("Find stock " + stock);
+					// System.out.println("Find ee8 stock " + stock);
 					String closePrice = "" + rs6.getFloat(10);
 					allStocksWithPrice.put(stock, closePrice);
 
@@ -516,7 +524,7 @@ public class UpDownMeasure {
 				int count7 = 0;
 				while (rs7.next()) {
 					String stock = rs7.getString(4);
-					// System.out.println("Find stock " + stock);
+					System.out.println("Find gentle bull stock " + stock);
 					String closePrice = "" + rs7.getFloat(8);
 					allStocksWithPrice.put(stock, closePrice);
 
@@ -675,6 +683,10 @@ public class UpDownMeasure {
 					String stk = stocksPriceIT.next().toString();
 					String close = allStocksWithPrice.get(stk).toString();
 					allStocksPriceBuffer.append(stk + " " + close + ",");
+
+					if (freshStock(stk, k)) {
+						allFreshStocksPriceBuffer.append(stk + " " + close + ",");
+					}
 				}
 
 			}
@@ -726,6 +738,27 @@ public class UpDownMeasure {
 				e.printStackTrace();
 			}
 
+			String fileName3 = "" + year + "_" + month + "_" + date + "_FreshTTABullPrice.txt";
+			try {
+				File myObj3 = new File(path + fileName3);
+				System.out.println(".... " + allFreshStocksPriceBuffer.toString());
+
+				if (!myObj3.exists())
+					myObj3.createNewFile();
+				// if (myObj.createNewFile()) {
+				Thread.sleep(5000);
+				FileWriter myWriter = new FileWriter(myObj3);
+				myWriter.write(allFreshStocksPriceBuffer.toString());
+				myWriter.close();
+				// System.out.println("File created: " + myObj.getName());
+				// } else {
+				// System.out.println("File already exists.");
+				// }
+			} catch (IOException e) {
+				System.out.println("An error occurred.");
+				e.printStackTrace();
+			}
+
 			Map<String, String> sortedMap2 = new TreeMap<String, String>(allStocksExceptGentleBull);
 			System.out.println("Without gentle bull stocks..." + sortedMap2.size());
 			Set sortedStocks2 = sortedMap2.keySet();
@@ -740,6 +773,55 @@ public class UpDownMeasure {
 			ex.printStackTrace(System.out);
 		}
 
+	}
+
+	// fresh TTA>100 in 15 days
+	public static boolean freshStock(String stock, int dateID) {
+		boolean fresh = false;
+		boolean cond1 = false;
+		boolean cond2 = false;
+
+		try {
+			// in last 16 days, if only the latest day has TTA>100, then considered as fresh
+			// TTA case
+			//// String query = "select count(*) FROM BBROCK a, SYMBOLS b WHERE a.STOCKID =
+			//// b.STOCKID and b.SYMBOL= ? and a.DATEID>=? and a.DATEID<=? and TTA>100";
+			PreparedStatement ttaCount = DB.getTTACount();
+			ttaCount.setString(1, stock);
+			ttaCount.setInt(2, dateID);
+			ttaCount.setInt(3, dateID);
+
+			ResultSet rs1 = ttaCount.executeQuery();
+
+			if (rs1.next()) {
+				int ttaNum = rs1.getInt(1);
+				if (ttaNum == 1) {
+					cond1 = true;
+				}
+			}
+
+			if (cond1) {
+
+				ttaCount.setString(1, stock);
+				ttaCount.setInt(2, dateID - 16);
+				ttaCount.setInt(3, dateID - 1);
+
+				ResultSet rs2 = ttaCount.executeQuery();
+
+				if (rs2.next()) {
+					int ttaNum = rs2.getInt(1);
+					if (ttaNum == 0) {
+						cond2 = true;
+						fresh = true;
+					}
+				}
+
+			}
+
+		} catch (Exception ex) {
+
+		}
+		return fresh;
 	}
 
 	public static void processStockUpDownHistory(int stockID) {

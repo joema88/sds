@@ -363,9 +363,17 @@ public class DB {
 	private static PreparedStatement gentleBullToday = null;
 	private static PreparedStatement weekSumBullToday = null;
 	private static PreparedStatement monthlySumBearToday = null;
+	private static PreparedStatement ttaCount = null;
+	
+	
 	
 	public static void closeConnection() {
 		try {
+			if( ttaCount != null ) {
+				ttaCount.close();
+				ttaCount = null;
+			}
+			
 			if( monthlySumBearToday != null) {
 				monthlySumBearToday.close();
 				monthlySumBearToday = null;
@@ -1714,6 +1722,23 @@ public class DB {
 		return updateD9;
 	}
 
+	//16 days only the latest day has TTA>100, consider fresh TTA of the day
+	public static PreparedStatement getTTACount() {
+		if (ttaCount == null) {
+			try {
+				String query = "select count(*) FROM BBROCK a, SYMBOLS b  WHERE a.STOCKID = b.STOCKID and   b.SYMBOL= ?  and a.DATEID>=? and a.DATEID<=? and TTA>100";
+
+				ttaCount = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return ttaCount;
+	}
+	
+	
 	public static PreparedStatement getSumTeal() {
 		if (tealSumStmnt == null) {
 			try {
