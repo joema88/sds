@@ -49,6 +49,8 @@ public class UpDownMeasure {
 		buyDateIds[0] = 9007;
 		buyDateIds[1] = 9028;
 		buyDateIds[2] = 9034;
+		
+		//9091 is the sell date of last boduang
 	}
 
 	public static void main(String[] args) {
@@ -76,7 +78,7 @@ public class UpDownMeasure {
 		// daily step 8, update daily f1, f8 count
 		// processF18Today(currentDateID) ;
 		// daily step 9, process D2, D9 for each stock
-		// processD2D9History(true);
+		//processD2D9History(true);
 		// daily step 10, process today's VBI
 		// processVBIHistory(true);
 		// daily step 11, process EE8
@@ -89,7 +91,7 @@ public class UpDownMeasure {
 		// processRTSHistory(true);
 		// daily step 15, process last day TBK, last 30 days breakout bullish pattern
 		// base on 30 days breakout mark set in step 14
-		// processTBKHistory(true);
+	    // processTBKHistory(true);
 		// daily step 16, process last day AVI
 		// processAVIHistory(true);
 		/// daily step 17, process last day TTA
@@ -99,7 +101,7 @@ public class UpDownMeasure {
 		// 2. Merrill export sort and group
 
 		// Why TME not printed out??? TTA=128
-		printOutBullStocks(9088, 9088);
+		printOutBullStocks(9093, 9093);
 		// printOutWeeklyBullMonthlyBear(9086, 9086);
 
 		// processStockTTAHistory(6660, false);

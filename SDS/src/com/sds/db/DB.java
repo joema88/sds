@@ -1722,6 +1722,7 @@ public class DB {
 		return updateD9;
 	}
 
+	
 	//16 days only the latest day has TTA>100, consider fresh TTA of the day
 	public static PreparedStatement getTTACount() {
 		if (ttaCount == null) {
