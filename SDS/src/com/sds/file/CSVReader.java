@@ -1,13 +1,10 @@
 package com.sds.file;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.Hashtable;
+import java.io.*;
+import java.util.*;
 
 import com.sds.db.DB;
 
@@ -233,6 +230,222 @@ public class CSVReader {
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}
+	}
+	/*
+	 * "" ,"Order Date " ,"Order #" ,"Account" ,"Trade  Action" ,"Security"
+	 * ,"Quantity" ,"Order Type" ,"Bid/Ask" ,"Last Price" ,"Duration" ,"Status" ""
+	 * ,"1/29/2021 1:24 PM ET" ,"VVG-2315" ,"IRRA-Edge 24Z-16K80" ,"Buy to open"
+	 * ," BIDU FEB 12, 2021 260.00 CALL" ,"1" ,"Limit$4.80" ,"$4.60 / $6.25"
+	 * ,"$5.05" ,"Day " ,"Executed  1 @ $4.80" "" ,"1/29/2021 1:03 PM ET"
+	 * ,"VVK-4733" ,"IRRA-Edge 24Z-16K80" ,"Buy to open"
+	 * ," SOXL FEB 19, 2021 600.00 CALL" ,"1" ,"Limit$19.80" ,"$17.00 / $21.00"
+	 * ,"$19.00" ,"Day " ,"Executed  1 @ $19.80" "" ,"1/28/2021 9:35 AM ET"
+	 * ,"VVN-1587" ,"IRRA-Edge 24Z-16K80" ,"Buy to open"
+	 * ," BIDU FEB 12, 2021 260.00 CALL" ,"5" ,"Limit$7.50" ,"$4.60 / $6.25"
+	 * ,"$5.05" ,"Day " ,"Executed  5 @ $7.50"
+	 */
+
+	public static void parseMLExport(String folder) {
+		// list all files under a folder
+		File f = new File(folder);
+
+		// Populates the array with names of files and directories
+		String[] fnames = f.list();
+		HashMap results = new HashMap();
+
+		// For each pathname in the pathnames array
+		for (String fname : fnames) {
+			// Print the names of files and directories
+			// System.out.println(fname);
+			// loop parse files and extract the record
+			readMELFile(folder, fname, results);
+
+		}
+
+		FileWriter myWriter = null;
+		String path = "/home/joma/share/test/SMELL/";
+		Calendar cal = Calendar.getInstance();
+		int month = cal.get(Calendar.MONTH) + 1;
+		int year = cal.get(Calendar.YEAR);
+		int date = cal.get(Calendar.DAY_OF_MONTH);
+		String fileName = "" + year + "_" + month + "_" + date + "_Sorted.txt";
+		try {
+			File myObj = new File(path + fileName);
+
+			if (!myObj.exists())
+				myObj.createNewFile();
+			// if (myObj.createNewFile()) {
+			Thread.sleep(5000);
+			myWriter = new FileWriter(myObj);
+			// myWriter.write(allStocksBuffer.toString());
+			// myWriter.close();
+			// System.out.println("File created: " + myObj.getName());
+			// } else {
+			// System.out.println("File already exists.");
+			// }
+
+			Map<String, TreeMap> sortedMap = new TreeMap<String, TreeMap>(results);
+
+			Iterator stocks = sortedMap.keySet().iterator();
+
+			while (stocks.hasNext()) {
+				String stock = stocks.next().toString();
+				// TreeMap<Calendar, String> tree = new TreeMap<Calendar, String>();
+
+				TreeMap<Calendar, String> records = (TreeMap<Calendar, String>) sortedMap.get(stock);
+
+				Iterator recordsIT = records.keySet().iterator();
+				while (recordsIT.hasNext()) {
+					Calendar key = (Calendar) recordsIT.next();
+					String line = records.get(key).toString();
+					System.out.println(padtoLength(stock, 4) + " " + line);
+					myWriter.write(padtoLength(stock, 4) + " " + line+"\n");
+
+				}
+				myWriter.write("\n");
+				System.out.println(" ");
+			}
+
+			myWriter.close();
+		} catch (Exception e) {
+			System.out.println("An error occurred.");
+			e.printStackTrace();
+		}
+		// sort the records based on stock name
+
+		// sort the records base on date time??
+	}
+
+	private static String padtoLength(String input, int length) {
+		StringBuffer result = new StringBuffer(input);
+
+		for (int k = 0; k < (length - input.length()); k++) {
+			result.append(" ");
+		}
+
+		return result.toString();
+
+	}
+
+	public static void readMELFile(String path, String fileName, HashMap results) {
+		String csvFile = path + fileName;
+		// System.out.println("Processing file " + csvFile);
+		BufferedReader br = null;
+		String line = "";
+		String cvsSplitBy = "\" ,\"";
+
+		try {
+
+			boolean start = false;
+			br = new BufferedReader(new FileReader(csvFile));
+			while ((line = br.readLine()) != null) {
+
+				if (line.indexOf("Buy") > 0 || line.indexOf("Sell") > 0) {
+					start = true;
+				}
+				// use comma as separator
+				if (start) {
+					// "" ,"Order Date " ,"Order #" ,"Account" ,
+					// "Trade Action" ,"Security" ,"Quantity" ,
+					// "Order Type" ,"Bid/Ask" ,"Last Price" ,
+					// "Duration" ,"Status"
+					if (line.indexOf("Buy") < 0 && line.indexOf("Sell") < 0) {
+						break;
+					}
+
+					// System.out.println(line);
+					String[] data = line.split(cvsSplitBy);
+					String emptySpace = data[0];
+					String orderDate = data[1];
+					String orderNum = data[2];
+					String account = data[3];
+					String action = data[4];
+					String security = data[5];
+					String quantity = data[6];
+					String orderType = data[7];
+					String bidAsk = data[8];
+					String lastPrice = data[9];
+					String duration = data[10];
+					String status = data[11];
+					String separator1 = "|";
+					String newline = padtoLength(orderDate, 24) + separator1 + padtoLength(action, 14) + separator1
+							+ padtoLength(security, 32) + separator1 + padtoLength(quantity, 5) + separator1
+							+ padtoLength(orderType, 15) + separator1 + status;
+					/*
+					 * System.out.println(" orderDate " + orderDate);
+					 * System.out.println(" orderNum " + orderNum); System.out.println(" account " +
+					 * account); System.out.println(" action " + action);
+					 * System.out.println(" security  " + security); System.out.println(" quantity "
+					 * + quantity); System.out.println(" orderType " + orderType);
+					 * System.out.println(" bidAsk " + bidAsk); System.out.println(" lastPrice  " +
+					 * lastPrice); System.out.println(" duration " + duration);
+					 * System.out.println(" status " + status);
+					 */
+					String[] sdata = security.strip().split(" ");
+					String stock = sdata[0];
+					// System.out.println(" stock " + stock);
+
+					String[] dateInfo = orderDate.strip().split(" ");
+					String dates = dateInfo[0];
+					String hours = dateInfo[1];
+					String map = dateInfo[2];
+					String tzone = dateInfo[3];
+					/*
+					 * System.out.println("  dates  " + dates); System.out.println("  hours  " +
+					 * hours); System.out.println("  map  " + map); System.out.println("  tzone  " +
+					 * tzone);
+					 */
+					String[] may = dates.strip().split("/");
+					int month = Integer.parseInt(may[0]);
+					int day = Integer.parseInt(may[1]);
+					int year = Integer.parseInt(may[2]);
+					// System.out.println(" year " + year + " month " + month + " day " + day);
+
+					String[] ham = hours.strip().split(":");
+					int hour = Integer.parseInt(ham[0]);
+					int minute = Integer.parseInt(ham[1]);
+					// System.out.println(" hour " + hour + " minute " + minute + " AM/PM " + map);
+
+					Calendar cal = Calendar.getInstance();
+					cal.set(year, month - 1, day);
+					cal.set(Calendar.HOUR, hour);
+					cal.set(Calendar.MINUTE, minute);
+					cal.set(Calendar.SECOND, 0);
+					cal.set(Calendar.MILLISECOND, 0);
+					if (map.equalsIgnoreCase("PM")) {
+						cal.set(Calendar.AM_PM, 1);
+					} else {
+						cal.set(Calendar.AM_PM, 0);
+					}
+
+					if (results.containsKey(stock)) {
+						TreeMap<Calendar, String> records = (TreeMap<Calendar, String>) results.get(stock);
+						records.put(cal, newline);
+
+					} else {
+						TreeMap<Calendar, String> records = new TreeMap<Calendar, String>();
+						records.put(cal, newline);
+						results.put(stock, records);
+					}
+
+				}
+			}
+		} catch (
+
+		FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (br != null) {
+				try {
+					br.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
 	}
 
 	public static void uploadCSVtoDB(String path, String fileName, String stock) {
