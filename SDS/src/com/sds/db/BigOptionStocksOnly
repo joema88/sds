@@ -12,7 +12,9 @@ select a.DATEID AS ID, CDATE, b.SYMBOL AS SYM, CLOSE,OBI,F1,F8,ROUND(AMC,1) AS A
 
 
 //AVG(UPC) vs. AVG(DPC) time history, big picture Up/down trend also
-t
+select a.DATEID AS ID, CDATE, AVG(UPC), AVG(DPC) FROM BBROCK a,  DATES c  WHERE a.DATEID=c.DATEID GROUP BY a.DATEID, CDATE ORDER BY a.DATEID DESC limit 100;
+
+
 
 //2. Industry sector average yield since the buy signal of short term wave (weeks to months)
 // Thus we could focus on selecting stocks within the strong sector(s)
