@@ -287,6 +287,7 @@ public class CSVReader {
 			Map<String, TreeMap> sortedMap = new TreeMap<String, TreeMap>(results);
 
 			Iterator stocks = sortedMap.keySet().iterator();
+			String separator1 = "|";
 
 			while (stocks.hasNext()) {
 				String stock = stocks.next().toString();
@@ -298,11 +299,11 @@ public class CSVReader {
 				while (recordsIT.hasNext()) {
 					Calendar key = (Calendar) recordsIT.next();
 					String line = records.get(key).toString();
-					System.out.println(padtoLength(stock, 4) + " " + line);
-					myWriter.write(padtoLength(stock, 4) + " " + line+"\n");
+					System.out.println(padtoLength(stock, 6) + separator1 + line);
+					myWriter.write(padtoLength(stock, 4) + separator1 + line + "\n");
 
 				}
-				myWriter.write("\n");
+				// myWriter.write("\n");
 				System.out.println(" ");
 			}
 
@@ -368,9 +369,6 @@ public class CSVReader {
 					String duration = data[10];
 					String status = data[11];
 					String separator1 = "|";
-					String newline = padtoLength(orderDate, 24) + separator1 + padtoLength(action, 14) + separator1
-							+ padtoLength(security, 32) + separator1 + padtoLength(quantity, 5) + separator1
-							+ padtoLength(orderType, 15) + separator1 + status;
 					/*
 					 * System.out.println(" orderDate " + orderDate);
 					 * System.out.println(" orderNum " + orderNum); System.out.println(" account " +
@@ -417,6 +415,90 @@ public class CSVReader {
 					} else {
 						cal.set(Calendar.AM_PM, 0);
 					}
+
+					String expirationDate = "";
+					Calendar cal2 = cal;
+
+					if (action.indexOf("Sell to open") >= 0 || (action.indexOf("Buy to open") >= 0)) {
+						// this is option trade expiration date should be parsed out
+						StringTokenizer toks = new StringTokenizer(security.trim(), " ,");
+						String stk = toks.nextToken();
+						String mStr = toks.nextToken();
+						String dStr = toks.nextToken();
+						String yStr = toks.nextToken();
+						int m = 0;
+						if (mStr.equalsIgnoreCase("JAN")) {
+							m = 0;
+						} else if (mStr.equalsIgnoreCase("FEB")) {
+							m = 1;
+						} else if (mStr.equalsIgnoreCase("MAR")) {
+							m = 2;
+						} else if (mStr.equalsIgnoreCase("AP")) {
+							m = 3;
+						} else if (mStr.equalsIgnoreCase("MAY")) {
+							m = 4;
+						} else if (mStr.equalsIgnoreCase("JUNE")) {
+							m = 5;
+						} else if (mStr.equalsIgnoreCase("JULY")) {
+							m = 6;
+						} else if (mStr.equalsIgnoreCase("AUG")) {
+							m = 7;
+						} else if (mStr.equalsIgnoreCase("SEPT")) {
+							m = 8;
+						} else if (mStr.equalsIgnoreCase("OCT")) {
+							m = 9;
+						} else if (mStr.equalsIgnoreCase("NOV")) {
+							m = 10;
+						} else if (mStr.equalsIgnoreCase("DEC")) {
+							m = 11;
+						}
+						int y = Integer.parseInt(yStr);
+						int d = Integer.parseInt(dStr);
+						cal2 = Calendar.getInstance();
+						cal2.set(y, m, d);
+						cal2.set(Calendar.HOUR, 0);
+						cal2.set(Calendar.MINUTE, 0);
+						cal2.set(Calendar.SECOND, 0);
+						cal2.set(Calendar.MILLISECOND, 0);
+						expirationDate = "" + (cal2.get(Calendar.MONTH) + 1) + "/" + cal2.get(Calendar.DAY_OF_MONTH)
+								+ "/" + cal2.get(Calendar.YEAR);
+
+					} else if (action.indexOf("Buy") >= 0 && action.indexOf("Buy to open") < 0) {
+						// this is stock, add one month to the initial buy date for tracking purpose
+						cal2.add(Calendar.MONTH, 1);
+						expirationDate = "" + (cal2.get(Calendar.MONTH) + 1) + "/" + cal2.get(Calendar.DAY_OF_MONTH)
+								+ "/" + cal2.get(Calendar.YEAR);
+					} else if ((action.indexOf("Sell") >= 0 && action.indexOf("Sell to open") < 0)
+							|| action.indexOf("Sell to close") < 0) {
+						// sell stock, expired the same day as sold
+						expirationDate = "" + (cal2.get(Calendar.MONTH) + 1) + "/" + cal2.get(Calendar.DAY_OF_MONTH)
+								+ "/" + cal2.get(Calendar.YEAR);
+					}
+
+					String type = "stock";
+					if (action.indexOf("Sell to open") >= 0 || (action.indexOf("Buy to open") >= 0)
+							|| (action.indexOf("Buy to close") >= 0) || (action.indexOf("Sell to close") >= 0)) {
+						type = "options";
+					}
+
+					System.out.println(status);
+
+					String[] sts = status.strip().split(" ");
+					String sts1 = sts[0];
+					//String vol = sts[1];
+					String quant = sts[2];
+					//String price = sts[3];
+					String price = sts[4];
+					if(price.indexOf("$")>=0)
+					price = price.substring(0,price.length()-1);
+					System.out.println("sts1 " + sts1);
+					System.out.println("quantity " + quant);
+					System.out.println("price " + price);
+
+					String newline = padtoLength(orderDate, 24) + separator1 + padtoLength(action, 14) + separator1
+							+ padtoLength(security, 32) + separator1 + padtoLength(quantity, 5) + separator1
+							+ padtoLength(orderType, 15) + separator1 + padtoLength(status, 28) + separator1
+							+ padtoLength(stock, 5) + separator1+ padtoLength(quant, 5)+separator1+ padtoLength(type, 8) +separator1 +padtoLength(price, 8) + separator1 + expirationDate;
 
 					if (results.containsKey(stock)) {
 						TreeMap<Calendar, String> records = (TreeMap<Calendar, String>) results.get(stock);
