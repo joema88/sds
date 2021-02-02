@@ -138,7 +138,7 @@ public class Summary {
 	public static void processBOSY(int dateID) {
 		try {
 			init();
-			BOYSStmnt.setInt(1, dateID - 5);
+			BOYSStmnt.setInt(1, dateID - 7);
 			BOYSStmnt.setInt(2, dateID);
 			ResultSet rs1 = BOYSStmnt.executeQuery();
 			// String query = "SELECT OS,OB,OY,BI,SALY,BOSY FROM DATES
@@ -155,32 +155,48 @@ public class Summary {
 				OB[k] = rs1.getFloat(2);
 				OY[k] = rs1.getFloat(3);
 				k++;
-				if (k >= 3)
+				if (k >= 4)
 					break;
 
 			}
 
 			int qualified = 0;
+			//within 5 days OB+OS>100, and today OB>50 and AVG OY<70, then buy signal
 			// OS >35.0, OB >50, OS+OB>100.0, OB Condition after OS, 3 days AVG OY <70.0
 			// Then Bull turn up point
-			if (OS[2] > 35.0f) {
+			if (OS[4] > 35.0f) {
+				if ((OS[4] + OB[0]) > 100.0f && OB[0] > 50.0f) {
+					qualified = 100;
+
+				}
+				BAT = OS[4] + OB[0];
+			} else if (OS[3] > 35.0f) {
+				if ((OS[3] + OB[0]) > 100.0f && OB[0] > 50.0f) {
+					qualified = 100;
+
+				}
+				BAT = OS[3] + OB[0];
+			} else if (OS[2] > 35.0f) {
 				if ((OS[2] + OB[0]) > 100.0f && OB[0] > 50.0f) {
 					qualified = 100;
 
 				}
+				BAT = OS[2] + OB[0];
 			} else if (OS[1] > 35.0f) {
 				if ((OS[1] + OB[0]) > 100.0f && OB[0] > 50.0f) {
 					qualified = 100;
 
 				}
+				BAT = OS[1] + OB[0];
 			}
 
+			/*
 			BAT = OS[2] + OB[0];
 
 			if ((OS[1] + OB[0]) > BAT) {
 				BAT = OS[1] + OB[0];
 			}
-
+*/
 			AY = (OY[0] + OY[1] + OY[2]) / 3.0f;
 			if (AY < 70.0f) {
 				qualified = qualified + 8;
