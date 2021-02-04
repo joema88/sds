@@ -144,9 +144,9 @@ public class Summary {
 			// String query = "SELECT OS,OB,OY,BI,SALY,BOSY FROM DATES
 			// WHERE DATEID > ? AND DATEID<= ? ORDER BY DATEID DESC";
 
-			float[] OS = new float[3];
-			float[] OB = new float[3];
-			float[] OY = new float[3];
+			float[] OS = new float[5];
+			float[] OB = new float[5];
+			float[] OY = new float[5];
 			float AY = 0.0f;
 			float BAT = 0.0f;
 			int k = 0;
@@ -161,9 +161,10 @@ public class Summary {
 			}
 
 			int qualified = 0;
-			//within 5 days OB+OS>100, and today OB>50 and AVG OY<70, then buy signal
+			// within 5 days OB+OS>100, and today OB>50 and AVG OY<70, then buy signal
 			// OS >35.0, OB >50, OS+OB>100.0, OB Condition after OS, 3 days AVG OY <70.0
 			// Then Bull turn up point
+
 			if (OS[4] > 35.0f) {
 				if ((OS[4] + OB[0]) > 100.0f && OB[0] > 50.0f) {
 					qualified = 100;
@@ -188,15 +189,15 @@ public class Summary {
 
 				}
 				BAT = OS[1] + OB[0];
+			} else {
+
+				BAT = OS[2] + OB[0];
+
+				if ((OS[1] + OB[0]) > BAT) {
+					BAT = OS[1] + OB[0];
+				}
 			}
 
-			/*
-			BAT = OS[2] + OB[0];
-
-			if ((OS[1] + OB[0]) > BAT) {
-				BAT = OS[1] + OB[0];
-			}
-*/
 			AY = (OY[0] + OY[1] + OY[2]) / 3.0f;
 			if (AY < 70.0f) {
 				qualified = qualified + 8;
@@ -578,16 +579,16 @@ public class Summary {
 		init();
 		// String symbol = "CIEN";
 		// processLastDayCCX(symbol, -1);
-	//	for (int dateId = 9020; dateId >8219; dateId--) {
-			// processAllYTPSum(dateId);
-			// processAllYTPSum(dateId);
-			// System.out.println("Done " + dateId);
-			// processBOSY(dateId);
-			// processCBI(dateId);
-			// processBuySellPoints(dateId);
-			//processDailyUTurnSummary(dateId);
-			//System.out.println("Done " + dateId);
-	//	}
+		// for (int dateId = 9020; dateId >8219; dateId--) {
+		// processAllYTPSum(dateId);
+		// processAllYTPSum(dateId);
+		// System.out.println("Done " + dateId);
+		// processBOSY(dateId);
+		// processCBI(dateId);
+		// processBuySellPoints(dateId);
+		// processDailyUTurnSummary(dateId);
+		// System.out.println("Done " + dateId);
+		// }
 
 		evaluateYield();
 	}
@@ -610,17 +611,18 @@ public class Summary {
 			int tot = 0;
 			float marketCapSum = 0.0f;
 			while (rs.next()) {
-				//dateID = rs.getInt(1);
+				// dateID = rs.getInt(1);
 				date = rs.getString(3);
 				tot++;
 				marketCapSum = marketCapSum + rs.getFloat(5);
 			}
 
 			UMACUpdate.setInt(1, tot);
-			UMACUpdate.setFloat(2,marketCapSum / (1.0f * tot));
-			UMACUpdate.setInt(3,dateID);
+			UMACUpdate.setFloat(2, marketCapSum / (1.0f * tot));
+			UMACUpdate.setInt(3, dateID);
 			UMACUpdate.executeUpdate();
-			System.out.println("processDailyUTurnSummary "+date+"  Total " + tot + " avg market cap " + marketCapSum / (1.0f * tot));
+			System.out.println("processDailyUTurnSummary " + date + "  Total " + tot + " avg market cap "
+					+ marketCapSum / (1.0f * tot));
 		} catch (Exception ex) {
 
 		}
@@ -656,9 +658,9 @@ public class Summary {
 			int sellDate = 0;
 			float buyPrice = 0;
 			float sellPrice = 0;
-			
+
 			// String query = "select a.DATEID, CDATE, b.SYMBOL,
-			// CLOSE,BI,CBI,SALY,BOSY,BAT,TOT,OS, OB, OY, AY, SL1, SL2, BUY, c.CDATE  "
+			// CLOSE,BI,CBI,SALY,BOSY,BAT,TOT,OS, OB, OY, AY, SL1, SL2, BUY, c.CDATE "
 			// +"FROM BBROCK a, SYMBOLS b, DATES c WHERE a.STOCKID = b.STOCKID and
 			// a.DATEID=c.DATEID and ( b.SYMBOL='SPY') AND a.DATEID>? order by a.DATEID
 			// ASC";
@@ -696,12 +698,13 @@ public class Summary {
 					buyPrice = close;
 					startPrice = close;
 					nextActionSale = true;
-					System.out.print("Buy " + symbol + " at " + cdate+" ("+dateId +")"+ " at price " + close);
+					System.out.print("Buy " + symbol + " at " + cdate + " (" + dateId + ")" + " at price " + close);
 				} else {
 					if (nextDayAction && nextActionSale) {
 
 						float yeild = 100.0f * (close - buyPrice) / buyPrice;
-						System.out.println(", Sell at "+ " at " + cdate+" ("+dateId +")"+" at price " + close + " yield " + yeild);
+						System.out.println(", Sell at " + " at " + cdate + " (" + dateId + ")" + " at price " + close
+								+ " yield " + yeild);
 						totalYield = totalYield * (1.0f + yeild / 100.0f);
 						float buyHoldYield = 1.0f + (close - startPrice) / startPrice;
 						System.out.println("totalYield " + totalYield + " vs. buyHoldYield " + buyHoldYield);
@@ -783,7 +786,7 @@ public class Summary {
 					if (nextActionBuy && BUY == 1 && !nextActionSale) {
 						buyPrice = close;
 						nextActionSale = true;
-						System.out.print("Buy " + symbol + " at "+ cdate+" ("+dateId +")"+ " at price " + close);
+						System.out.print("Buy " + symbol + " at " + cdate + " (" + dateId + ")" + " at price " + close);
 					}
 
 				}
@@ -794,7 +797,8 @@ public class Summary {
 
 			if (nextActionSale) {
 				float yeild = 100.0f * (close - buyPrice) / buyPrice;
-				System.out.println(", Sell at " + " at " + cdate+" ("+dateId +")"+ " at price " + close + " yield " + yeild);
+				System.out.println(
+						", Sell at " + " at " + cdate + " (" + dateId + ")" + " at price " + close + " yield " + yeild);
 				totalYield = totalYield * (1.0f + yeild / 100.0f);
 				System.out.println("");
 				System.out.println("------------------");

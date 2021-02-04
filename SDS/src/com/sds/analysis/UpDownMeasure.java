@@ -42,13 +42,14 @@ public class UpDownMeasure {
 	// int buyDateId = 9007; //buy date
 	private static int buyDateId = 9034; // sell date, accumulator start here
 
-	public static int[] buyDateIds = new int[3];
+	public static int[] buyDateIds = new int[4];
 
 	public static void initBuyDateIDS() {
 		// 9007,9028
 		buyDateIds[0] = 9007;
 		buyDateIds[1] = 9028;
 		buyDateIds[2] = 9034;
+		buyDateIds[3] = 9095;
 		
 		//9091 is the sell date of last boduang
 	}
@@ -76,13 +77,13 @@ public class UpDownMeasure {
 		// daily step 7, update daily OBI (Over bought indicator)
 		// processOBIHistory(1);
 		// daily step 8, update daily f1, f8 count
-		// processF18Today(currentDateID) ;
+		 //processF18Today(currentDateID) ;
 		// daily step 9, process D2, D9 for each stock
 		//processD2D9History(true);
 		// daily step 10, process today's VBI
 		// processVBIHistory(true);
 		// daily step 11, process EE8
-		// processTodayEE8(currentDateID);
+		//processTodayEE8(currentDateID);
 		// daily step 12, process IAYD
 		// processTodayIndustryAVGPDYDelta(currentDateID, -1);
 		// daily step 13, process BDA [(Delta of SAY)*100 + (Delta of IAYD)]
@@ -101,7 +102,7 @@ public class UpDownMeasure {
 		// 2. Merrill export sort and group
 
 		// Why TME not printed out??? TTA=128
-		printOutBullStocks(9093, 9093);
+		//printOutBullStocks(9096, 9096);
 		// printOutWeeklyBullMonthlyBear(9086, 9086);
 
 		// processStockTTAHistory(6660, false);

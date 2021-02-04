@@ -464,13 +464,17 @@ public class CSVReader {
 								+ "/" + cal2.get(Calendar.YEAR);
 
 					} else if (action.indexOf("Buy") >= 0 && action.indexOf("Buy to open") < 0) {
-						// this is stock, add one month to the initial buy date for tracking purpose
-						cal2.add(Calendar.MONTH, 1);
+						// this is stock, add three months to the initial buy date for tracking purpose
+						cal2.add(Calendar.MONTH, 3);
 						expirationDate = "" + (cal2.get(Calendar.MONTH) + 1) + "/" + cal2.get(Calendar.DAY_OF_MONTH)
 								+ "/" + cal2.get(Calendar.YEAR);
 					} else if ((action.indexOf("Sell") >= 0 && action.indexOf("Sell to open") < 0)
 							|| action.indexOf("Sell to close") < 0) {
 						// sell stock, expired the same day as sold
+						expirationDate = "" + (cal2.get(Calendar.MONTH) + 1) + "/" + cal2.get(Calendar.DAY_OF_MONTH)
+								+ "/" + cal2.get(Calendar.YEAR);
+					}else if ((action.indexOf("Buy to close") >= 0) || (action.indexOf("Sell to close") >= 0)) {
+						// close option position, expired the same day as transaction day
 						expirationDate = "" + (cal2.get(Calendar.MONTH) + 1) + "/" + cal2.get(Calendar.DAY_OF_MONTH)
 								+ "/" + cal2.get(Calendar.YEAR);
 					}
