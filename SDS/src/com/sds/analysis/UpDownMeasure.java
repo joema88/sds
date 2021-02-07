@@ -61,7 +61,7 @@ public class UpDownMeasure {
 		initCurrentDateID();
 		// processUpDownHistory();//no longer do DM update
 		// daily step 1
-		// processDMAHistory(); //DM update here
+	    // processDMAHistory(); //DM update here
 		// daily step 2, today only
 		// processDMRankAvgDMHistory();
 		// daily step 3
@@ -77,7 +77,7 @@ public class UpDownMeasure {
 		// daily step 7, update daily OBI (Over bought indicator)
 		// processOBIHistory(1);
 		// daily step 8, update daily f1, f8 count
-		 //processF18Today(currentDateID) ;
+		// processF18Today(currentDateID) ;
 		// daily step 9, process D2, D9 for each stock
 		//processD2D9History(true);
 		// daily step 10, process today's VBI
@@ -102,7 +102,7 @@ public class UpDownMeasure {
 		// 2. Merrill export sort and group
 
 		// Why TME not printed out??? TTA=128
-		//printOutBullStocks(9096, 9096);
+		//printOutBullStocks(9098, 9098);
 		// printOutWeeklyBullMonthlyBear(9086, 9086);
 
 		// processStockTTAHistory(6660, false);

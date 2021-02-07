@@ -492,7 +492,9 @@ public class CSVReader {
 					//String vol = sts[1];
 					String quant = sts[2];
 					//String price = sts[3];
-					String price = sts[4];
+					String price = "";
+					if(sts.length==4)
+						price = sts[4];
 					if(price.indexOf("$")>=0)
 					price = price.substring(0,price.length()-1);
 					System.out.println("sts1 " + sts1);

@@ -59,6 +59,7 @@ public static String  downLoadFinViz(String stock) throws Exception{
 		}
 		
 		
+		
 		String fileName = date+".html";
 		System.out.println(date);
 		String url ="https://finviz.com/quote.ashx?t="+ stock;
