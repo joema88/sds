@@ -50,8 +50,8 @@ public class UpDownMeasure {
 		buyDateIds[1] = 9028;
 		buyDateIds[2] = 9034;
 		buyDateIds[3] = 9095;
-		
-		//9091 is the sell date of last boduang
+
+		// 9091 is the sell date of last boduang
 	}
 
 	public static void main(String[] args) {
@@ -61,7 +61,7 @@ public class UpDownMeasure {
 		initCurrentDateID();
 		// processUpDownHistory();//no longer do DM update
 		// daily step 1
-	    // processDMAHistory(); //DM update here
+		// processDMAHistory(); //DM update here
 		// daily step 2, today only
 		// processDMRankAvgDMHistory();
 		// daily step 3
@@ -79,11 +79,11 @@ public class UpDownMeasure {
 		// daily step 8, update daily f1, f8 count
 		// processF18Today(currentDateID) ;
 		// daily step 9, process D2, D9 for each stock
-		//processD2D9History(true);
+		// processD2D9History(true);
 		// daily step 10, process today's VBI
 		// processVBIHistory(true);
 		// daily step 11, process EE8
-		//processTodayEE8(currentDateID);
+		// processTodayEE8(currentDateID);
 		// daily step 12, process IAYD
 		// processTodayIndustryAVGPDYDelta(currentDateID, -1);
 		// daily step 13, process BDA [(Delta of SAY)*100 + (Delta of IAYD)]
@@ -92,7 +92,7 @@ public class UpDownMeasure {
 		// processRTSHistory(true);
 		// daily step 15, process last day TBK, last 30 days breakout bullish pattern
 		// base on 30 days breakout mark set in step 14
-	    // processTBKHistory(true);
+		// processTBKHistory(true);
 		// daily step 16, process last day AVI
 		// processAVIHistory(true);
 		/// daily step 17, process last day TTA
@@ -102,8 +102,9 @@ public class UpDownMeasure {
 		// 2. Merrill export sort and group
 
 		// Why TME not printed out??? TTA=128
-		//printOutBullStocks(9098, 9098);
-		// printOutWeeklyBullMonthlyBear(9086, 9086);
+		printOutBullStocks(9082, 9102);
+
+		printOutWeeklyBullMonthlyBear(9082, 9102);
 
 		// processStockTTAHistory(6660, false);
 		// processTTAHistory(false);
@@ -147,19 +148,20 @@ public class UpDownMeasure {
 		System.out.println("Processing weekly bulls, monthly bears");
 		PreparedStatement weekSumBullToday = DB.weekSumBullToday();
 		PreparedStatement monthlySumBearToday = DB.monthlySumBearToday();
+		PreparedStatement cDate = DB.getCDate();
 		int limit = 50;
-		HashMap weekSumBullMap = new HashMap();
-		HashMap weekSumBullPriceMap = new HashMap();
-		HashMap monthlySumBearMap = new HashMap();
-		HashMap monthlySumBearPriceMap = new HashMap();
-
-		StringBuffer allBullStocksBuffer = new StringBuffer();
-		StringBuffer allBullPriceBuffer = new StringBuffer();
-		StringBuffer allBearStocksBuffer = new StringBuffer();
-		StringBuffer allBearPriceBuffer = new StringBuffer();
 
 		try {
 			for (int k = startDateId; k <= endDateId; k++) {
+				HashMap weekSumBullMap = new HashMap();
+				HashMap weekSumBullPriceMap = new HashMap();
+				HashMap monthlySumBearMap = new HashMap();
+				HashMap monthlySumBearPriceMap = new HashMap();
+
+				StringBuffer allBullStocksBuffer = new StringBuffer();
+				StringBuffer allBullPriceBuffer = new StringBuffer();
+				StringBuffer allBearStocksBuffer = new StringBuffer();
+				StringBuffer allBearPriceBuffer = new StringBuffer();
 				// String query = "select a.STOCKID,b.SYMBOL,ROUND(SUM(NETCHANGE),2) AS
 				// SUM_NETCHANGE,ROUND(SUM(PERCENT),2) AS SUM_PERCENT,ROUND(AVG(MARKCAP),2) AS
 				// AVG_MARKCAP, ROUND(AVG(CLOSE),2) AS AVG_CLOSE, MAX(CLOSE),MIN(CLOSE) FROM
@@ -219,67 +221,73 @@ public class UpDownMeasure {
 				if (count2 == limit) {
 					System.out.println("monthlySumBear today reached limit " + limit + " at dateId " + k);
 				}
+
+				// print out sorted results
+				Map<String, String> sortedMap = new TreeMap<String, String>(weekSumBullMap);
+				System.out.println("With weekly bull stocks..." + sortedMap.size());
+				Set sortedStocks = sortedMap.keySet();
+				Iterator weeklyBullITSorted = sortedStocks.iterator();
+				while (weeklyBullITSorted.hasNext()) {
+					String stk = weeklyBullITSorted.next().toString();
+					String count = sortedMap.get(stk).toString();
+					System.out.println(stk + " count " + count);
+					allBullStocksBuffer.append(stk + ",");
+				}
+
+				// weeklyBullsWithPrice print out with price
+				System.out.println("With price weekly bull stocks..." + weekSumBullPriceMap.size());
+				Set weeklyBullsPrice = weekSumBullMap.keySet();
+				Iterator weeklyBullPriceIT = weeklyBullsPrice.iterator();
+				while (weeklyBullPriceIT.hasNext()) {
+					String stk = weeklyBullPriceIT.next().toString();
+					String close = weekSumBullPriceMap.get(stk).toString();
+					allBullPriceBuffer.append(stk + " " + close + ",");
+				}
+
+				Map<String, String> sortedMap2 = new TreeMap<String, String>(monthlySumBearMap);
+				System.out.println("With monthly bear stocks..." + sortedMap2.size());
+				Set sortedStocks2 = sortedMap2.keySet();
+				Iterator monthlyBearITSorted = sortedStocks2.iterator();
+				while (monthlyBearITSorted.hasNext()) {
+					String stk = monthlyBearITSorted.next().toString();
+					String count = sortedMap2.get(stk).toString();
+					System.out.println(stk + " count " + count);
+					allBearStocksBuffer.append(stk + ",");
+				}
+
+				// weeklyBullsWithPrice print out with price
+				System.out.println("With price montly bear stocks..." + monthlySumBearPriceMap.size());
+				Set monthlyBearPrice = monthlySumBearPriceMap.keySet();
+				Iterator monthlyBearPriceIT = monthlyBearPrice.iterator();
+				while (monthlyBearPriceIT.hasNext()) {
+					String stk = monthlyBearPriceIT.next().toString();
+					String close = monthlySumBearPriceMap.get(stk).toString();
+					allBearPriceBuffer.append(stk + " " + close + ",");
+				}
+
+				String path = "/home/joma/share/test/BBROCK/";
+				cDate.setInt(1, k);
+				ResultSet rsCDate = cDate.executeQuery();
+
+				String fileName = "";
+				if (rsCDate.next()) {
+					fileName = rsCDate.getString(1);
+				}
+				if (fileName.length() < 1) {
+					fileName = "Bull" + (int) Math.random() * 1000;
+				}
+				String fileName1 = fileName + "_WeeklyBull.txt";
+				writeToFile(path + fileName1, allBullStocksBuffer);
+
+				String fileName2 = fileName + "_WeeklyBullPrice.txt";
+				writeToFile(path + fileName2, allBullPriceBuffer);
+
+				String fileName3 = fileName + "_MonthlyBear.txt";
+				writeToFile(path + fileName3, allBearStocksBuffer);
+
+				String fileName4 = fileName + "_MonthlyBearPrice.txt";
+				writeToFile(path + fileName4, allBearPriceBuffer);
 			}
-
-			// print out sorted results
-			Map<String, String> sortedMap = new TreeMap<String, String>(weekSumBullMap);
-			System.out.println("With weekly bull stocks..." + sortedMap.size());
-			Set sortedStocks = sortedMap.keySet();
-			Iterator weeklyBullITSorted = sortedStocks.iterator();
-			while (weeklyBullITSorted.hasNext()) {
-				String stk = weeklyBullITSorted.next().toString();
-				String count = sortedMap.get(stk).toString();
-				System.out.println(stk + " count " + count);
-				allBullStocksBuffer.append(stk + ",");
-			}
-
-			// weeklyBullsWithPrice print out with price
-			System.out.println("With price weekly bull stocks..." + weekSumBullPriceMap.size());
-			Set weeklyBullsPrice = weekSumBullMap.keySet();
-			Iterator weeklyBullPriceIT = weeklyBullsPrice.iterator();
-			while (weeklyBullPriceIT.hasNext()) {
-				String stk = weeklyBullPriceIT.next().toString();
-				String close = weekSumBullPriceMap.get(stk).toString();
-				allBullPriceBuffer.append(stk + " " + close + ",");
-			}
-
-			Map<String, String> sortedMap2 = new TreeMap<String, String>(monthlySumBearMap);
-			System.out.println("With monthly bear stocks..." + sortedMap2.size());
-			Set sortedStocks2 = sortedMap2.keySet();
-			Iterator monthlyBearITSorted = sortedStocks2.iterator();
-			while (monthlyBearITSorted.hasNext()) {
-				String stk = monthlyBearITSorted.next().toString();
-				String count = sortedMap2.get(stk).toString();
-				System.out.println(stk + " count " + count);
-				allBearStocksBuffer.append(stk + ",");
-			}
-
-			// weeklyBullsWithPrice print out with price
-			System.out.println("With price montly bear stocks..." + monthlySumBearPriceMap.size());
-			Set monthlyBearPrice = monthlySumBearPriceMap.keySet();
-			Iterator monthlyBearPriceIT = monthlyBearPrice.iterator();
-			while (monthlyBearPriceIT.hasNext()) {
-				String stk = monthlyBearPriceIT.next().toString();
-				String close = monthlySumBearPriceMap.get(stk).toString();
-				allBearPriceBuffer.append(stk + " " + close + ",");
-			}
-
-			String path = "/home/joma/share/test/";
-			Calendar cal = Calendar.getInstance();
-			int month = cal.get(Calendar.MONTH) + 1;
-			int year = cal.get(Calendar.YEAR);
-			int date = cal.get(Calendar.DAY_OF_MONTH);
-			String fileName1 = "" + year + "_" + month + "_" + date + "_WeeklyBull.txt";
-			writeToFile(path + fileName1, allBullStocksBuffer);
-
-			String fileName2 = "" + year + "_" + month + "_" + date + "_WeeklyBullPrice.txt";
-			writeToFile(path + fileName2, allBullPriceBuffer);
-
-			String fileName3 = "" + year + "_" + month + "_" + date + "_MonthlyBear.txt";
-			writeToFile(path + fileName3, allBearStocksBuffer);
-
-			String fileName4 = "" + year + "_" + month + "_" + date + "_MonthlyBearPrice.txt";
-			writeToFile(path + fileName4, allBearPriceBuffer);
 
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
@@ -312,26 +320,28 @@ public class UpDownMeasure {
 		PreparedStatement tbkToday = DB.tbkToday();
 		PreparedStatement vbiToday = DB.vbiToday();
 		PreparedStatement ee8Today = DB.ee8Today();
+		PreparedStatement cDate = DB.getCDate();
 		PreparedStatement gentleBullToday = DB.gentleBullToday();
 		int limitBT9 = 50;
 		int limit = 100;
-		HashMap ttaTodayTable = new HashMap();
-		HashMap ttaLastTenSumTable = new HashMap();
-		HashMap fucTodayTable = new HashMap();
-		HashMap tbkTodayTable = new HashMap();
-		HashMap vbiTodayTable = new HashMap();
-		HashMap ee8TodayTable = new HashMap();
-		HashMap gentleBullTodayTable = new HashMap();
-		HashMap allStocks = new HashMap();
-		HashMap allStocksWithPrice = new HashMap();
-
-		HashMap allStocksExceptGentleBull = new HashMap();
-		StringBuffer allStocksBuffer = new StringBuffer();
-		StringBuffer allStocksPriceBuffer = new StringBuffer();
-		StringBuffer allFreshStocksPriceBuffer = new StringBuffer();
 
 		try {
 			for (int k = startDateId; k <= endDateId; k++) {
+				HashMap ttaTodayTable = new HashMap();
+				HashMap ttaLastTenSumTable = new HashMap();
+				HashMap fucTodayTable = new HashMap();
+				HashMap tbkTodayTable = new HashMap();
+				HashMap vbiTodayTable = new HashMap();
+				HashMap ee8TodayTable = new HashMap();
+				HashMap gentleBullTodayTable = new HashMap();
+				HashMap allStocks = new HashMap();
+				HashMap allStocksWithPrice = new HashMap();
+
+				HashMap allStocksExceptGentleBull = new HashMap();
+				StringBuffer allStocksBuffer = new StringBuffer();
+				StringBuffer allStocksPriceBuffer = new StringBuffer();
+				StringBuffer allFreshStocksPriceBuffer = new StringBuffer();
+
 				// ttaToday()
 				// String query = "SELECT a.DATEID, a.STOCKID AS SKID, CDATE, b.SYMBOL AS SYM,
 				// ROUND(CLOSE,1) AS CLOS, FUC,TBK, VBI,TTA,ROUND(SAY,1) AS SAY,MARKCAP AS
@@ -692,86 +702,91 @@ public class UpDownMeasure {
 					}
 				}
 
+				String path = "/home/joma/share/test/BBROCK/";
+				cDate.setInt(1, k);
+				ResultSet rsCDate = cDate.executeQuery();
+
+				String fileName = "";
+				if (rsCDate.next()) {
+					fileName = rsCDate.getString(1);
+				}
+				if (fileName.length() < 1) {
+					fileName = "Bull" + (int) Math.random() * 1000;
+				}
+				try {
+					File myObj = new File(path + fileName + "_Bull.txt");
+					System.out.println(".... " + allStocksBuffer.toString());
+
+					if (!myObj.exists())
+						myObj.createNewFile();
+					// if (myObj.createNewFile()) {
+					Thread.sleep(5000);
+					FileWriter myWriter = new FileWriter(myObj);
+					myWriter.write(allStocksBuffer.toString());
+					myWriter.close();
+					// System.out.println("File created: " + myObj.getName());
+					// } else {
+					// System.out.println("File already exists.");
+					// }
+				} catch (IOException e) {
+					System.out.println("An error occurred.");
+					e.printStackTrace();
+				}
+
+				String fileName2 = fileName + "_BullPrice.txt";
+				try {
+					File myObj2 = new File(path + fileName2);
+					System.out.println(".... " + allStocksPriceBuffer.toString());
+
+					if (!myObj2.exists())
+						myObj2.createNewFile();
+					// if (myObj.createNewFile()) {
+					Thread.sleep(5000);
+					FileWriter myWriter = new FileWriter(myObj2);
+					myWriter.write(allStocksPriceBuffer.toString());
+					myWriter.close();
+					// System.out.println("File created: " + myObj.getName());
+					// } else {
+					// System.out.println("File already exists.");
+					// }
+				} catch (IOException e) {
+					System.out.println("An error occurred.");
+					e.printStackTrace();
+				}
+
+				String fileName3 = fileName + "_FreshTTABullPrice.txt";
+				try {
+					File myObj3 = new File(path + fileName3);
+					System.out.println(".... " + allFreshStocksPriceBuffer.toString());
+
+					if (!myObj3.exists())
+						myObj3.createNewFile();
+					// if (myObj.createNewFile()) {
+					Thread.sleep(5000);
+					FileWriter myWriter = new FileWriter(myObj3);
+					myWriter.write(allFreshStocksPriceBuffer.toString());
+					myWriter.close();
+					// System.out.println("File created: " + myObj.getName());
+					// } else {
+					// System.out.println("File already exists.");
+					// }
+				} catch (IOException e) {
+					System.out.println("An error occurred.");
+					e.printStackTrace();
+				}
+
+				Map<String, String> sortedMap2 = new TreeMap<String, String>(allStocksExceptGentleBull);
+				System.out.println("Without gentle bull stocks..." + sortedMap2.size());
+				Set sortedStocks2 = sortedMap2.keySet();
+				Iterator ttaITSorted2 = sortedStocks2.iterator();
+				while (ttaITSorted2.hasNext()) {
+					String stk8 = ttaITSorted2.next().toString();
+					String count = sortedMap2.get(stk8).toString();
+					System.out.println(stk8 + " count " + count);
+
+				}
 			}
 
-			String path = "/home/joma/share/test/";
-			Calendar cal = Calendar.getInstance();
-			int month = cal.get(Calendar.MONTH) + 1;
-			int year = cal.get(Calendar.YEAR);
-			int date = cal.get(Calendar.DAY_OF_MONTH);
-			String fileName = "" + year + "_" + month + "_" + date + "_Bull.txt";
-			try {
-				File myObj = new File(path + fileName);
-				System.out.println(".... " + allStocksBuffer.toString());
-
-				if (!myObj.exists())
-					myObj.createNewFile();
-				// if (myObj.createNewFile()) {
-				Thread.sleep(5000);
-				FileWriter myWriter = new FileWriter(myObj);
-				myWriter.write(allStocksBuffer.toString());
-				myWriter.close();
-				// System.out.println("File created: " + myObj.getName());
-				// } else {
-				// System.out.println("File already exists.");
-				// }
-			} catch (IOException e) {
-				System.out.println("An error occurred.");
-				e.printStackTrace();
-			}
-
-			String fileName2 = "" + year + "_" + month + "_" + date + "_BullPrice.txt";
-			try {
-				File myObj2 = new File(path + fileName2);
-				System.out.println(".... " + allStocksPriceBuffer.toString());
-
-				if (!myObj2.exists())
-					myObj2.createNewFile();
-				// if (myObj.createNewFile()) {
-				Thread.sleep(5000);
-				FileWriter myWriter = new FileWriter(myObj2);
-				myWriter.write(allStocksPriceBuffer.toString());
-				myWriter.close();
-				// System.out.println("File created: " + myObj.getName());
-				// } else {
-				// System.out.println("File already exists.");
-				// }
-			} catch (IOException e) {
-				System.out.println("An error occurred.");
-				e.printStackTrace();
-			}
-
-			String fileName3 = "" + year + "_" + month + "_" + date + "_FreshTTABullPrice.txt";
-			try {
-				File myObj3 = new File(path + fileName3);
-				System.out.println(".... " + allFreshStocksPriceBuffer.toString());
-
-				if (!myObj3.exists())
-					myObj3.createNewFile();
-				// if (myObj.createNewFile()) {
-				Thread.sleep(5000);
-				FileWriter myWriter = new FileWriter(myObj3);
-				myWriter.write(allFreshStocksPriceBuffer.toString());
-				myWriter.close();
-				// System.out.println("File created: " + myObj.getName());
-				// } else {
-				// System.out.println("File already exists.");
-				// }
-			} catch (IOException e) {
-				System.out.println("An error occurred.");
-				e.printStackTrace();
-			}
-
-			Map<String, String> sortedMap2 = new TreeMap<String, String>(allStocksExceptGentleBull);
-			System.out.println("Without gentle bull stocks..." + sortedMap2.size());
-			Set sortedStocks2 = sortedMap2.keySet();
-			Iterator ttaITSorted2 = sortedStocks2.iterator();
-			while (ttaITSorted2.hasNext()) {
-				String stk = ttaITSorted2.next().toString();
-				String count = sortedMap2.get(stk).toString();
-				System.out.println(stk + " count " + count);
-
-			}
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);
 		}

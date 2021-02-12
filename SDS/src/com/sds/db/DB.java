@@ -364,11 +364,17 @@ public class DB {
 	private static PreparedStatement weekSumBullToday = null;
 	private static PreparedStatement monthlySumBearToday = null;
 	private static PreparedStatement ttaCount = null;
+	private static PreparedStatement cdateStmnt = null;
 	
 	
 	
 	public static void closeConnection() {
 		try {
+			if( cdateStmnt != null ) {
+				cdateStmnt.close();
+				cdateStmnt = null;
+			}
+			
 			if( ttaCount != null ) {
 				ttaCount.close();
 				ttaCount = null;
@@ -1834,6 +1840,19 @@ public class DB {
 		return subIndStmnt;
 	}
 
+	public static PreparedStatement getCDate() {
+		if (cdateStmnt == null) {
+			try {
+				String query = "select CDATE FROM DATES where DATEID=?";
+				cdateStmnt = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return cdateStmnt;
+	}
 	public static PreparedStatement getAllSubUnderIndustryStmnt() {
 		if (subUnderIndStmnt == null) {
 			try {
