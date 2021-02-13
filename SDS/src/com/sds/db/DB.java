@@ -368,6 +368,7 @@ public class DB {
 	
 	
 	
+	
 	public static void closeConnection() {
 		try {
 			if( cdateStmnt != null ) {

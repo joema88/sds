@@ -102,9 +102,9 @@ public class UpDownMeasure {
 		// 2. Merrill export sort and group
 
 		// Why TME not printed out??? TTA=128
-		printOutBullStocks(9082, 9102);
+		//printOutBullStocks(9103, 9103);
 
-		printOutWeeklyBullMonthlyBear(9082, 9102);
+		//printOutWeeklyBullMonthlyBear(9103, 9103);
 
 		// processStockTTAHistory(6660, false);
 		// processTTAHistory(false);
