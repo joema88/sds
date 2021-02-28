@@ -63,7 +63,7 @@ public class UpDownMeasure {
 		// daily step 1
 		// processDMAHistory(); //DM update here
 		// daily step 2, today only
-		// processDMRankAvgDMHistory();
+		//processDMRankAvgDMHistory();
 		// daily step 3
 		// processFUCHistory();
 		// daily step 4
@@ -83,7 +83,7 @@ public class UpDownMeasure {
 		// daily step 10, process today's VBI
 		// processVBIHistory(true);
 		// daily step 11, process EE8
-		// processTodayEE8(currentDateID);
+	    // processTodayEE8(currentDateID);
 		// daily step 12, process IAYD
 		// processTodayIndustryAVGPDYDelta(currentDateID, -1);
 		// daily step 13, process BDA [(Delta of SAY)*100 + (Delta of IAYD)]
@@ -102,9 +102,9 @@ public class UpDownMeasure {
 		// 2. Merrill export sort and group
 
 		// Why TME not printed out??? TTA=128
-		//printOutBullStocks(9103, 9103);
+		//printOutBullStocks(9111, 9111);
 
-		//printOutWeeklyBullMonthlyBear(9103, 9103);
+		//printOutWeeklyBullMonthlyBear(9111, 9111);
 
 		// processStockTTAHistory(6660, false);
 		// processTTAHistory(false);
@@ -3966,6 +3966,11 @@ public class UpDownMeasure {
 								// String query = "UPDATE BBROCK SET BDA=?
 								// WHERE STOCKID =? and DATEID=?";
 
+								if( BDA<-32768 ) {
+									BDA = -32768;
+								}else if( BDA>32767 ) {
+									BDA = 32767;
+								}
 								DBAdUpdate.setFloat(1, BDA);
 
 								if (stockID > 0) {

@@ -135,6 +135,7 @@ public class Summary {
 
 	}
 
+	
 	public static void processBOSY(int dateID) {
 		try {
 			init();

@@ -421,6 +421,7 @@ public class DB {
 				existTTA.close();
 				existTTA = null;
 			}
+			
 			if (updateTTA != null) {
 				updateTTA.close();
 				updateTTA = null;
