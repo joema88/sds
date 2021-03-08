@@ -247,6 +247,8 @@ public class RecalSteps {
 			UpDownMeasure.processStockAVIHistory(stockID, false);
 			//recalculate stock TTA bull indicator
 			UpDownMeasure.processStockTTAHistory(stockID, false);
+			//recalculate stock UCC bull/bear indicator
+			UpDownMeasure.processUCCStockHistory(stockID);
 			
 		} catch (Exception ex) {
 			ex.printStackTrace(System.out);

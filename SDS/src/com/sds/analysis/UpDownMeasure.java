@@ -63,7 +63,7 @@ public class UpDownMeasure {
 		// daily step 1
 		// processDMAHistory(); //DM update here
 		// daily step 2, today only
-		//processDMRankAvgDMHistory();
+		// processDMRankAvgDMHistory();
 		// daily step 3
 		// processFUCHistory();
 		// daily step 4
@@ -83,11 +83,11 @@ public class UpDownMeasure {
 		// daily step 10, process today's VBI
 		// processVBIHistory(true);
 		// daily step 11, process EE8
-	    // processTodayEE8(currentDateID);
+		// processTodayEE8(currentDateID);
 		// daily step 12, process IAYD
 		// processTodayIndustryAVGPDYDelta(currentDateID, -1);
 		// daily step 13, process BDA [(Delta of SAY)*100 + (Delta of IAYD)]
-		// processTodayBDA(currentDateID, -1);
+		 // processTodayBDA(currentDateID, -1);
 		// daily step 14, this may have to be switched with step 14 once finalized
 		// processRTSHistory(true);
 		// daily step 15, process last day TBK, last 30 days breakout bullish pattern
@@ -97,15 +97,18 @@ public class UpDownMeasure {
 		// processAVIHistory(true);
 		/// daily step 17, process last day TTA
 		// processTTAHistory(true);
+		// daily step 18, process dail UCC
+		// processTodayUCC(currentDateID) ;
 
 		// two more task, 1. 15 days fresh TTA>100,
 		// 2. Merrill export sort and group
 
 		// Why TME not printed out??? TTA=128
-		//printOutBullStocks(9111, 9111);
+		// printOutBullStocks(9117, 9117);
 
-		//printOutWeeklyBullMonthlyBear(9111, 9111);
+		// printOutWeeklyBullMonthlyBear(9117, 9117);
 
+		//processUCCHistory();
 		// processStockTTAHistory(6660, false);
 		// processTTAHistory(false);
 		// processStockAVIHistory(297, false); //test FB AVI first
@@ -2168,6 +2171,299 @@ public class UpDownMeasure {
 		}
 	}
 
+	public static void processUCCHistory() {
+		try {
+
+			long t1 = System.currentTimeMillis();
+			PreparedStatement dateIDStmnt = DB.getDateIDStmnt();
+
+			PreparedStatement allStocks = DB.getAllStockIDs();
+			PreparedStatement dateIdRange = DB.getStockDateIDRange();
+			PreparedStatement dateIDExistStmnt = DB.checkDateIDExistsStmnt();
+			allStocks.setInt(1, 1);
+
+			ResultSet rs = allStocks.executeQuery();
+			int sc = 0;
+			System.out.println("-----------Begin---------");
+			while (rs.next()) {
+				sc++;
+				int stockID = rs.getInt(1);
+
+				if (stockID == 48) {
+					System.out.println("AMZN");
+				}
+
+				dateIdRange.setInt(1, stockID);
+
+				ResultSet dateRS = dateIdRange.executeQuery();
+
+				dateRS.next();
+
+				int strtDateId = dateRS.getInt(1);
+				int endDateId = dateRS.getInt(2);
+
+				for (int k = currentDateID; k >= 9036; k--) {
+					// we only have percent info after 9036 backtrack 14 days
+					boolean exist = false;
+					int adjustment = 0;
+					int lcMax = 10;
+					int lc = 0;
+					do {
+						dateIDExistStmnt.setInt(1, stockID);
+						dateIDExistStmnt.setInt(2, k);
+
+						ResultSet dateIDExist = dateIDExistStmnt.executeQuery();
+
+						dateIDExist.next();
+
+						int count = dateIDExist.getInt(1);
+
+						if (count > 0) {
+							exist = true;
+						} else {
+							k--;
+							adjustment++;
+						}
+						lc++;
+
+					} while (!exist && lc < lcMax);
+
+					if (exist)
+						processUCCToday(stockID, k);
+				}
+
+				System.out.println("processUCCHistory done for " + stockID);
+				Thread.sleep(1000);
+			}
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
+
+	public static void processUCCStockHistory(int stockID) {
+		try {
+
+			long t1 = System.currentTimeMillis();
+			PreparedStatement dateIDStmnt = DB.getDateIDStmnt();
+
+			PreparedStatement dateIdRange = DB.getStockDateIDRange();
+			PreparedStatement dateIDExistStmnt = DB.checkDateIDExistsStmnt();
+
+			dateIdRange.setInt(1, stockID);
+
+			ResultSet dateRS = dateIdRange.executeQuery();
+
+			dateRS.next();
+
+			int strtDateId = dateRS.getInt(1);
+			int endDateId = dateRS.getInt(2);
+
+			// 8923)
+			// for (int k = endDateId; k >= strtDateId; k--) {
+			// for (int k = endDateId; k >= strtDateId; k--) {
+			for (int k = endDateId; k >= 9036; k--) {
+				// we only have percent info after 9036 backtrack 14 days
+				boolean exist = false;
+				int adjustment = 0;
+				int lcMax = 10;
+				int lc = 0;
+				do {
+					dateIDExistStmnt.setInt(1, stockID);
+					dateIDExistStmnt.setInt(2, k);
+
+					ResultSet dateIDExist = dateIDExistStmnt.executeQuery();
+
+					dateIDExist.next();
+
+					int count = dateIDExist.getInt(1);
+
+					if (count > 0) {
+						exist = true;
+					} else {
+						k--;
+						adjustment++;
+					}
+					lc++;
+
+				} while (!exist && lc < lcMax);
+
+				if (exist)
+					processUCCToday(stockID, k);
+			}
+
+			System.out.println("process done for " + stockID);
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
+
+	public static void processTodayUCC(int dateId) {
+		try {
+			PreparedStatement todayStocks = DB.getTodayStocks();
+
+			// String query = "select STOCKID FROM BBROCK WHERE DATEID=? ORDER BY STOCKID
+			// ASC";
+
+			todayStocks.setInt(1, dateId);
+			ResultSet rs = todayStocks.executeQuery();
+
+			while (rs.next()) {
+				int stkid = rs.getInt(1);
+
+				processUCCToday(stkid, dateId);
+				System.out.println("processUCCToday done for stockid " + stkid);
+			}
+
+		} catch (Exception ex) {
+			ex.printStackTrace(System.out);
+		}
+	}
+
+	public static void processUCCToday(int stockID, int dateId) {
+		try {
+
+			// String query = "SELECT DATEID,PERCENT FROM BBROCK
+			// WHERE STOCKID = ? AND DATEID >=? AND DATEID <=? ORDER BY DATEID DESC";
+
+			PreparedStatement pastPercent = DB.getPastPercentStmnt();
+
+			// String query = "UPDATE BBROCK SET S14=?, UCC=?
+			// WHERE STOCKID = ? AND DATEID =? ";
+
+			PreparedStatement updateUCC = DB.updateUCC();
+
+			PreparedStatement previousUCC = DB.getUCCStmnt();
+
+			pastPercent.setInt(1, stockID);
+			pastPercent.setInt(2, dateId - 13);
+			pastPercent.setInt(3, dateId);
+
+			ResultSet rs = pastPercent.executeQuery();
+
+			float s14 = 0.0f;
+			int unc = 0;
+			int previous6To15DateId = 0;
+			int previous15To25DateId = 0;
+			int previousAbove25DateId = 0;
+			// percent>25
+			boolean ExtremeUpAdjacent = true;
+			int ExtremeUpCount = 0;
+			// percent>=15 && <25
+			boolean MajorUpAdjacent = true;
+			int MajorUpCount = 0;
+			// percent>=6 && <15
+			boolean UnusualUpAdjacent = true;
+			int UnusualUpCount = 0;
+
+			boolean update = false;
+			int previousDateID = 0;
+			int k = 0;
+
+			// reset before calculation
+			updateUCC.setFloat(1, 0.0f);
+			updateUCC.setInt(2, 0);
+			updateUCC.setInt(3, stockID);
+			updateUCC.setInt(4, dateId);
+			updateUCC.executeUpdate();
+
+			while (rs.next()) {
+				int dateIdCurrent = rs.getInt(1);
+				float percent = rs.getFloat(2);
+				s14 = s14 + percent;
+
+				if (k == 0 && percent > 6.0f)
+					update = true;
+
+				if (k == 1)
+					previousDateID = dateIdCurrent;
+
+				if (percent > 25.0f) {
+					ExtremeUpCount++;
+					if (previousAbove25DateId == 0) {
+						previousAbove25DateId = dateIdCurrent;
+					} else if ((previousAbove25DateId - dateIdCurrent) > 1) {
+						ExtremeUpAdjacent = false;
+					} else if ((previousAbove25DateId - dateIdCurrent) == 1) {
+						previousAbove25DateId = dateIdCurrent;
+					}
+				} else if (percent > 15.0f && percent <= 25.0f) {
+					MajorUpCount++;
+					if (previous15To25DateId == 0) {
+						previous15To25DateId = dateIdCurrent;
+					} else if ((previous15To25DateId - dateIdCurrent) > 1) {
+						MajorUpAdjacent = false;
+					} else if ((previous15To25DateId - dateIdCurrent) == 1) {
+						previous15To25DateId = dateIdCurrent;
+					}
+				} else if (percent > 6.0f && percent <= 15.0f) {
+					UnusualUpCount++;
+					if (previous6To15DateId == 0) {
+						previous6To15DateId = dateIdCurrent;
+					} else if ((previous6To15DateId - dateIdCurrent) > 1) {
+						UnusualUpAdjacent = false;
+					} else if ((previous6To15DateId - dateIdCurrent) == 1) {
+						previous6To15DateId = dateIdCurrent;
+					}
+				}
+
+				k++;
+			}
+
+			if (ExtremeUpCount > 9)
+				ExtremeUpCount = 9;
+			if (MajorUpCount > 9)
+				MajorUpCount = 9;
+			if (UnusualUpCount > 9)
+				UnusualUpCount = 9;
+
+			unc = 100000 * ExtremeUpCount + 1000 * MajorUpCount + 10 * UnusualUpCount;
+
+			if (!ExtremeUpAdjacent)
+				unc = unc + 10000;
+			if (!MajorUpAdjacent)
+				unc = unc + 100;
+			if (!UnusualUpAdjacent)
+				unc = unc + 1;
+
+			// check if unc or ucc value is the same as previous date
+			// if the same skip update
+
+			if (update) {
+				// String query = "SELECT UCC, S14 FROM BBROCK
+				// WHERE DATEID = ? AND STOCKID = ?";
+				previousUCC.setInt(1, previousDateID);
+				previousUCC.setInt(2, stockID);
+
+				ResultSet pUCCRS = previousUCC.executeQuery();
+
+				int preUCC = 0;
+				if (pUCCRS.next())
+					preUCC = pUCCRS.getInt(1);
+
+				if (preUCC != unc) {
+					updateUCC.setFloat(1, s14);
+					updateUCC.setInt(2, unc);
+					updateUCC.setInt(3, stockID);
+					updateUCC.setInt(4, dateId);
+					updateUCC.executeUpdate();
+				}
+			} else {
+				// reset to default to cover previous calculation
+				// still update s14 though
+				updateUCC.setFloat(1, s14);
+				updateUCC.setInt(2, 0);
+				updateUCC.setInt(3, stockID);
+				updateUCC.setInt(4, dateId);
+				updateUCC.executeUpdate();
+			}
+
+		} catch (Exception ex) {
+
+		}
+	}
+
 	public static void processStockVBIHistory(int stockID) {
 		try {
 
@@ -3966,9 +4262,9 @@ public class UpDownMeasure {
 								// String query = "UPDATE BBROCK SET BDA=?
 								// WHERE STOCKID =? and DATEID=?";
 
-								if( BDA<-32768 ) {
+								if (BDA < -32768) {
 									BDA = -32768;
-								}else if( BDA>32767 ) {
+								} else if (BDA > 32767) {
 									BDA = 32767;
 								}
 								DBAdUpdate.setFloat(1, BDA);

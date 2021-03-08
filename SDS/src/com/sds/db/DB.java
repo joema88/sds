@@ -220,6 +220,26 @@ public class DB {
 	// AS FUC IS LONG TERM AND RARE, TBK IS MEDIATE TERM, VBI IS SHORT TERM AND
 	// FREQUENT
 
+	//3/5/2021 CHANGE START
+	//THESE FOLLOWING PARAMS SHOWS UNUSUAL UP TREND ACTIVITY OF STOCK IN PAST 14 DAYS
+	//SET UP BACKGROUND FOR LONG OR SHORT
+	//SUM OF DAILY PERCENT CHANGE OF PAST 14 DAYS (SHOULD BE PARAMETERIZED)
+	// ALTER TABLE BBROCK ADD COLUMN S14 FLOAT DEFAULT 0.0;
+	
+	//UNUSAL UP PERCENT COUNT AND CONTINUOUS OR NOT
+	//ALTER TABLE BBROCK ADD COLUMN UCC INT DEFAULT 0;
+	// IN THE FORMAT 6 DIGITS ECMCUC
+	//E stands for the number days (within past 14 days) percent>25, next C stands for continuous percent>25 or not
+	//if there are two or more days percent>25, and at least two of them are not adjacent
+	//then C=1, otherwise c=0
+	//M stands for the number of days >15 and <=25, c same meaning
+	//U stands for the number of days >6 and <=15, c same meaning
+	// so 210030 stands for there are two days in which percent>25 and the two days
+	//are not adjacent to each other, there are zero days percent>=15 and <25
+	//there are 3 days percent>6 and<=15, and at least two days of such are not adjacent
+	//3/5/2021 CHANGE END
+	
+	
 	private static Connection dbcon = null;
 	private static PreparedStatement symbolStmnt = null;
 	private static PreparedStatement symbolDateIDQuery = null;
@@ -365,12 +385,30 @@ public class DB {
 	private static PreparedStatement monthlySumBearToday = null;
 	private static PreparedStatement ttaCount = null;
 	private static PreparedStatement cdateStmnt = null;
-	
-	
+	private static PreparedStatement updateUCCStmnt = null;
+	private static PreparedStatement pastPercentStmnt = null;
+	private static PreparedStatement todayStocks = null;
+	private static PreparedStatement UCCStmnt = null;
 	
 	
 	public static void closeConnection() {
 		try {
+			if( UCCStmnt != null ) {
+				UCCStmnt.close();
+				UCCStmnt = null;
+			}
+			if( todayStocks != null) {
+				todayStocks.close();
+				todayStocks = null;
+			}
+			if( pastPercentStmnt != null) {
+				pastPercentStmnt.close();
+				pastPercentStmnt = null;
+			}
+			if( updateUCCStmnt != null) {
+				updateUCCStmnt.close();
+				updateUCCStmnt = null;
+			}
 			if( cdateStmnt != null ) {
 				cdateStmnt.close();
 				cdateStmnt = null;
@@ -1217,6 +1255,22 @@ public class DB {
 		return fud;
 	}
 
+	
+	public static PreparedStatement getTodayStocks() {
+		if (todayStocks == null) {
+			try {
+				String query = "select STOCKID FROM BBROCK WHERE DATEID=? ORDER BY STOCKID ASC";
+				todayStocks = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return todayStocks;
+	}
+
+	
 	public static PreparedStatement getTodayVBIFUCX() {
 		if (vbifx == null) {
 			try {
@@ -1972,6 +2026,21 @@ public class DB {
 		return insertDataStmnt;
 	}
 
+	
+	public static PreparedStatement getUCCStmnt() {
+		if (UCCStmnt == null) {
+			try {
+				String query = "SELECT UCC, S14 FROM  BBROCK  WHERE DATEID = ? AND STOCKID = ?";
+				UCCStmnt = getConnection().prepareStatement(query);
+			} catch (Exception ex) {
+				ex.printStackTrace(System.out);
+			}
+
+		}
+
+		return UCCStmnt;
+	}
+	
 	public static PreparedStatement getBOYSStmnt() {
 		if (BOYSStmnt == null) {
 			try {
@@ -2465,6 +2534,43 @@ public class DB {
 		return closePriceStmnt;
 	}
 
+	
+	public static PreparedStatement getPastPercentStmnt() {
+		getConnection();
+
+		if (pastPercentStmnt == null) {
+			try {
+
+				String query = "SELECT DATEID,PERCENT FROM BBROCK  WHERE STOCKID = ? AND DATEID >=? AND DATEID <=? ORDER BY DATEID DESC";
+
+				pastPercentStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return pastPercentStmnt;
+	}
+	
+
+	
+	public static PreparedStatement updateUCC() {
+		getConnection();
+
+		if (updateUCCStmnt == null) {
+			try {
+
+				String query = "UPDATE BBROCK  SET S14=?, UCC=? WHERE STOCKID = ? AND DATEID =? ";
+
+				updateUCCStmnt = dbcon.prepareStatement(query);
+			} catch (SQLException e) {
+				e.printStackTrace(System.out);
+			}
+		}
+
+		return updateUCCStmnt;
+	}
+	
 	public static PreparedStatement getTBKStmnt() {
 		getConnection();
 
